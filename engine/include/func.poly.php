@@ -111,7 +111,7 @@ function inherit_usable_to_poly(&$poly_model,$specific_usable,$soul_usable,$flag
 						if (is_array($poly_model['usable'][$z]['p']['mem_opt_able'])){
 							$s = $poly_model['usable'][$z]['p']['mem_opt_able'];
 							foreach ($s as $u => $t){
-								if ($org['params'][$v] === $all_valid_mem_opt_index[$t]['code']){
+								if (is_same_mem($org['params'][$v],$all_valid_mem_opt_index[$t]['code'])){
 									if ($all_valid_mem_opt_index[$t]['opt'] > 1){
 										$all_valid_mem_opt_index[$avmoi_ptr] = $all_valid_mem_opt_index[$t];
 										$all_valid_mem_opt_index[$avmoi_ptr]['opt'] = 1;
@@ -149,7 +149,7 @@ function inherit_usable_to_poly(&$poly_model,$specific_usable,$soul_usable,$flag
                         if (isset($poly_model['usable'][$z]['n']['mem_opt_able'])){
 							$s = $poly_model['usable'][$z]['n']['mem_opt_able'];
 							foreach ($s as $u => $t){
-								if ($org['params'][$v] === $all_valid_mem_opt_index[$t]['code']){
+								if (is_same_mem($org['params'][$v],$all_valid_mem_opt_index[$t]['code'])){
 									if ($all_valid_mem_opt_index[$t]['opt'] > 1){
 										$all_valid_mem_opt_index[$avmoi_ptr] = $all_valid_mem_opt_index[$t];
 										$all_valid_mem_opt_index[$avmoi_ptr]['opt'] = 1;
