@@ -5,7 +5,7 @@ ini_set('display_errors',0);
 error_reporting(E_ERROR); 
 
 
-$stack_pointer_reg = 'SP';
+$stack_pointer_reg = 'ESP';
 
 
 

@@ -23,7 +23,7 @@ require_once dirname(__FILE__)."/../nasm.inc.php";
 
 
 
-$stack_pointer_reg = 'SP';
+$stack_pointer_reg = 'ESP';
 
 
 

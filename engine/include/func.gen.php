@@ -506,6 +506,7 @@ function is_effect_ipsp($asm,$rule = 1,$sp_define = false){
 	global $con_abs_jmp;
 	global $stack_pointer_reg;
 	global $registersss;
+	global $register_assort;
 	
 	if (isset($con_abs_jmp[$asm['operation']])){ 
 	    return true;
@@ -532,7 +533,7 @@ function is_effect_ipsp($asm,$rule = 1,$sp_define = false){
 				    continue;
 				}
 				if ('r' === $asm['p_type'][$a]){
-					if (false !== strpos($b,$stack_pointer_reg)){
+					if ($register_assort[$b] == $stack_pointer_reg){
 						return true;
 					}
 				}
