@@ -1,19 +1,20 @@
 <?php
 
 define('UNEST.ORG', TRUE);
-ini_set('display_errors',0);
+
 error_reporting(E_ERROR); 
 
-require_once dirname(__FILE__)."/include/ready.func.php";
-require_once dirname(__FILE__)."/include/ready.preprocess.php";
+require dirname(__FILE__)."/library/ready.func.php";
+require dirname(__FILE__)."/library/general.func.php";
+require dirname(__FILE__)."/library/preprocess.func.php";
+
+require dirname(__FILE__)."/library/data.construction.php";
 
 require_once dirname(__FILE__)."/include/intel_instruction.php";
 
 require_once dirname(__FILE__)."/include/intel_instruction_array.php";
 
 require_once dirname(__FILE__)."/include/config.inc.php";
-
-require_once dirname(__FILE__)."/include/func.gen.php";
 
 require_once dirname(__FILE__)."/include/func.config.php";
 
@@ -27,12 +28,13 @@ $stack_pointer_reg = 'ESP';
 
 
 
-$my_params = get_params($argv);
+$my_params = GeneralFunc::get_params($argv);
 
 
 
 $complete_finished = false; 
 register_shutdown_function('shutdown_except');
+
 
 if (isset($my_params['maxinput'])){
     $max_input = $my_params['maxinput'];
@@ -43,30 +45,30 @@ if (isset($my_params['maxinput'])){
 if (isset($my_params['timelimit'])){
     set_time_limit($my_params['timelimit']);
 }else{
-    $output['error'][] = 'need param timelimit';
+    GeneralFunc::LogInsert('need param timelimit');
 }
 if (isset($my_params['base'])){
     $base_addr = $my_params['base'];
 }else{
-    $output['error'][] = 'need param base';
+    GeneralFunc::LogInsert('need param base');
 }
 if (isset($my_params['log'])){
     $log_path = $base_addr.'/'.$my_params['log'];
 }else{
-    $output['error'][] = 'need param log';
+    GeneralFunc::LogInsert('need param log');
 }
 if (!isset($my_params['path'])){
-    $output['error'][] = 'need param path';
+    GeneralFunc::LogInsert('need param path');
 }
 
 if (!isset($my_params['filename'])){
-    $output['error'][] = 'need param filename';
+    GeneralFunc::LogInsert('need param filename');
 }else{
     $input_filename = $base_addr.'/'.$my_params['path'].'/'.$my_params['filename'];
 }
 
 if (!isset($my_params['cnf'])){
-    $output['error'][] = 'need param cnf';
+    GeneralFunc::LogInsert('need param cnf');
 }else{
 	$usr_cfg_file = $base_addr.'/'.$my_params['cnf']; 
 }
@@ -77,19 +79,19 @@ if ('bin' === $my_params['type']){
 }elseif ('coff' === $my_params['type']){	
 	$output_type = 'COFF';
 }else{
-	$output['error'][] = 'need param type';
+	GeneralFunc::LogInsert('need param type');
 }
 
-$file_format_parser = dirname(__FILE__)."/mod.file.format/".$output_type."/in.inc.php";
+$file_format_parser = dirname(__FILE__)."/IOFormatParser/".$output_type.".IO.php";
 
 if (file_exists($file_format_parser)){
 	require $file_format_parser;
 }else{
-    $output['error'][] = 'type without file format parser';
+    GeneralFunc::LogInsert('type without file format parser');
 }
 
 if (!isset($my_params['output'])){
-    $output['error'][] = 'need param output';
+    GeneralFunc::LogInsert('need param output');
 }else{
 	$bin_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".bin";
 	$asm_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".asm";
@@ -101,31 +103,32 @@ if (!isset($my_params['output'])){
 $UniqueHead = 'UNEST_'; 
 $pattern_reloc = '/('."$UniqueHead".'RELINFO_[\d]{1,}_[\d]{1,}_[\d]{1,})/';  
 
+if (!GeneralFunc::LogHasErr()){
+	
+
+	$exetime_record = array();
+	GeneralFunc::exetime_record(); 
+
+	
+	
+		$myTables = array();
+		$handle = fopen($input_filename,'rb');
+		if (!$handle){
+			GeneralFunc::LogInsert('fail to open file:'.$input_filename);
+		}else{
+			$buf = fread($handle,filesize($input_filename));
+			fclose($handle);
+
+			$input_filesize = filesize($input_filename);
+			
+			IOFormatParser::in_file_format();
+			$exetime_record['analysis_input_file_format'] = GeneralFunc::exetime_record(); 
+		}
+	
+}
 
 
-$exetime_record = array();
-$stime = 0;
-exetime_record($stime); 
-
-
-
-	$myTables = array();
-	$handle = fopen($input_filename,'rb');
-	if (!$handle){
-	    $output['error'] = 'fail to open file:'.$input_filename;
-	}else{
-		$buf = fread($handle,filesize($input_filename));
-		fclose($handle);
-
-		$input_filesize = filesize($input_filename);
-        
-		in_file_format();
-	    $exetime_record['analysis_input_file_format'] = exetime_record($stime); 
-	}
-
-
-
-if (empty($output['error'])){
+if (!GeneralFunc::LogHasErr()){
     $user_config = false;
 	$user_strength = false;
 	$preprocess_config = array();   
@@ -135,11 +138,11 @@ if (empty($output['error'])){
 	$preprocess_sec_name = array();   
 
 	if (false === get_usr_config(false,$usr_cfg_file,$user_config,$user_strength,$user_cnf,$preprocess_config,true,$preprocess_sec_name)){ 
-	    $output['error'][] = $language['without_cfg_file'];        
+	    GeneralFunc::LogInsert($language['without_cfg_file']);        
 	}
 
 	if (!count($preprocess_sec_name)){
-	    $output['error'][] = $language['without_act_sec'];        
+	    GeneralFunc::LogInsert($language['without_act_sec']);        
 	}else{
 		
 		$ignore_sec = $preprocess_sec_name;
@@ -154,10 +157,9 @@ if (empty($output['error'])){
 
 		if (count($ignore_sec)){
 			foreach ($ignore_sec as $a => $b){
-				$output['notice'][] = $language['ignore_ready_sec'].$a;
+				GeneralFunc::LogInsert($language['ignore_ready_sec'].$a,3);
 			}
 		}
-        
 	}
 
 	unset($user_config);
@@ -166,41 +168,41 @@ if (empty($output['error'])){
 	if (isset($preprocess_config['protect_section'])){  
 		$protect_section = $preprocess_config['protect_section'];
 		
-		if (is_overlap_section($protect_section)){
-			$output['error'][] = $language['overlay_protect_section'];      
+		if (PreprocessFunc::is_overlap_section($protect_section)){
+			GeneralFunc::LogInsert($language['overlay_protect_section']);      
 		}	
 	}
 	if (isset($preprocess_config['dynamic_insert'])){  
 		$dynamic_insert = $preprocess_config['dynamic_insert'];
 		
-		if (is_overlap_section($dynamic_insert)){
-			$output['error'][] = $language['overlay_dynamic_insert'];      
+		if (PreprocessFunc::is_overlap_section($dynamic_insert)){
+			GeneralFunc::LogInsert($language['overlay_dynamic_insert']);      
 		}	
 	}	
 }
 
 
-if (empty($output['error'])){
+if (!GeneralFunc::LogHasErr()){
 	
 	$protect_section_array = false; 
 	if (!empty($protect_section)){
-		$protect_section_array = bind_protect_section_2_sec($protect_section,$myTables['CodeSectionArray'],$language,$output);
+		$protect_section_array = PreprocessFunc::bind_protect_section_2_sec($protect_section,$myTables['CodeSectionArray'],$language);
 	}
 	
 }
 
-if (empty($output['error'])){
+if (!GeneralFunc::LogHasErr()){
 	
 	$dynamic_insert_array = false; 
 	if (!empty($dynamic_insert)){
-		$dynamic_insert_array = bind_dynamic_insert_2_sec($dynamic_insert,$myTables['CodeSectionArray'],$language,$output);
+		$dynamic_insert_array = PreprocessFunc::bind_dynamic_insert_2_sec($dynamic_insert,$myTables['CodeSectionArray'],$language);
 	}
 	
 }
 
 
 
-    if (empty($output['error'])){
+    if (!GeneralFunc::LogHasErr()){
 		
 		
 		
@@ -213,13 +215,13 @@ if (empty($output['error'])){
 		$bin_filesize = 0;
 
 		if (!count($myTables['CodeSectionArray'])){ 
-		    $output['error'][] = $language['no_target_sec'];
+		    GeneralFunc::LogInsert($language['no_target_sec']);
 		}else{		
 			$p_sec_abs = array(); 
-			$asm_size = collect_and_disasm($bin_file,$asm_file,$disasm,$myTables['CodeSectionArray'],$buf,$bin_filesize,$protect_section_array,$p_sec_abs,$output,$language,false);            
+			$asm_size = ReadyFunc::collect_and_disasm($bin_file,$asm_file,$disasm,$myTables['CodeSectionArray'],$buf,$bin_filesize,$protect_section_array,$p_sec_abs,$language,false);            
 
-			if (empty($output['error'])){
-				$exetime_record['collect_and_disasm'] = exetime_record($stime); 
+			if (!GeneralFunc::LogHasErr()){
+				$exetime_record['collect_and_disasm'] = GeneralFunc::exetime_record(); 
 			   
 				$LineNum_Code2Reloc = array();  
 												
@@ -228,35 +230,35 @@ if (empty($output['error'])){
 				$AsmLastSec = array();          
 												
 				if ($asm_size){
-					if (format_disasm_file($asm_file,$bin_filesize,$AsmResultArray,$output,$language)){
-						$exetime_record['format_disasm_file'] = exetime_record($stime); 
+					if (ReadyFunc::format_disasm_file($asm_file,$bin_filesize,$AsmResultArray,$language)){
+						$exetime_record['format_disasm_file'] = GeneralFunc::exetime_record(); 
                         if (!empty($protect_section)){ 
-						    format_protect_section ($p_sec_abs,$AsmResultArray,$output,$language);
-							$exetime_record['format_protect_section'] = exetime_record($stime); 
+						    PreprocessFunc::format_protect_section ($p_sec_abs,$AsmResultArray,$language);
+							$exetime_record['format_protect_section'] = GeneralFunc::exetime_record(); 
 						}
-						sec_reloc_format($myTables,$AsmResultArray,$AsmLastSec,$output,$language,$LineNum_Code2Reloc);			
-						$exetime_record['sec_reloc_format'] = exetime_record($stime); 
+						ReadyFunc::sec_reloc_format($myTables,$AsmResultArray,$AsmLastSec,$language,$LineNum_Code2Reloc);			
+						$exetime_record['sec_reloc_format'] = GeneralFunc::exetime_record(); 
 					}
 				}else{
-					$output['error'][] = $language['disasm_file_not_found'];
+					GeneralFunc::LogInsert($language['disasm_file_not_found']);
 				}
 			}
 		}
 	}
 
-    if (empty($output['error'])){
+    if (!GeneralFunc::LogHasErr()){
 		
 		
 		
 		$solid_jmp_array = array();    
 		$solid_jmp_to    = array();    
 
-		eip_label_replacer($AsmLastSec,$solid_jmp_array,$solid_jmp_to,$myTables,$AsmResultArray,$LineNum_Code2Reloc,$output,$language);
+		ReadyFunc::eip_label_replacer($AsmLastSec,$solid_jmp_array,$solid_jmp_to,$myTables,$AsmResultArray,$LineNum_Code2Reloc,$language);
 
 		
-		rel_label_replacer($myTables,$AsmResultArray,$LineNum_Code2Reloc,$output,$language);
+		ReadyFunc::rel_label_replacer($myTables,$AsmResultArray,$LineNum_Code2Reloc,$language);
 
-		$exetime_record['eip rel label replace'] = exetime_record($stime); 
+		$exetime_record['eip rel label replace'] = GeneralFunc::exetime_record(); 
 	   
 		$garble_rel_info = array();  
 									 
@@ -275,7 +277,7 @@ if (empty($output['error'])){
 					    $garble_rel_info[$a][$c][0] = $d;
 					}else{
 						unset ($myTables['CodeSectionArray'][$a]);						
-                        $output['warning'][] = $language['section_name']." ".$b['name'].$language['section_number']." $a ".$language['illegal_rel_type'];
+                        GeneralFunc::LogInsert($language['section_name']." ".$b['name'].$language['section_number']." $a ".$language['illegal_rel_type'],2);
                         break;  
 					}
 				}
@@ -315,13 +317,12 @@ if (empty($output['error'])){
         $stack_used                = array(); 
 		$stack_broke               = array(); 
 
-
-		standard_asm($myTables,$garble_rel_info,$AsmResultArray,$StandardAsmResultArray,$stack_used,$stack_broke,$output,$language);
+		ReadyFunc::standard_asm($myTables,$garble_rel_info,$AsmResultArray,$StandardAsmResultArray,$stack_used,$stack_broke,$language);
 		
 		
 		
 		
-		$exetime_record['disasm to standard'] = exetime_record($stime); 
+		$exetime_record['disasm to standard'] = GeneralFunc::exetime_record(); 
 		
 
 		
@@ -329,9 +330,9 @@ if (empty($output['error'])){
 											
 											
 											
-		exec_thread_list_get($myTables['CodeSectionArray'],$StandardAsmResultArray,$exec_thread_list,$solid_jmp_to,$AsmLastSec);
+		ReadyFunc::exec_thread_list_get($myTables['CodeSectionArray'],$StandardAsmResultArray,$exec_thread_list,$solid_jmp_to,$AsmLastSec);
 
-		$exetime_record['exec thread list'] = exetime_record($stime); 
+		$exetime_record['exec thread list'] = GeneralFunc::exetime_record(); 
 
 		
 		$soul_forbid = array(); 
@@ -344,18 +345,18 @@ if (empty($output['error'])){
 											
 
 		
-		get_soul_usable_limit($myTables['CodeSectionArray'],$exec_thread_list,$StandardAsmResultArray,$stack_used,$stack_broke);
+		ReadyFunc::get_soul_usable_limit($myTables['CodeSectionArray'],$exec_thread_list,$StandardAsmResultArray,$stack_used,$stack_broke);
 		
-		$exetime_record['usable register and memory'] = exetime_record($stime); 
+		$exetime_record['usable register and memory'] = GeneralFunc::exetime_record(); 
 
 		
 		
 		$all_valid_mem_opt_index   = array();   
 												
 												
-		$soul_usable = compress_same_char_output($soul_usable,$all_valid_mem_opt_index);        
+		$soul_usable = ReadyFunc::compress_same_char_output($soul_usable,$all_valid_mem_opt_index);        
 		
-		$exetime_record['compress same char to output'] = exetime_record($stime); 
+		$exetime_record['compress same char to output'] = GeneralFunc::exetime_record(); 
 
 		
 		
@@ -378,18 +379,18 @@ if (empty($output['error'])){
 
 			$label_index = -1; 
         	foreach ($c_Asm_Result as $z => $y){			
-			    $gret = generat_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$z,$y,$s_w_Dlinked_List_index,$prev,$c_solid_jmp_array);
+			    $gret = ReadyFunc::generat_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$z,$y,$s_w_Dlinked_List_index,$prev,$c_solid_jmp_array);
 			    unset ($c_solid_jmp_array[$z]);
 			}
 			if (!empty($c_solid_jmp_array)){
 				foreach ($c_solid_jmp_array as $x => $y){
 					if ($x <= $z){ 
 								   
-						$output['error'][] = $language['section_name']." ".$b['name'].$language['section_number']." $sec ".$language['jmp_dest_out_rang_error'];
+						GeneralFunc::LogInsert($language['section_name']." ".$b['name'].$language['section_number']." $sec ".$language['jmp_dest_out_rang_error']);
 						break;
 					}
 					foreach ($y as $w){
-						add_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$s_w_Dlinked_List_index,$prev,$w,$z,true);				
+						ReadyFunc::add_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$s_w_Dlinked_List_index,$prev,$w,$z,true);				
 					}
 				}		
 			}
@@ -407,17 +408,17 @@ if (empty($output['error'])){
 
     
 	$dynamic_insert_result = array();
-	if (empty($output['error'])){
-		$dynamic_insert_result = dynamic_insert_dealer($dynamic_insert_array,$StandardAsmResultArray);
+	if (!GeneralFunc::LogHasErr()){
+		$dynamic_insert_result = PreprocessFunc::dynamic_insert_dealer($dynamic_insert_array,$StandardAsmResultArray);
 	}
 
-    if (empty($output['error'])){
+    if (!GeneralFunc::LogHasErr()){
 		
-		parser_rel_usable_mem ($all_valid_mem_opt_index);
+		ReadyFunc::parser_rel_usable_mem ($all_valid_mem_opt_index);
 
 	    
 	    
-		scan_affiliate_usable ($soul_usable,$soul_forbid);
+		ReadyFunc::scan_affiliate_usable ($soul_usable,$soul_forbid);
 
 		
 		foreach ($sec_name as $a => $b){	    
@@ -473,7 +474,7 @@ if (empty($output['error'])){
 				
 		}
 				 
-		$exetime_record['init mem_addition'] = exetime_record($stime); 
+		$exetime_record['init mem_addition'] = GeneralFunc::exetime_record(); 
 		
         
 		
@@ -490,14 +491,17 @@ if (empty($output['error'])){
         
 		
 		$rel_jmp_range    = array();
-		$rel_jmp_pointer  = array();
+        $rel_jmp_pointer  = array();
 		$rel_jmp_switcher = array(); 
 		$c_usable_oplen   = false;   
 		foreach ($soul_writein_Dlinked_List_Total as $sec => $a){
 			$soul_writein_Dlinked_List = $soul_writein_Dlinked_List_Total[$sec]['list'];
-			if (!reset_rel_jmp_array($rel_jmp_range[$sec],$rel_jmp_pointer[$sec])){ 
-			    $output['error'][] = $language['init_rel_jmp_fail'];  
+			ConstructionDlinkedListOpt::ReadyInit();
+			if (!reset_rel_jmp_array()){ 
+			    GeneralFunc::LogInsert($language['init_rel_jmp_fail']);  
 			}else{
+				$rel_jmp_pointer[$sec] = ConstructionDlinkedListOpt::ReadRelJmpPointer();
+				$rel_jmp_range[$sec]   = ConstructionDlinkedListOpt::readRelJmpRange();
 				if (is_array($rel_jmp_range[$sec])){
 					foreach ($rel_jmp_range[$sec] as $z => $y){
 						if (false !== $y['max']){
@@ -535,15 +539,15 @@ if (empty($output['error'])){
 		}
 		
         
-		redeal_split_opt($StandardAsmResultArray,$exec_thread_list,$soul_forbid,$soul_usable);
+		ReadyFunc::redeal_split_opt($StandardAsmResultArray,$exec_thread_list,$soul_forbid,$soul_usable);
 		
         
 		
         foreach ($StandardAsmResultArray as $a => $b){
-			soul_stack_set($StandardAsmResultArray[$a],$soul_usable[$a]);
+			GeneralFunc::soul_stack_set($StandardAsmResultArray[$a],$soul_usable[$a]);
 		}
-         
-		if (empty($output['error'])){
+
+		if (!GeneralFunc::LogHasErr()){
 			
 			
 			$rdy_output['StandardAsmResultArray']          = $StandardAsmResultArray;
@@ -572,11 +576,8 @@ if (empty($output['error'])){
 			$rdy_output['rel_jmp_pointer']  = $rel_jmp_pointer;
 			$rdy_output['rel_jmp_switcher'] = $rel_jmp_switcher;
 
-
 			file_put_contents($rdy_file,serialize($rdy_output)); 
 		}
-
-     
 	}
 
     echo "<br><br><br><br>";
@@ -587,141 +588,5 @@ if (empty($output['error'])){
     $complete_finished = true;
 
 exit;
-
-
-
-
-function scan_affiliate_usable (&$soul_usable,&$soul_forbid){
-	global $all_valid_mem_opt_index;
-    
-	
-    $tmp = $soul_usable;
-	foreach ($tmp as $sec => $a){	    
-		foreach ($a as $line => $b){
-		    
-			if (is_array($b['p']['mem_opt_able'])){
-			    
-				    foreach ($b['p']['mem_opt_able'] as $mem_index){
-						if (isset($all_valid_mem_opt_index[$mem_index]['reg'])){
-						    foreach ($all_valid_mem_opt_index[$mem_index]['reg'] as $reg){								
-							    if (isset($b['p']['normal_write_able'][$reg])){
-								    unset ($soul_usable[$sec][$line]['p']['normal_write_able'][$reg]);
-								}
-                                $soul_forbid[$sec][$line]['p']['normal'][$reg][32] = true;								
-								
-							}
-						}
-					}
-				
-			}
-			if (is_array($b['n']['mem_opt_able'])){
-			    
-				    foreach ($b['n']['mem_opt_able'] as $mem_index){
-						if (isset($all_valid_mem_opt_index[$mem_index]['reg'])){
-						    foreach ($all_valid_mem_opt_index[$mem_index]['reg'] as $reg){
-							    if (isset($b['n']['normal_write_able'][$reg])){
-									unset ($soul_usable[$sec][$line]['n']['normal_write_able'][$reg]);
-								    
-								}
-								$soul_forbid[$sec][$line]['n']['normal'][$reg][32] = true;
-							}
-						}
-					}
-				
-			}
-		}
-	}
-	return true;
-
-}
-
-
-
-function parser_rel_usable_mem (&$all_valid_mem_opt_index){
-	
-	global $pattern_reloc;
-
-    $tmp = $all_valid_mem_opt_index;
-	foreach ($tmp as $a => $b){
-		if (preg_match($pattern_reloc,$b['code'],$z)){
-			$z = explode ('_',$z[0]);
-			$all_valid_mem_opt_index[$a]['rel'] = $z[3];
-		}	
-	}
-}
-
-
-
-
-function add_soul_writein_Dlinked_List(&$soul_writein_Dlinked_List,&$num,&$prev,$label,$asm,$ia = false){
-	global $label_index;
-	global $sec;
-	global $soul_usable;
-	global $soul_forbid;
-
-	global $AsmResultArray;
-
-	if (false !== $prev){
-		$soul_writein_Dlinked_List[$num]['p']  = $prev;
-		$soul_writein_Dlinked_List[$prev]['n'] = $num;
-	}
-	if (false !== $label){
-		$soul_writein_Dlinked_List[$num]['label'] = $label;
-		
-        if (true === $ia){ 
-		    if (isset($soul_usable[$sec][$asm]['n'])){ 
-				$soul_usable[$sec][$label_index]['p'] = $soul_usable[$sec][$asm]['n'];		
-				$soul_usable[$sec][$label_index]['n'] = $soul_usable[$sec][$asm]['n'];
-			}
-			if (isset($soul_forbid[$sec][$asm]['n'])){ 
-				$soul_forbid[$sec][$label_index]['p'] = $soul_forbid[$sec][$asm]['n'];	
-				$soul_forbid[$sec][$label_index]['n'] = $soul_forbid[$sec][$asm]['n'];	
-			}
-		}else{ 
-		    if (isset($soul_usable[$sec][$asm]['p'])){ 
-				$soul_usable[$sec][$label_index]['p'] = $soul_usable[$sec][$asm]['p'];		
-				$soul_usable[$sec][$label_index]['n'] = $soul_usable[$sec][$asm]['p'];	
-			}
-			if (isset($soul_forbid[$sec][$asm]['p'])){ 
-				$soul_forbid[$sec][$label_index]['p'] = $soul_forbid[$sec][$asm]['p'];	
-				$soul_forbid[$sec][$label_index]['n'] = $soul_forbid[$sec][$asm]['p'];	
-			}
-		}
-		$soul_writein_Dlinked_List[$num]['c'] = $label_index;
-		$soul_writein_Dlinked_List[$num]['len'] = 0; 
-		$label_index --;
-	}else{
-		global $c_Asm_Result;
-		global $p_sec_abs;
-
-		if (isset($p_sec_abs[$asm])){ 
-		    $soul_writein_Dlinked_List[$num]['ipsp'] = true;
-		}elseif (is_effect_ipsp($c_Asm_Result[$asm])){ 
-		    $soul_writein_Dlinked_List[$num]['ipsp'] = true;
-		}
-
-        $soul_writein_Dlinked_List[$num]['c'] = $asm;
-		
-		$soul_writein_Dlinked_List[$num]['len'] = intval(strlen($AsmResultArray[$sec][$asm]['bin'])/2);		
-	}
-	
-	$prev = $num;
-	$num ++;
-}
-
-function generat_soul_writein_Dlinked_List(&$soul_writein_Dlinked_List,$a,$b,&$num,&$prev,$c_solid_jmp_array){	
-
-	if (isset($c_solid_jmp_array[$a])){ 
-		foreach ($c_solid_jmp_array[$a] as $z => $y){
-			add_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$num,$prev,$y,$a);				
-		}
-	}	
-	
-    add_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$num,$prev,false,$a);
-
-	return;
-}
-
-
 
 ?>

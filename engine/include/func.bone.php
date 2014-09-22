@@ -9,87 +9,12 @@ $UNIQUE_bone_index = 1;
 
 
 
-function remove_list_unit (&$copy_buff,$c_lp,&$lp_first,&$lp_last){
-	$prev = false;
-	$next = false;
-
-	if (isset($copy_buff[$c_lp]['p'])){
-	    $prev = $copy_buff[$c_lp]['p'];
-	}else{ 
-	    $lp_first = false;		
-	}
-	
-    if (isset($copy_buff[$c_lp]['n'])){
-	    $next = $copy_buff[$c_lp]['n'];
-	}else{ 
-	    $lp_last = false;		
-	}
-	
-	$copy_buff[$c_lp]['302'] = $next;
-	if (false !== $prev)
-		unset ($copy_buff[$prev]['n']);
-	if (false !== $next)
-		unset ($copy_buff[$next]['p']);
-
-	if ((false !== $prev)&&(false !== $next)){
-		$copy_buff[$prev]['n'] = $next;
-		$copy_buff[$next]['p'] = $prev;
-	}elseif (false !== $next){ 
-	    $lp_first = $next;
-	}elseif (false !== $prev){ 
- 		$lp_last = $prev;
-	}
-}
-
-
-function get_first_unit($list){
-	foreach ($list as $a){
-	    if (!isset($a['p'])){
-		    break;
-		}
-	}
-    return $a;
-}
-
-
-function get_last_unit($list){
-	foreach ($list as $a){
-	    if (!isset($a['n'])){
-		    break;
-		}
-	}
-    return $a;
-}
-
-
-
-function get_usable_from_list_id ($id,$position){
-    global $soul_writein_Dlinked_List;
-	global $c_soul_usable;
-	global $poly_result_array;
-    global $bone_result_array;
-	global $meat_result_array;
-
-	$asm_id = $soul_writein_Dlinked_List[$id]['c'];
-	if (isset($soul_writein_Dlinked_List[$id]['poly'])){      
-		return $poly_result_array[$soul_writein_Dlinked_List[$id]['poly']]['usable'][$asm_id][$position];	   
-	}elseif (isset($soul_writein_Dlinked_List[$id]['bone'])){ 
-		return $bone_result_array[$soul_writein_Dlinked_List[$id]['bone']]['usable'][$asm_id][$position];
-    }elseif (isset($soul_writein_Dlinked_List[$id]['meat'])){ 
-		return $meat_result_array[$soul_writein_Dlinked_List[$id]['meat']]['usable'][$asm_id][$position];
-	}else{                                                    
-		return $c_soul_usable[$asm_id][$position];
-	}
-	return $id;
-}
-
-
 function remove_ipsp_from_usable(&$usable_mem){
     global $all_valid_mem_opt_index;
 	global $c_user_cnf_stack_pointer_define;
 	if (is_array($usable_mem)){
 		$tmp = $usable_mem;
-		foreach ($tmp as $i => $a){			          
+		foreach ($tmp as $i => $a){		
 			if (preg_match('/'."$c_user_cnf_stack_pointer_define".'/',$all_valid_mem_opt_index[$a]['code'])){
 				unset ($usable_mem[$i]);				
 			}			
@@ -98,7 +23,6 @@ function remove_ipsp_from_usable(&$usable_mem){
 }
 
 function remove_ipsp_from_usable_list($start,$end){
-    global $soul_writein_Dlinked_List;
 	global $c_soul_usable;
 	global $poly_result_array;
     global $bone_result_array;
@@ -108,19 +32,19 @@ function remove_ipsp_from_usable_list($start,$end){
     $c_lp = $start;
 	
 	while (true){
-	
-       
-
-        $asm_id = $soul_writein_Dlinked_List[$c_lp]['c'];
-		if (isset($soul_writein_Dlinked_List[$c_lp]['poly'])){      
-   		    remove_ipsp_from_usable ($poly_result_array[$soul_writein_Dlinked_List[$c_lp]['poly']]['usable'][$asm_id]['p']['mem_opt_able']);
-   		    remove_ipsp_from_usable ($poly_result_array[$soul_writein_Dlinked_List[$c_lp]['poly']]['usable'][$asm_id]['n']['mem_opt_able']);	   
-	    }elseif (isset($soul_writein_Dlinked_List[$c_lp]['bone'])){ 
-   		    remove_ipsp_from_usable ($bone_result_array[$soul_writein_Dlinked_List[$c_lp]['bone']]['usable'][$asm_id]['p']['mem_opt_able']);
-   		    remove_ipsp_from_usable ($bone_result_array[$soul_writein_Dlinked_List[$c_lp]['bone']]['usable'][$asm_id]['n']['mem_opt_able']);   
-	    }elseif (isset($soul_writein_Dlinked_List[$c_lp]['meat'])){ 
-   		    remove_ipsp_from_usable ($meat_result_array[$soul_writein_Dlinked_List[$c_lp]['meat']]['usable'][$asm_id]['p']['mem_opt_able']);
-   		    remove_ipsp_from_usable ($meat_result_array[$soul_writein_Dlinked_List[$c_lp]['meat']]['usable'][$asm_id]['n']['mem_opt_able']);
+		$asm_id = ConstructionDlinkedListOpt::getDlinkedList($c_lp,'c');
+		if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_lp,'poly')){  
+			$tmp = ConstructionDlinkedListOpt::getDlinkedList($c_lp,'poly');
+   		    remove_ipsp_from_usable ($poly_result_array[$tmp]['usable'][$asm_id]['p']['mem_opt_able']);
+   		    remove_ipsp_from_usable ($poly_result_array[$tmp]['usable'][$asm_id]['n']['mem_opt_able']);	   
+		}elseif (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_lp,'bone')){  
+			$tmp = ConstructionDlinkedListOpt::getDlinkedList($c_lp,'bone');
+   		    remove_ipsp_from_usable ($bone_result_array[$tmp]['usable'][$asm_id]['p']['mem_opt_able']);
+   		    remove_ipsp_from_usable ($bone_result_array[$tmp]['usable'][$asm_id]['n']['mem_opt_able']);   
+		}elseif (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_lp,'meat')){  
+			$tmp = ConstructionDlinkedListOpt::getDlinkedList($c_lp,'meat');
+   		    remove_ipsp_from_usable ($meat_result_array[$tmp]['usable'][$asm_id]['p']['mem_opt_able']);
+   		    remove_ipsp_from_usable ($meat_result_array[$tmp]['usable'][$asm_id]['n']['mem_opt_able']);
 	    }else{                                                    
 			remove_ipsp_from_usable ($c_soul_usable[$asm_id]['p']['mem_opt_able']);
 			remove_ipsp_from_usable ($c_soul_usable[$asm_id]['n']['mem_opt_able']);
@@ -129,10 +53,10 @@ function remove_ipsp_from_usable_list($start,$end){
         if ($c_lp === $end){
 		    break;
 		}
-		if (!isset($soul_writein_Dlinked_List[$c_lp]['n'])){
+        if (!ConstructionDlinkedListOpt::issetDlinkedListUnit($c_lp,'n')){
 		    break;
 		}
-	    $c_lp = $soul_writein_Dlinked_List[$c_lp]['n'];
+		$c_lp = ConstructionDlinkedListOpt::getDlinkedList($c_lp,'n');
 	}
     
 }
@@ -147,8 +71,8 @@ function inherit_bone_usable(&$c_bone_result_array,$c_soul_position){
 		foreach ($x as $b){
 			if (isset($b['s'])){
 				if (isset($c_soul_position[$b['s']])){
-					$first = get_usable_from_list_id($c_soul_position[$b['s']]['first'],'p');
-					$last  = get_usable_from_list_id($c_soul_position[$b['s']]['last'],'n');
+					$first = ConstructionDlinkedListOpt::get_usable_from_DlinkedList($c_soul_position[$b['s']]['first'],'p');
+					$last  = ConstructionDlinkedListOpt::get_usable_from_DlinkedList($c_soul_position[$b['s']]['last'],'n');					
 					if (isset($buff)){
 						
 						
@@ -209,13 +133,13 @@ function inherit_bone_usable(&$c_bone_result_array,$c_soul_position){
 		}
 	}
     
-	soul_stack_set($c_bone_result_array['code'],$c_bone_result_array['usable']);
+	GeneralFunc::soul_stack_set($c_bone_result_array['code'],$c_bone_result_array['usable']);
 }
 
 
 function poly_compress(&$copy_buff,&$c_first,&$c_last){
     global $poly_result_reverse_array;
-	global $soul_writein_Dlinked_List;
+
 	global $poly_result_reverse_array;
 
 	$c_lp = $c_last;
@@ -259,7 +183,8 @@ function poly_compress(&$copy_buff,&$c_first,&$c_last){
     
 	if (true === $compress){ 
 		$lp_linked_list = $poly_result_reverse_array[$c_count_index]['i']; 
-		$copy_buff[$lp_linked_list] = $soul_writein_Dlinked_List[$lp_linked_list];
+
+		$copy_buff[$lp_linked_list] = ConstructionDlinkedListOpt::getDlinkedList($lp_linked_list);
 		unset($copy_buff[$lp_linked_list]['302']);
 		$next = false;		
 		
@@ -291,7 +216,7 @@ function poly_compress(&$copy_buff,&$c_first,&$c_last){
 
 
 function soul_copy($source_first,$source_last,&$dest,&$delay_remove){
-	global $soul_writein_Dlinked_List;
+
 	
 	$c_first  = $source_first;
    	$c_lp     = $source_first;
@@ -299,14 +224,17 @@ function soul_copy($source_first,$source_last,&$dest,&$delay_remove){
     
 	while (true){
 		
-	    $copy_buff[$c_lp] = $soul_writein_Dlinked_List[$c_lp];
+
+		$copy_buff[$c_lp] = ConstructionDlinkedListOpt::getDlinkedList($c_lp);
 		if ($c_lp === $source_last){
 		    break;
 		}
-		if (!isset($soul_writein_Dlinked_List[$c_lp]['n'])){
+
+		if (!ConstructionDlinkedListOpt::issetDlinkedListUnit($c_lp,'n')){
 		    break;
 		}
-		$c_lp = $soul_writein_Dlinked_List[$c_lp]['n'];		
+
+		$c_lp = ConstructionDlinkedListOpt::getDlinkedList($c_lp,'n');
 	}
 	$c_last = $c_lp;
 
@@ -335,7 +263,7 @@ function soul_copy($source_first,$source_last,&$dest,&$delay_remove){
 			if (mt_rand(0,1)){
 				$delay_remove[] = $c_lp; 
 			}else{
-				remove_list_unit ($copy_buff,$c_lp,$dest['first'],$dest['last']);	
+				ConstructionDlinkedListOpt::remove_from_DlinkedList($c_lp,$dest['first'],$dest['last'],$copy_buff);	
 			}
 		}
 		if ($c_lp === $c_last){
@@ -371,8 +299,8 @@ function rel_copy_create($asm,$usable){
 
 
 function insert_copy_2_list(&$c_prev,$copy,$soul_position){
-    global $soul_writein_Dlinked_List;
-	global $s_w_Dlinked_List_index;
+
+
 	global $c_Asm_Result;
 	global $c_soul_usable;
 	global $poly_result_array;
@@ -386,9 +314,11 @@ function insert_copy_2_list(&$c_prev,$copy,$soul_position){
    
 	$c_lp = $soul_position['first'];
 	while (true){
-		$tmp_multi_bone_poly[] = $s_w_Dlinked_List_index;
+
+		$tmp_multi_bone_poly[] = ConstructionDlinkedListOpt::getDlinkedListIndex();
 		
-		$soul_writein_Dlinked_List[$s_w_Dlinked_List_index] = $copy[$c_lp];
+
+		ConstructionDlinkedListOpt::setDlinkedList($copy[$c_lp],ConstructionDlinkedListOpt::getDlinkedListIndex());
         if (isset($copy[$c_lp]['poly'])){
 		    $c_asm    = $poly_result_array[$copy[$c_lp]['poly']]['code'][$copy[$c_lp]['c']];
             $c_usable = $poly_result_array[$copy[$c_lp]['poly']]['usable'][$copy[$c_lp]['c']];
@@ -406,10 +336,14 @@ function insert_copy_2_list(&$c_prev,$copy,$soul_position){
 			
 		    
 			
-			unset ($soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['poly']);
-			unset ($soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['meat']);
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['bone'] = rel_copy_create($c_asm,$c_usable);
-            $soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['c']    = 99;
+
+
+			ConstructionDlinkedListOpt::unsetDlinkedList('poly');
+			ConstructionDlinkedListOpt::unsetDlinkedList('meat');
+
+			ConstructionDlinkedListOpt::setDlinkedList(rel_copy_create($c_asm,$c_usable),ConstructionDlinkedListOpt::getDlinkedListIndex(),'bone');
+
+            ConstructionDlinkedListOpt::setDlinkedList(99,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
             
             
 			
@@ -420,32 +354,43 @@ function insert_copy_2_list(&$c_prev,$copy,$soul_position){
 				$old_rel_n = $p_number;
 				$old_rel_i = $p_rel_info['i'];
 				$old_rel_c = $p_rel_info['c'];
-				$new = reloc_inc_copy_naked($old_rel_i,$old_rel_c);
+				$new = GenerateFunc::reloc_inc_copy_naked($old_rel_i,$old_rel_c);
 				
-				$bone_result_array[$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['bone']]['code'][99]['rel'][$p_number]['c'] = $new;
+
+				$tmp_tmp = ConstructionDlinkedListOpt::getDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),'bone');
+				$bone_result_array[$tmp_tmp]['code'][99]['rel'][$p_number]['c'] = $new;
+				
 				$c_rel_info[$old_rel_i][$new] = $c_rel_info[$old_rel_i][$old_rel_c];
-				$bone_result_array[$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['bone']]['code'][99]['params'][$old_rel_n] = str_replace("$UniqueHead".'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$old_rel_c,"$UniqueHead".'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$new,$bone_result_array[$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['bone']]['code'][99]['params'][$old_rel_n]);
+				
+
+				$bone_result_array[$tmp_tmp]['code'][99]['params'][$old_rel_n] = str_replace("$UniqueHead".'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$old_rel_c,"$UniqueHead".'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$new,$bone_result_array[$tmp_tmp]['code'][99]['params'][$old_rel_n]);
+
 				
 				
 				
 			}
 		}
-		$soul_writein_Dlinked_List[$c_prev]['n'] = $s_w_Dlinked_List_index;
-		$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['p'] = $c_prev;		
-		$c_prev = $s_w_Dlinked_List_index;
+
+
+        ConstructionDlinkedListOpt::insertDlinkedListByIndex($c_prev);
+
+		$c_prev = ConstructionDlinkedListOpt::getDlinkedListIndex();
 		if ($c_lp === $soul_position['last']){
-			$s_w_Dlinked_List_index ++;
+
+			ConstructionDlinkedListOpt::incDlinkedListIndex();
 			break;
 		}
 		if (!isset($copy[$c_lp]['n'])){
 			
 			
 			
-			$s_w_Dlinked_List_index ++;
+
+			ConstructionDlinkedListOpt::incDlinkedListIndex();
 			break;
 		}
 		$c_lp = $copy[$c_lp]['n'];		
-		$s_w_Dlinked_List_index ++;
+
+		ConstructionDlinkedListOpt::incDlinkedListIndex();
 	}
 
 	$multi_bone_poly[] = $tmp_multi_bone_poly;
@@ -455,11 +400,11 @@ function insert_copy_2_list(&$c_prev,$copy,$soul_position){
 
 
 function init_bone_model(&$c_bone,$bone_obj){ 
-	global $soul_writein_Dlinked_List;
+
     global $UNIQUE_bone_index;
 	global $bone_result_array;
-    global $soul_writein_Dlinked_List_start;
-	global $s_w_Dlinked_List_index;
+
+
 	global $UniqueHead;
 	global $Jcc;
 
@@ -494,8 +439,10 @@ function init_bone_model(&$c_bone,$bone_obj){
 		    $soul_position[$a]['first'] = $bone_obj[$z];
 		    $soul_position[$a]['last']  = $bone_obj[$b];
 			$z = $b + 1;
-			if (isset($soul_writein_Dlinked_List[$soul_position[$a]['last']]['n'])){
-			    $c_last = $soul_writein_Dlinked_List[$soul_position[$a]['last']]['n'];
+
+            if (ConstructionDlinkedListOpt::issetDlinkedListUnit($soul_position[$a]['last'],'n')){
+
+				$c_last = ConstructionDlinkedListOpt::getDlinkedList($soul_position[$a]['last'],'n');
 			}else{
 			    $c_last = false;
 			}
@@ -515,10 +462,13 @@ function init_bone_model(&$c_bone,$bone_obj){
 	
     
 	
-	$c_bone_list_start = $s_w_Dlinked_List_index;
+
+	$c_bone_list_start = ConstructionDlinkedListOpt::getDlinkedListIndex();
 	$c_prev = false;
-	if (isset($soul_writein_Dlinked_List[$bone_obj[1]]['p'])){
-	    $c_prev = $soul_writein_Dlinked_List[$bone_obj[1]]['p'];
+
+    if (ConstructionDlinkedListOpt::issetDlinkedListUnit($bone_obj[1],'p')){
+
+		$c_prev = ConstructionDlinkedListOpt::getDlinkedList($bone_obj[1],'p');
 	}
 	$c_soul_ptr = 1;
     foreach ($c_bone['code'] as $a => $b){			    
@@ -527,34 +477,43 @@ function init_bone_model(&$c_bone,$bone_obj){
 			    if (isset($copy[$a])){ 
 				    insert_copy_2_list($c_prev,$copy[$a],$soul_position[$a]);
 				}else{					
-					$soul_writein_Dlinked_List[$c_prev]['n'] = $soul_position[$a]['first'];
-					$soul_writein_Dlinked_List[$soul_position[$a]['first']]['p'] = $c_prev;
+
+
+					ConstructionDlinkedListOpt::insertDlinkedList($c_prev,$soul_position[$a]['first']);
 					$c_prev = $soul_position[$a]['last'];
 				}				
 			}
 		}else{            
 		    if (false === $c_prev){ 
-				$soul_writein_Dlinked_List_start = $s_w_Dlinked_List_index;
+				ConstructionDlinkedListOpt::setListFirstUnit();
 			}else{
 				
 				
-				$soul_writein_Dlinked_List[$c_prev]['n'] = $s_w_Dlinked_List_index;
-				$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['p'] = $c_prev;
+
+
+				ConstructionDlinkedListOpt::insertDlinkedListByIndex($c_prev);
 			}
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['ipsp'] = true;
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['bone'] = $bone_index;
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['c'] = $a;
+
+			ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');
+
+			ConstructionDlinkedListOpt::setDlinkedList($bone_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'bone');
+
+			ConstructionDlinkedListOpt::setDlinkedList($a,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
 			if (isset($b['label'])){
-			    $soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['label'] = $b['label'];
+
+                ConstructionDlinkedListOpt::setDlinkedList($b['label'],ConstructionDlinkedListOpt::getDlinkedListIndex(),'label');
 			}
 			
-			$c_prev = $s_w_Dlinked_List_index;
-			$s_w_Dlinked_List_index++;
+
+			$c_prev = ConstructionDlinkedListOpt::getDlinkedListIndex();
+
+			ConstructionDlinkedListOpt::incDlinkedListIndex();
 		}
 	}
 	if (false !== $c_last){
-		$soul_writein_Dlinked_List[$c_prev]['n'] = $c_last;
-		$soul_writein_Dlinked_List[$c_last]['p'] = $c_prev;
+
+
+		ConstructionDlinkedListOpt::insertDlinkedList($c_prev,$c_last);
 	}
 
 	$bone_result_array[$bone_index] = $c_bone;
@@ -565,7 +524,7 @@ function init_bone_model(&$c_bone,$bone_obj){
 		
 		
 		
-	    remove_list_unit ($soul_writein_Dlinked_List,$a,$soul_writein_Dlinked_List_start,$none);	
+	    ConstructionDlinkedListOpt::remove_from_DlinkedList($a,ConstructionDlinkedListOpt::readListFirstUnit(),$none);
 	}
 
 
@@ -578,7 +537,7 @@ function init_bone_model(&$c_bone,$bone_obj){
 }
 
 
-function collect_usable_bone_model ($bone_obj,$last_ipsp,$soul_writein_Dlinked_List,$c_bone_model){
+function collect_usable_bone_model ($bone_obj,$last_ipsp,$c_bone_model){
     
 	
 	
@@ -605,7 +564,8 @@ function collect_usable_bone_model ($bone_obj,$last_ipsp,$soul_writein_Dlinked_L
 			}elseif (0 === $b){                           
 				
 				for ($i = 0;$i < $c_soul_length;$i++){
-					if (isset($soul_writein_Dlinked_List[$bone_obj[$c_soul + $i]]['ipsp'])){
+
+                    if (ConstructionDlinkedListOpt::issetDlinkedListUnit($bone_obj[$c_soul + $i],'ipsp')){
 						break;
 					}   
 				}
@@ -633,7 +593,8 @@ function collect_usable_bone_model ($bone_obj,$last_ipsp,$soul_writein_Dlinked_L
 	if ((0 == $b)&&($c_bone_model['direct'][$a])){ 
 		
 		for ($i = $c_soul;$i <= $c_bone_model['direct'][$a];$i ++){			    
-			if (isset($soul_writein_Dlinked_List[$bone_obj[$i]]['ipsp'])){
+
+            if (ConstructionDlinkedListOpt::issetDlinkedListUnit($bone_obj[$i],'ipsp')){
 				return false;
 			}
 		}			
@@ -660,12 +621,12 @@ function check_bone_stack_conflict($c_bone_model,$bone_obj){
 	foreach ($c_bone_model['direct'] as $a => $b){
 		if ($b){
 			$i ++;
-			$tmp = get_unit_by_soul_writein_Dlinked_List($bone_obj[$i]);     
+			$tmp = ConstructionDlinkedListOpt::get_unit_by_soul_writein_Dlinked_List($bone_obj[$i]);     
 			if (true !== $tmp['usable']['p']['stack']){
 				$stack_unusable[$a]['p'] = true;
 			}				
 			$i = $b;
-			$tmp = get_unit_by_soul_writein_Dlinked_List($bone_obj[$i]); 
+			$tmp = ConstructionDlinkedListOpt::get_unit_by_soul_writein_Dlinked_List($bone_obj[$i]); 
 			if (true !== $tmp['usable']['n']['stack']){
 				$stack_unusable[$a]['n'] = true;
 			}
@@ -682,7 +643,7 @@ function check_bone_stack_conflict($c_bone_model,$bone_obj){
 			    if (isset($d['p'])){
 					$conflict_position['bone'] = $d['p'];
 					if (isset ($c_bone_model['code'][$d['p']]['operation'])){
-                        $tmp = get_inst_define($c_bone_model['code'][$d['p']]['operation'],$c_bone_model['code'][$d['p']]['params']);
+                        $tmp = GenerateFunc::get_inst_define($c_bone_model['code'][$d['p']]['operation'],$c_bone_model['code'][$d['p']]['params']);
 						if (isset($tmp['STACK'])){
 						    if ($stack_forbid){
 							    $ret = true;
@@ -717,15 +678,15 @@ function check_bone_stack_conflict($c_bone_model,$bone_obj){
     return $ret;
 }
 
-function bone_create($bone_obj,&$output,$language){		 
-	global $soul_writein_Dlinked_List;
+function bone_create($bone_obj,$language){		 
+
     global $bone_model_index;
 	global $bone_model_index_multi;
     global $bone_model_repo;
     global $MAX_INCLUDE_MULTI_PROCESS_BONE;
     global $UNIQUE_bone_index;
 	global $bone_result_array;
-	global $s_w_Dlinked_List_index;
+
 
 
 	if (count($bone_obj) <= $MAX_INCLUDE_MULTI_PROCESS_BONE){  
@@ -737,7 +698,8 @@ function bone_create($bone_obj,&$output,$language){
 	$last_ipsp = false;
 	if (is_array($bone_obj)){
 		foreach ($bone_obj as $a => $b){
-			if (($soul_writein_Dlinked_List[$b]['ipsp'])||($soul_writein_Dlinked_List[$b]['label'])){
+
+			if ((ConstructionDlinkedListOpt::getDlinkedList($b,'ipsp'))||(ConstructionDlinkedListOpt::getDlinkedList($b,'label'))){
 				$last_ipsp = $a; 
 			}
 		}
@@ -748,12 +710,14 @@ function bone_create($bone_obj,&$output,$language){
 	
 	if ($z){
 		$start_index = $UNIQUE_bone_index;
-		$start_lp    = $s_w_Dlinked_List_index;
 
-		$ready_for_poly_start = $s_w_Dlinked_List_index;
+		$start_lp    = ConstructionDlinkedListOpt::getDlinkedListIndex();
 
-		if (!collect_usable_bone_model ($bone_obj,$last_ipsp,$soul_writein_Dlinked_List,$bone_model_repo[$z])){ 
-		    $output['warning'][] = $language['fail_bone_array'].$z;	
+
+		$ready_for_poly_start = ConstructionDlinkedListOpt::getDlinkedListIndex();
+
+		if (!collect_usable_bone_model ($bone_obj,$last_ipsp,$bone_model_repo[$z])){ 
+		    GeneralFunc::LogInsert($language['fail_bone_array'].$z,2);	
 			
 			
 
@@ -763,6 +727,5 @@ function bone_create($bone_obj,&$output,$language){
 	    return;   
 	}
 }
-
 
 ?>

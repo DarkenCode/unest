@@ -11,7 +11,6 @@
 function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configure_array,&$section_array,&$global_array,&$i){
 
 	global $language;
-	global $output;
 
 
     $in_section = false;  
@@ -35,7 +34,7 @@ function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configu
 				continue;
 			}elseif ('==PreprocessConfig==' === $a){
 				if (false !== $preprocess_config){  
-				    $output['error'][] = $language['dup_preprocessconfig'];
+				    GeneralFunc::LogInsert($language['dup_preprocessconfig']);
 					return false;
 				}
 				$in_section = 3; 
@@ -46,7 +45,7 @@ function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configu
 				if (false !== $c_name){
 					$all_configure_array[$i] = $c_ret;
 					if (isset($section_array[$c_name])){
-						$output['error'][] = $language['dup_section'].$c_name;
+						GeneralFunc::LogInsert($language['dup_section'].$c_name);
 						return false;
 					}
 					$section_array[$c_name] = $i;
@@ -95,16 +94,16 @@ function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configu
 							if (false === $c_name){
 								$c_name = $value;								
 							}else{ 
-							    $output['warning'][] = $language['double_usr_cfg_secname'].' '.$line.' : '.$a;
+							    GeneralFunc::LogInsert($language['double_usr_cfg_secname'].' '.$line.' : '.$a,2);
 							}
 							continue;
 						}else{
 							$tmp = check_cnf_value ($name,$value,$c_ret);
                             if (1 === $tmp){
-								$output['warning'][] = $language['unknown_usr_cfg_name'].' '.$line.' : '.$a;
+								GeneralFunc::LogInsert($language['unknown_usr_cfg_name'].' '.$line.' : '.$a,2);
 							}elseif (2 === $tmp){
 								
-								$output['warning'][] = $language['dismatch_usr_cfg_value'].' '.$line.' : '.$a;
+								GeneralFunc::LogInsert($language['dismatch_usr_cfg_value'].' '.$line.' : '.$a,2);
 							}
 							continue;				
 						}
@@ -112,7 +111,7 @@ function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configu
 				}
 			}
 		}
-		$output['notice'][] = $language['unkown_usr_cfg_line'].' '.$line.' : '.$a;
+		GeneralFunc::LogInsert($language['unkown_usr_cfg_line'].' '.$line.' : '.$a,3);
 	}
 
 }
@@ -126,7 +125,7 @@ function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configu
 function get_usr_config($sec_name,$filename,&$user_config,&$user_strength,&$user_cnf,&$preprocess_config,$preprocess = false,&$preprocess_sec_name){
 
    	global $language;
-	global $output;
+
 
     $buffer = false;
 	$handle = @fopen("$filename", "r");
@@ -169,7 +168,7 @@ function get_usr_config($sec_name,$filename,&$user_config,&$user_strength,&$user
 				foreach ($section_array as $c_name => $v){
 					if (!isset($sec_name[$c_name])){
 						unset ($all_configure_array[$v]);
-						$output['warning'][] = $language['unknown_cfg_sec_name'].$c_name;
+						GeneralFunc::LogInsert($language['unknown_cfg_sec_name'].$c_name,2);
 					}
 				}
 
@@ -350,7 +349,7 @@ function check_cnf_value ($name,$value,&$c_ret){
 
 
 function affect_setvalue_dynamic($sec_name,$setvalue_dynamic,&$user_cnf){
-    global $output;
+
 	global $language;
 
     foreach ($setvalue_dynamic as $name => $a){
@@ -361,18 +360,18 @@ function affect_setvalue_dynamic($sec_name,$setvalue_dynamic,&$user_cnf){
 					if (true === $user_cnf[$a]['setvalue_dynamic'][$key]){
 						$tmp = check_cnf_value('@'.$key,$new_value,$user_cnf[$a]);
 						if (1 === $tmp){ 
-							$output['warning'][] = $language['setvalue_unknown_key'].'['.$name.']['.$key.'] = '.$new_value;
+							GeneralFunc::LogInsert($language['setvalue_unknown_key'].'['.$name.']['.$key.'] = '.$new_value,2);
 						}elseif (2 === $tmp){ 
-							$output['warning'][] = $language['setvalue_mismatch_value'].'['.$name.']['.$key.'] = '.$new_value;
+							GeneralFunc::LogInsert($language['setvalue_mismatch_value'].'['.$name.']['.$key.'] = '.$new_value,2);
 						}						
 					}else{ 
-				        $output['warning'][] = $language['setvalue_with_off'].'['.$name.']['.$key.']';
+				        GeneralFunc::LogInsert($language['setvalue_with_off'].'['.$name.']['.$key.']',2);
 						break;
 					}
 				}
 			}
 		}else{ 
-		    $output['warning'][] = $language['setvalue_illegal_sec'].$name;
+		    GeneralFunc::LogInsert($language['setvalue_illegal_sec'].$name,2);
 		}
 	}
 

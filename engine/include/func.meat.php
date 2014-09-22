@@ -12,7 +12,7 @@ $UNIQUE_meat_index = 1;
 
 $cf = @file_get_contents(dirname(__FILE__).'/../models/model_meat.dat');
 if ($cf == false){
-	$output['warning'][] = 'fail to open meat repo';
+	GeneralFunc::LogInsert('fail to open meat repo',2);
 }else{
 	$meat_array = unserialize($cf);
 	$repo_number = count($meat_array);
@@ -42,9 +42,9 @@ if ($cf == false){
 
 function meat_insert_into_list($current_forward,$meat_generated,$direct = 'p'){
     global $UNIQUE_meat_index;
-    global $soul_writein_Dlinked_List;
-	global $s_w_Dlinked_List_index;
-	global $soul_writein_Dlinked_List_start;
+
+
+
     global $meat_result_array;
     global $c_user_cnf_stack_pointer_define;
 
@@ -52,13 +52,17 @@ function meat_insert_into_list($current_forward,$meat_generated,$direct = 'p'){
 	$next = false;
 
     if ('p' === $direct){
-		if (isset($soul_writein_Dlinked_List[$current_forward]['p'])){
-		    $prev = $soul_writein_Dlinked_List[$current_forward]['p'];
+
+		if (ConstructionDlinkedListOpt::issetDlinkedListUnit($current_forward,'p')){		
+
+            $prev = ConstructionDlinkedListOpt::getDlinkedList($current_forward,'p');			
 		}
 	    $next = $current_forward;
 	}else{
-		if (isset($soul_writein_Dlinked_List[$current_forward]['n'])){
-		    $next = $soul_writein_Dlinked_List[$current_forward]['n'];
+
+        if (ConstructionDlinkedListOpt::issetDlinkedListUnit($current_forward,'n')){		
+
+            $next = ConstructionDlinkedListOpt::getDlinkedList($current_forward,'n');			
 		}
         $prev = $current_forward;	
 	}
@@ -72,27 +76,35 @@ function meat_insert_into_list($current_forward,$meat_generated,$direct = 'p'){
 
     for (;$c_meat < $UNIQUE_meat_index;$c_meat++){
 		if (false !== $prev){
-			$soul_writein_Dlinked_List[$prev]['n'] = $s_w_Dlinked_List_index;
+
+			ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$prev,'n');
 		}else{ 
-		    $soul_writein_Dlinked_List_start = $s_w_Dlinked_List_index;
+		    ConstructionDlinkedListOpt::setListFirstUnit();
 		}
-		$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['meat'] = $c_meat;
-		$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['c'] = 98;
+
+		ConstructionDlinkedListOpt::setDlinkedList($c_meat,ConstructionDlinkedListOpt::getDlinkedListIndex(),'meat');
+
+		ConstructionDlinkedListOpt::setDlinkedList(98,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
 		
-		if (is_effect_ipsp($meat_result_array[$c_meat]['code'][98],0,$c_user_cnf_stack_pointer_define)){
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['ipsp'] = true;			
-		    
+		if (GeneralFunc::is_effect_ipsp($meat_result_array[$c_meat]['code'][98],0,$c_user_cnf_stack_pointer_define)){
+
+		    ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');			
+
 		}
 
         if (false !== $prev){
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['p'] = $prev;
+
+		    ConstructionDlinkedListOpt::setDlinkedList($prev,ConstructionDlinkedListOpt::getDlinkedListIndex(),'p');
 		}
-		$prev = $s_w_Dlinked_List_index;	   
-		$s_w_Dlinked_List_index ++;
+
+		$prev = ConstructionDlinkedListOpt::getDlinkedListIndex();	   
+
+		ConstructionDlinkedListOpt::incDlinkedListIndex();
 	}
 	if (false !== $next){
-	    $soul_writein_Dlinked_List[$next]['p'] = $prev;
-		$soul_writein_Dlinked_List[$prev]['n'] = $next;
+
+
+		ConstructionDlinkedListOpt::insertDlinkedList($prev,$next);
 	}
 
 
@@ -200,10 +212,10 @@ function gen_invalid_mem_address(){
 	    if (false !== $ret){
 		    $ret .= '+';
 		}
-		$r_int = rand_interger();
+		$r_int = GenerateFunc::rand_interger();
 		$ret .= $r_int['value'];
 
-		$third = bits_precision_adjust($r_int['bits']);
+		$third = GenerateFunc::bits_precision_adjust($r_int['bits']);
 	}
 
 	$ret = '['.$ret.']';
@@ -265,7 +277,7 @@ function meat_params_generate(&$ret,$p_type,$p_bits,$p_static,$reg_usable,$mem_u
 		    $ret['params'][$number] = $p_static[$number];		
 		}else{
 			if ('i' === $type){        
-				$r_int = rand_interger($p_bits[$number]);
+				$r_int = GenerateFunc::rand_interger($p_bits[$number]);
 				$ret['params'][$number] = $r_int['value'];
 				
 			}elseif ('r' === $type){   
@@ -381,7 +393,7 @@ function meat_generate($usable_meat_repo,$c_meat_no,$reg_usable,$mem_usable,$mem
 			
 			
             
-			soul_stack_set($result['code'],$result['usable']);
+			GeneralFunc::soul_stack_set($result['code'],$result['usable']);
 
 			$meat_result_array[$UNIQUE_meat_index] = $result;
 			$UNIQUE_meat_index ++;
@@ -398,7 +410,7 @@ function meat_generate($usable_meat_repo,$c_meat_no,$reg_usable,$mem_usable,$mem
 
 
 function meat_start($List_id,$direct = 'p'){
-    global $soul_writein_Dlinked_List;
+
     global $meat_result_array;
 	global $bone_result_array;
 	global $poly_result_array;
@@ -412,47 +424,58 @@ function meat_start($List_id,$direct = 'p'){
 	    $fat = 2;
 	}
 
-
     $c_usable_array = array();
-	if (isset($soul_writein_Dlinked_List[$List_id]['poly'])){
+
+    $tmp2 = ConstructionDlinkedListOpt::getDlinkedList($List_id,'c');
+
+
+	if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'poly')){
 		
-        if ($fat === $poly_result_array[$soul_writein_Dlinked_List[$List_id]['poly']]['fat'][$soul_writein_Dlinked_List[$List_id]['c']]){
+		$tmp1 = ConstructionDlinkedListOpt::getDlinkedList($List_id,'poly');		
+        if ($fat === $poly_result_array[$tmp]['fat'][$tmp2]){
 			
 		    return 0;
 		}
-	    $c_usable_array = $poly_result_array[$soul_writein_Dlinked_List[$List_id]['poly']]['usable'][$soul_writein_Dlinked_List[$List_id]['c']][$direct];
-	}elseif (isset($soul_writein_Dlinked_List[$List_id]['bone'])){
+	    $c_usable_array = $poly_result_array[$tmp1]['usable'][$tmp2][$direct];
+
+    }elseif (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'bone')){
 		
-		if ($fat === $poly_result_array[$soul_writein_Dlinked_List[$List_id]['bone']]['fat'][$soul_writein_Dlinked_List[$List_id]['c']]){
+		$tmp1 = ConstructionDlinkedListOpt::getDlinkedList($List_id,'bone');
+		if ($fat === $poly_result_array[$tmp1]['fat'][$tmp2]){
 			
 			return 0;
 		}
-		$c_usable_array = $bone_result_array[$soul_writein_Dlinked_List[$List_id]['bone']]['usable'][$soul_writein_Dlinked_List[$List_id]['c']][$direct];
-	}elseif (isset($soul_writein_Dlinked_List[$List_id]['meat'])){
+		$c_usable_array = $bone_result_array[$tmp1]['usable'][$tmp2][$direct];
+
+    }elseif (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'meat')){
 				
-	    $c_usable_array = $meat_result_array[$soul_writein_Dlinked_List[$List_id]['meat']]['usable'][$soul_writein_Dlinked_List[$List_id]['c']][$direct];
+        $tmp1 = ConstructionDlinkedListOpt::getDlinkedList($List_id,'meat');
+	    $c_usable_array = $meat_result_array[$tmp1]['usable'][$tmp2][$direct];
 	}else{
 		
-	    $c_usable_array = $c_soul_usable[$soul_writein_Dlinked_List[$List_id]['c']][$direct];
+	    $c_usable_array = $c_soul_usable[$tmp2][$direct];
 	}
 
     
 	$prev_inst = false; 
 	$next_inst = false; 
     if ('p' === $direct){
-		if (isset($soul_writein_Dlinked_List[$List_id]['p'])){
-			$prev_inst = get_inst_from_list($soul_writein_Dlinked_List[$List_id]['p'],'p');
+
+        if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'p')){
+
+			$prev_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList(ConstructionDlinkedListOpt::getDlinkedList($List_id,'p'),'p');
 		}else{
 			$prev_inst = 'empty';
 		}
-		$next_inst = get_inst_from_list($List_id,'n');
+		$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($List_id,'n');
 	}else{
-		if (isset($soul_writein_Dlinked_List[$List_id]['n'])){
-			$next_inst = get_inst_from_list($soul_writein_Dlinked_List[$List_id]['n'],'n');
+
+		if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'n')){
+			$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($soul_writein_Dlinked_List[$List_id]['n'],'n');
 		}else{
 			$next_inst = 'empty';
 		}
-	    $prev_inst = get_inst_from_list($List_id,'p');
+	    $prev_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($List_id,'p');
 	}
     
 
@@ -460,7 +483,7 @@ function meat_start($List_id,$direct = 'p'){
 
     global $c_MeatMutation;
 	
-    $meat_mutation = my_rand($c_MeatMutation);    
+    $meat_mutation = GenerateFunc::my_rand($c_MeatMutation);    
 	
 	
 	
@@ -605,63 +628,10 @@ function random_repo_by_rate($usable_model){
 
 
 
-function get_inst_from_list($List_id,$direct){
-    global $soul_writein_Dlinked_List;
-    global $meat_result_array;
-	global $bone_result_array;
-	global $poly_result_array;
-	global $c_Asm_Result;
-
-    $ret = false;
-    $tmp = false; 
-    while (isset($soul_writein_Dlinked_List[$List_id]['label'])){ 
-		
-		
-		if (isset($soul_writein_Dlinked_List[$List_id][$direct])){
-			$List_id = $soul_writein_Dlinked_List[$List_id][$direct];
-		}else{
-			
-			return 'empty';
-		}	
-	}
-	if (isset($soul_writein_Dlinked_List[$List_id]['poly'])){
-		if (isset($poly_result_array[$soul_writein_Dlinked_List[$List_id]['poly']]['code'][$soul_writein_Dlinked_List[$List_id]['c']]['operation'])){
-			$ret = $poly_result_array[$soul_writein_Dlinked_List[$List_id]['poly']]['code'][$soul_writein_Dlinked_List[$List_id]['c']]['operation'];
-		}
-		
-	}elseif (isset($soul_writein_Dlinked_List[$List_id]['bone'])){
-		if (isset($bone_result_array[$soul_writein_Dlinked_List[$List_id]['bone']]['code'][$soul_writein_Dlinked_List[$List_id]['c']]['operation'])){
-			$ret = $bone_result_array[$soul_writein_Dlinked_List[$List_id]['bone']]['code'][$soul_writein_Dlinked_List[$List_id]['c']]['operation'];
-		}
-		
-	}elseif (isset($soul_writein_Dlinked_List[$List_id]['meat'])){
-		if (isset($meat_result_array[$soul_writein_Dlinked_List[$List_id]['meat']]['code'][$soul_writein_Dlinked_List[$List_id]['c']]['operation'])){
-			$ret = $meat_result_array[$soul_writein_Dlinked_List[$List_id]['meat']]['code'][$soul_writein_Dlinked_List[$List_id]['c']]['operation'];
-		}
-		
-	}elseif (isset($c_Asm_Result[$soul_writein_Dlinked_List[$List_id]['c']])){	
-		if (isset($c_Asm_Result[$soul_writein_Dlinked_List[$List_id]['c']]['operation'])){
-			$ret = $c_Asm_Result[$soul_writein_Dlinked_List[$List_id]['c']]['operation'];
-		}
-		
-	}
-
-	
-	return $ret;
-}
-
-
-
-
-
-
-
-
-
 
 
 function meat_create($objs,$meat_max_number){
-    global $soul_writein_Dlinked_List;
+
 
     $c_total_meat_generated = 0;
 
@@ -676,14 +646,12 @@ function meat_create($objs,$meat_max_number){
 		    $first_unit = $a;
 		}		
 		$last_unit = $a;
-		
 		if (meat_start ($a,'p')){ 
             meat_insert_into_list($a,1,'p');
 			$meat_max_number --;
 			$c_total_meat_generated ++;
 			$new_meat_gen = true;
-		}
-		
+		}	
 		if (meat_start ($a,'n')){ 
 		    meat_insert_into_list($a,1,'n');
 			$meat_max_number --;	
@@ -708,10 +676,12 @@ function meat_create($objs,$meat_max_number){
 
         while (($current_unit != $last_unit) and ($meat_max_number > 0)){
 		    
-			if (!isset($soul_writein_Dlinked_List[$current_unit]['n'])){      
+
+			if (!ConstructionDlinkedListOpt::issetDlinkedListUnit($current_unit,'n')){ 
 				$current_unit = false;
 			}else{
-				$current_unit = $soul_writein_Dlinked_List[$current_unit]['n'];	
+
+				$current_unit = ConstructionDlinkedListOpt::getDlinkedList($current_unit,'n');
 			}
 
 	        if (meat_start ($current_unit,'p')){ 

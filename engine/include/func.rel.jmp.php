@@ -8,19 +8,16 @@
 
 
 
-function resize_rel_jmp_array($rel_jmp_range_key,$old_rel_jmp_range){
-    global $soul_writein_Dlinked_List;
-    global $c_rel_jmp_range;
-	global $c_rel_jmp_pointer;
-    global $c_usable_oplen;
+function resize_rel_jmp_array($rel_jmp_range_key){
 
 	
 	
 
+    $old_rel_jmp_range = ConstructionDlinkedListOpt::ReadRollingRelJmpRange();
     
     while (!empty($rel_jmp_range_key)){
 		$a = array_pop($rel_jmp_range_key);
-		$b = $c_rel_jmp_range[$a];
+		$b = ConstructionDlinkedListOpt::readRelJmpRange($a);
 
 		if (isset($old_rel_jmp_range[$a])){
 			if ($old_rel_jmp_range[$a]['range'] == $b['range']){  
@@ -46,20 +43,21 @@ function resize_rel_jmp_array($rel_jmp_range_key,$old_rel_jmp_range){
 		}
 		
         $tmp = get_addition_List_info($a,true,false);
-		$c_change = $tmp['len'] - $soul_writein_Dlinked_List[$a]['len']; 
+        $c_change = $tmp['len'] - ConstructionDlinkedListOpt::getDlinkedList($a,'len');
 		if ($c_change){                                                  
-			if (false !== $c_usable_oplen){
-				$c_usable_oplen -= $c_change;
-			}
-			
-			
-			$soul_writein_Dlinked_List[$a]['len'] = $tmp['len'];
+
+			ConstructionDlinkedListOpt::OplenIncrease($c_change);
 			
 			
 			
-			foreach ($c_rel_jmp_pointer[$a] as $z => $y){
+			ConstructionDlinkedListOpt::setDlinkedList($tmp['len'],$a,'len');
+			
+			
+			
+			$tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($a);
+			foreach ($tmp as $z => $y){
 				if ($y & 4){
-					$c_rel_jmp_range[$z]['range'] += $c_change;
+					ConstructionDlinkedListOpt::increaseRelJmpRange($z,$c_change); 
 					if (!isset($rel_jmp_range_key[$z])){
 						
 						$rel_jmp_range_key[$z] = $z;
@@ -90,10 +88,7 @@ function resize_rel_jmp_array($rel_jmp_range_key,$old_rel_jmp_range){
 
 
 
-function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = false,$backup_List=false,$c_List_start=0){
-    
-    global $soul_writein_Dlinked_List;
-	global $c_usable_oplen;  
+function  reset_rel_jmp_array($discard_objs = false,$backup_List=false,$c_List_start=0){  
 
 	$in_cache_last_src   = false;
 	$in_cache_last_label = false;
@@ -108,7 +103,7 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		$end_unit = false;			
 	}else{
 		
-		init_in_cache_array($discard_objs,$backup_List,$rel_jmp_range,$rel_jmp_pointer,$c_List_start,$c_unit,$end_unit,$in_cache_last_src,$in_cache_last_label,$in_cache_last_whole,$in_cache_src,$in_cache_label,$c_usable_oplen);
+		init_in_cache_array($discard_objs,$backup_List,$c_List_start,$c_unit,$end_unit,$in_cache_last_src,$in_cache_last_label,$in_cache_last_whole,$in_cache_src,$in_cache_label);
 
 
 
@@ -123,73 +118,69 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		    break;
 		}
 
-		if (!isset($soul_writein_Dlinked_List[$c_unit]['len'])){ 
+        if (!ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'len')){ 
 		    $tmp = get_addition_List_info($c_unit,true,true);
-			$soul_writein_Dlinked_List[$c_unit]['len'] = $tmp['len'];
+			ConstructionDlinkedListOpt::setDlinkedList($tmp['len'],$c_unit,'len');
 			if (isset($tmp['rel_jmp'])){
-				$soul_writein_Dlinked_List[$c_unit]['rel_jmp'] = $tmp['rel_jmp'];
+				ConstructionDlinkedListOpt::setDlinkedList($tmp['rel_jmp'],$c_unit,'rel_jmp');
 			}
 		}
 
-		if (false !== $c_usable_oplen){
-			$c_usable_oplen -= $soul_writein_Dlinked_List[$c_unit]['len'];
-		}
+        ConstructionDlinkedListOpt::OplenIncrease(ConstructionDlinkedListOpt::getDlinkedList($c_unit,'len'));
 		
 		if (false !== $in_cache_last_whole){ 
 		    foreach ($in_cache_last_whole as $a){
-			    $rel_jmp_pointer[$c_unit][$a] = 1 | 2 | 4;    
-				$rel_jmp_range[$a]['unit'][$c_unit] = 1 | 2 | 4;
-				$rel_jmp_range[$a]['range'] += $soul_writein_Dlinked_List[$c_unit]['len'];
+			    ConstructionDlinkedListOpt::SetRelJmpPointer($c_unit,$a,1 | 2 | 4);    
+				ConstructionDlinkedListOpt::setRelJmpRange(1 | 2 | 4,$a,'unit',$c_unit);
 				
-				if (false !== $rel_jmp_range[$a]['max']){
-					if ($rel_jmp_range[$a]['max'] < $rel_jmp_range[$a]['range']){
-						return false;
-					}
+				ConstructionDlinkedListOpt::increaseRelJmpRange($a,ConstructionDlinkedListOpt::getDlinkedList($c_unit,'len'));
+				
+				if (ConstructionDlinkedListOpt::outRelJmpRange($a)){
+				    return false;
 				}
 			}
 		}
 
-        if (isset($soul_writein_Dlinked_List[$c_unit]['label'])){  
-			$label = $soul_writein_Dlinked_List[$c_unit]['label'];
+        if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'label')){  
+			$label = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'label');
 		    if (is_array($in_cache_src[$label])){
 				foreach ($in_cache_src[$label] as $a => $b){
-					$rel_jmp_range[$a] = $b;
-                    $rel_jmp_range[$a]['unit'][$c_unit] = 1 | 4;
+					ConstructionDlinkedListOpt::setRelJmpRange($b,$a);
+                    ConstructionDlinkedListOpt::setRelJmpRange(1 | 4,$a,'unit',$c_unit);
 					
-					if (false !== $rel_jmp_range[$a]['max']){
-						if ($rel_jmp_range[$a]['max'] < $rel_jmp_range[$a]['range']){
-							return false;
-						}
+					if (ConstructionDlinkedListOpt::outRelJmpRange($a)){
+						return false;
 					}
-					foreach ($rel_jmp_range[$a]['unit'] as $c => $d){
-					    $rel_jmp_pointer[$c][$a] = $d;
-					}
+					
+					ConstructionDlinkedListOpt::RelJmpRange2Pointer($a);
 				}
 				unset($in_cache_src[$label]);
 			}
             $in_cache_label[$label]['unit'][$c_unit] = 2 | 4;
 		}
 
-		if (isset($soul_writein_Dlinked_List[$c_unit]['rel_jmp'])){ 
-			$label = $soul_writein_Dlinked_List[$c_unit]['rel_jmp']['label'];
+        if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'rel_jmp')){ 
+			$label = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp','label');
 			if (isset($in_cache_label[$label])){
-			    $rel_jmp_range[$c_unit]['max']    = $soul_writein_Dlinked_List[$c_unit]['rel_jmp']['max'];
-                $rel_jmp_range[$c_unit]['label']  = $soul_writein_Dlinked_List[$c_unit]['rel_jmp']['label'];
-			    $rel_jmp_range[$c_unit]['range']  = $in_cache_label[$label]['range'];
-				$rel_jmp_range[$c_unit]['range'] += $soul_writein_Dlinked_List[$c_unit]['len'];
-				$rel_jmp_range[$c_unit]['unit']   = $in_cache_label[$label]['unit'];
-			    $rel_jmp_range[$c_unit]['unit'][$c_unit] = 1 | 4;
+			    
+				ConstructionDlinkedListOpt::setRelJmpRange(ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp','max'),$c_unit,'max');				
                 
-				if (false !== $rel_jmp_range[$c_unit]['max']){
-				    if ($rel_jmp_range[$c_unit]['max'] < $rel_jmp_range[$c_unit]['range']){
-					    return false;
-					}
+				ConstructionDlinkedListOpt::setRelJmpRange(ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp','label'),$c_unit,'label');
+			    
+				ConstructionDlinkedListOpt::setRelJmpRange($in_cache_label[$label]['range'],$c_unit,'range');
+				
+                ConstructionDlinkedListOpt::increaseRelJmpRange($c_unit,ConstructionDlinkedListOpt::getDlinkedList($c_unit,'len'));
+				
+				ConstructionDlinkedListOpt::setRelJmpRange($in_cache_label[$label]['unit'],$c_unit,'unit');
+			    
+				ConstructionDlinkedListOpt::setRelJmpRange(1 | 4,$c_unit,'unit',$c_unit);
+                
+				if (true === ConstructionDlinkedListOpt::outRelJmpRange($c_unit)){
+					return false;
 				}
-				foreach ($rel_jmp_range[$c_unit]['unit'] as $c => $d){
-					    $rel_jmp_pointer[$c][$c_unit] = $d;
-				}
+				ConstructionDlinkedListOpt::RelJmpRange2Pointer($c_unit);
 			}else{
-			    $in_cache_src[$label][$c_unit]          = $soul_writein_Dlinked_List[$c_unit]['rel_jmp'];
+                $in_cache_src[$label][$c_unit]          = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp');
                 $in_cache_src[$label][$c_unit]['range'] = 0;
 				$in_cache_src[$label][$c_unit]['unit'][$c_unit] = 2;
 				
@@ -200,7 +191,7 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		$tmp = $in_cache_label;
 		foreach ($tmp as $label => $a){
 			if (!isset($in_cache_label[$label]['unit'][$c_unit])){
-			    $in_cache_label[$label]['range'] += $soul_writein_Dlinked_List[$c_unit]['len'];			
+				$in_cache_label[$label]['range'] += ConstructionDlinkedListOpt::getDlinkedList($c_unit,'len');
 				$in_cache_label[$label]['unit'][$c_unit] = 1 | 2 | 4;
 			}
 		}
@@ -208,16 +199,16 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		$tmp = $in_cache_src;
 		foreach ($tmp as $label => $a){
 		    foreach ($a as $b => $c){
-				if (!isset($in_cache_src[$label][$b]['unit'][$c_unit])){
-                    $in_cache_src[$label][$b]['range'] += $soul_writein_Dlinked_List[$c_unit]['len'];				
+				if (!isset($in_cache_src[$label][$b]['unit'][$c_unit])){	
+					$in_cache_src[$label][$b]['range'] += ConstructionDlinkedListOpt::getDlinkedList($c_unit,'len');
 					$in_cache_src[$label][$b]['unit'][$c_unit] = 1 | 2 | 4;
 				}
 			}
 		}
 
 		
-	    if (isset($soul_writein_Dlinked_List[$c_unit]['n'])){
-		    $c_unit = $soul_writein_Dlinked_List[$c_unit]['n'];			
+		if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'n')){
+			$c_unit = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'n');
 		}else{
 		    break;
 		}
@@ -231,27 +222,26 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		foreach ($in_cache_last_src as $label => $v){
 			if (isset($in_cache_label[$label])){
 				foreach ($v as $a => $b){
-					$rel_jmp_range[$a] = $b;
-					$rel_jmp_range[$a]['range'] += $in_cache_label[$label]['range'];
+					ConstructionDlinkedListOpt::setRelJmpRange($b,$a);
 					
-					if (false !== $rel_jmp_range[$a]['max']){
-						if ($rel_jmp_range[$a]['max'] < $rel_jmp_range[$a]['range']){
-							return false;
-						}
+					ConstructionDlinkedListOpt::increaseRelJmpRange($a,$in_cache_label[$label]['range']);
+					
+                    if (ConstructionDlinkedListOpt::outRelJmpRange($a)){
+						return false;
 					}
-					foreach ($rel_jmp_range[$a]['unit'] as $c => $d){
-						$rel_jmp_pointer[$c][$a] = $d;
-					}
+					
+					ConstructionDlinkedListOpt::RelJmpRange2Pointer($a);
+				
 					foreach ($in_cache_label[$label]['unit'] as $c => $d){
-						$rel_jmp_range[$a]['unit'][$c] = $d;
-						$rel_jmp_pointer[$c][$a] = $d;
+						ConstructionDlinkedListOpt::setRelJmpRange($d,$a,'unit',$c);
+						ConstructionDlinkedListOpt::SetRelJmpPointer($c,$a,$d);
 					}
 				}
 			}else{ 
 				$log = array();
 				$log['in_cache_last_src'] = $in_cache_last_src;
 				$log['in_cache_label']    = $in_cache_label;
-				internal_log_save('still have $in_cache_src here till func end : [func reset_rel_jmp_array] ',$log);
+				GeneralFunc::internal_log_save('still have $in_cache_src here till func end : [func reset_rel_jmp_array] ',$log);
 				return false;
 				
 				
@@ -265,20 +255,19 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		foreach ($in_cache_last_label as $label => $v){
 		    if (isset($in_cache_src[$label])){
 				foreach ($in_cache_src[$label] as $a => $b){
-				    $rel_jmp_range[$a] = $b;
-                    $rel_jmp_range[$a]['range'] += $in_cache_last_label[$label]['range'];
+				    ConstructionDlinkedListOpt::setRelJmpRange($b,$a);
                     
-					if (false !== $rel_jmp_range[$a]['max']){
-						if ($rel_jmp_range[$a]['max'] < $rel_jmp_range[$a]['range']){
-							return false;
-						}
+					ConstructionDlinkedListOpt::increaseRelJmpRange($a,$in_cache_last_label[$label]['range']);
+                    
+					if (ConstructionDlinkedListOpt::outRelJmpRange($a)){
+						return false;
 					}
-					foreach ($rel_jmp_range[$a]['unit'] as $c => $d){
-						$rel_jmp_pointer[$c][$a] = $d;
-					}
+					
+					ConstructionDlinkedListOpt::RelJmpRange2Pointer($a);
+
 					foreach ($in_cache_last_label[$label]['unit'] as $c => $d){
-						$rel_jmp_range[$a]['unit'][$c] = $d;
-						$rel_jmp_pointer[$c][$a] = $d;
+						ConstructionDlinkedListOpt::setRelJmpRange($d,$a,'unit',$c);
+						ConstructionDlinkedListOpt::SetRelJmpPointer($c,$a,$d);
 					}
 				}						
 				unset($in_cache_src[$label]);
@@ -287,7 +276,7 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 				$log['in_cache_last_label'] = $in_cache_last_label;
 				$log['label']               = $label;
 				$log['in_cache_src']        = $in_cache_src;
-				internal_log_save('fail to search Label (of $in_cache_last_label) in $in_cache_src : [func reset_rel_jmp_array] ',$log);
+				GeneralFunc::internal_log_save('fail to search Label (of $in_cache_last_label) in $in_cache_src : [func reset_rel_jmp_array] ',$log);
 				return false;
 				
 				
@@ -299,7 +288,7 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 		$log = array();
         $log['in_cache_last_label'] = $in_cache_last_label;
 		$log['in_cache_src']        = $in_cache_src;
-		internal_log_save('still have $in_cache_src here till func end : [func reset_rel_jmp_array] ',$log);
+		GeneralFunc::internal_log_save('still have $in_cache_src here till func end : [func reset_rel_jmp_array] ',$log);
 		return false;
 		
 		
@@ -312,29 +301,28 @@ function  reset_rel_jmp_array(&$rel_jmp_range,&$rel_jmp_pointer,$discard_objs = 
 
 
 
-function init_in_cache_array($discard_objs,$backup_List,&$rel_jmp_range,&$rel_jmp_pointer,$c_List_start,&$c_unit,&$end_unit,&$in_cache_last_src,&$in_cache_last_label,&$in_cache_last_whole,&$in_cache_src,&$in_cache_label,&$c_usable_oplen){
+function init_in_cache_array($discard_objs,$backup_List,$c_List_start,&$c_unit,&$end_unit,&$in_cache_last_src,&$in_cache_last_label,&$in_cache_last_whole,&$in_cache_src,&$in_cache_label){
 
-        global $soul_writein_Dlinked_List;
 
 
 		
 		
 		$del_array = false;
 		foreach ($discard_objs as $b){
-			if (false !== $c_usable_oplen){
-				$c_usable_oplen += $soul_writein_Dlinked_List[$b]['len'];	
-			}
-			if (is_array($rel_jmp_pointer[$b])){
-			    foreach ($rel_jmp_pointer[$b] as $c => $d){
-				    unset ($rel_jmp_range[$c]['unit'][$b]);
+			ConstructionDlinkedListOpt::OplenIncrease(ConstructionDlinkedListOpt::getDlinkedList($b,'len'),false);			
+			$tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($b);
+			if (is_array($tmp)){
+			    foreach ($tmp as $c => $d){
+				    ConstructionDlinkedListOpt::unsetRelJmpRange($c,'unit',$b);
 					if ($d & 4){
-					    $rel_jmp_range[$c]['range'] -= $soul_writein_Dlinked_List[$b]['len'];					
+						
+						ConstructionDlinkedListOpt::increaseRelJmpRange($c,ConstructionDlinkedListOpt::getDlinkedList($b,'len'),false);
 					}
 					if ($d !== (1 | 2 | 4)){    
 						$del_array[$c] = $c;
 					}
 				}				
-				unset ($rel_jmp_pointer[$b]);
+				ConstructionDlinkedListOpt::UnsetRelJmpPointer($b);
 			}
 		}
 
@@ -346,14 +334,15 @@ function init_in_cache_array($discard_objs,$backup_List,&$rel_jmp_range,&$rel_jm
 		$tmp = reset($discard_objs);
 		
 		if (isset($backup_List[$tmp]['p'])){
-			if (is_array($rel_jmp_pointer[$backup_List[$tmp]['p']])){
-				foreach ($rel_jmp_pointer[$backup_List[$tmp]['p']] as $a => $b){
+            $tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['p']);
+			if (is_array($tmp_tmp)){
+				foreach ($tmp_tmp as $a => $b){
 					if ($b & 2){
 						$reserve_start_pointer[$a] = $b;	
 					}
 				}			
 			}
-			$c_unit = $soul_writein_Dlinked_List[$backup_List[$tmp]['p']]['n'];
+			$c_unit = ConstructionDlinkedListOpt::getDlinkedList($backup_List[$tmp]['p'],'n');
 		}else{
 			$c_unit = $c_List_start;       
 		}
@@ -361,8 +350,9 @@ function init_in_cache_array($discard_objs,$backup_List,&$rel_jmp_range,&$rel_jm
 		$tmp = end($discard_objs);
 		
 		if (isset($backup_List[$tmp]['n'])){
-			if (is_array($rel_jmp_pointer[$backup_List[$tmp]['n']])){
-				foreach ($rel_jmp_pointer[$backup_List[$tmp]['n']] as $a => $b){
+			$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['p']);
+			if (is_array($tmp_tmp)){
+				foreach ($tmp_tmp as $a => $b){
 					if ($b & 1){
 						$reserve_last_pointer[$a] = $b;	
 					}
@@ -386,19 +376,21 @@ function init_in_cache_array($discard_objs,$backup_List,&$rel_jmp_range,&$rel_jm
 			    unset ($reserve_last_pointer[$a]);
 				unset ($reserve_start_pointer[$a]);
 			}else{
+				$tmp_tmp = $rel_jmp_range[$a]['label'];
 			    if (in_array($a,$discard_objs)){
-				    $in_cache_label[$rel_jmp_range[$a]['label']] = $rel_jmp_range[$a];
+				    $in_cache_label[$tmp_tmp] = ConstructionDlinkedListOpt::readRelJmpRange($a);
 				}else{
-				    $in_cache_src[$rel_jmp_range[$a]['label']][$a] = $rel_jmp_range[$a];
+				    $in_cache_src[$tmp_tmp][$a] = ConstructionDlinkedListOpt::readRelJmpRange($a);
 				}
 			}
 		}	
 
 		foreach ($reserve_last_pointer as $a => $b){
+			$tmp_tmp = $rel_jmp_range[$a]['label'];
 		    if (in_array($a,$discard_objs)){
-			    $in_cache_last_label[$rel_jmp_range[$a]['label']] = $rel_jmp_range[$a];
+			    $in_cache_last_label[$tmp_tmp] = ConstructionDlinkedListOpt::readRelJmpRange($a);
 			}else{
-				$in_cache_last_src[$rel_jmp_range[$a]['label']][$a] = $rel_jmp_range[$a];
+				$in_cache_last_src[$tmp_tmp][$a] = ConstructionDlinkedListOpt::readRelJmpRange($a);
 			}
 		}
 
@@ -406,10 +398,11 @@ function init_in_cache_array($discard_objs,$backup_List,&$rel_jmp_range,&$rel_jm
 		
         if (false !== $del_array){
 		    foreach ($del_array as $a){
-				foreach ($rel_jmp_range[$a]['unit'] as $c => $d){
-				    unset ($rel_jmp_pointer[$c][$a]);
+				
+				foreach (ConstructionDlinkedListOpt::readRelJmpRange($a,'unit') as $c => $d){					
+				    ConstructionDlinkedListOpt::UnsetRelJmpPointer($c,$a);
 				}
-			    unset ($rel_jmp_range[$a]);
+			    ConstructionDlinkedListOpt::unsetRelJmpRange($a);
 			}
 		}
 
@@ -429,13 +422,6 @@ function init_in_cache_array($discard_objs,$backup_List,&$rel_jmp_range,&$rel_jm
 
 
 function get_addition_List_info($unit,$get_len=false,$get_rel_jmp=false){
-    
-	global $soul_writein_Dlinked_List;
-
-	global $poly_result_array;
-	global $bone_result_array;
-	global $meat_result_array;
-	global $c_Asm_Result;
 
 	global $UniqueHead;
 
@@ -443,23 +429,12 @@ function get_addition_List_info($unit,$get_len=false,$get_rel_jmp=false){
 
 	$ret = false; 
 
-    if (isset($soul_writein_Dlinked_List[$unit]['label'])){ 
 
-    	$ret = array('len' => 0);
-
+    $c_opt = ConstructionDlinkedListOpt::getCode_from_DlinkedList($unit);
+	if (false === $c_opt){
+	    $ret = array('len' => 0);
 	}else{
-		$c_opt = false;
-
 		
-		if (isset($soul_writein_Dlinked_List[$unit]['poly'])){
-			$c_opt = $poly_result_array[$soul_writein_Dlinked_List[$unit]['poly']]['code'][$soul_writein_Dlinked_List[$unit]['c']];	
-		}elseif (isset($soul_writein_Dlinked_List[$unit]['bone'])){
-			$c_opt = $bone_result_array[$soul_writein_Dlinked_List[$unit]['bone']]['code'][$soul_writein_Dlinked_List[$unit]['c']];
-		}elseif (isset($soul_writein_Dlinked_List[$unit]['meat'])){
-			$c_opt = $meat_result_array[$soul_writein_Dlinked_List[$unit]['meat']]['code'][$soul_writein_Dlinked_List[$unit]['c']];
-		}else{
-			$c_opt = $c_Asm_Result[$soul_writein_Dlinked_List[$unit]['c']];
-		}
 		if ($get_rel_jmp){ 
 		    if ((isset($range_limit_static_jmp[$c_opt['operation']])) and (0 === strpos($c_opt['params'][0],"$UniqueHead".'SOLID_JMP_'))){ 
 			    $ret['rel_jmp']['max'] = $range_limit_static_jmp[$c_opt['operation']];    
@@ -468,9 +443,8 @@ function get_addition_List_info($unit,$get_len=false,$get_rel_jmp=false){
 		}
 
 		if ($get_len){   
-			global $c_rel_jmp_range;
-			if (isset($c_rel_jmp_range[$unit]['range'])){     
-	            $c_opt['range'] = $c_rel_jmp_range[$unit]['range'];		
+			if (ConstructionDlinkedListOpt::issetRelJmpRange($unit)){     
+	            $c_opt['range'] = ConstructionDlinkedListOpt::readRelJmpRange($unit,'range');
 			}
 			
 		    $ret['len'] = code_len($c_opt);

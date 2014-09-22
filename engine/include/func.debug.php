@@ -18,8 +18,8 @@ function gen_code_4_debug_usable_array($usable,$prev,$next,$type = '0x0cccccccc'
 	global $all_valid_mem_opt_index;
 	global $registersss;
 
-	global $soul_writein_Dlinked_List;
-    global $s_w_Dlinked_List_index;
+
+
     
 	global $UNIQUE_meat_index;
 	global $meat_result_array;
@@ -94,27 +94,34 @@ function gen_code_4_debug_usable_array($usable,$prev,$next,$type = '0x0cccccccc'
 	    $meat_result_array[$UNIQUE_meat_index] = $result;				
         foreach ($result['code'] as $a => $b){
 			if (false !== $prev){
-			    $soul_writein_Dlinked_List[$prev]['n'] = $s_w_Dlinked_List_index;			
+
+				ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$prev,'n');				
 		    }else{
 
-				global $soul_writein_Dlinked_List_start;
+				ConstructionDlinkedListOpt::setListFirstUnit();
 
-			    $soul_writein_Dlinked_List_start = $s_w_Dlinked_List_index;
 			}
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['p'] = $prev;
-		    $soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['meat'] = $UNIQUE_meat_index;			
-		    $soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['c']    = $a;
+
+			ConstructionDlinkedListOpt::setDlinkedList($prev,ConstructionDlinkedListOpt::getDlinkedListIndex(),'n');
+
+			ConstructionDlinkedListOpt::setDlinkedList($UNIQUE_meat_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'meat');
+
+			ConstructionDlinkedListOpt::setDlinkedList($a,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
 			
 			
 			
 			
 			
-			$prev = $s_w_Dlinked_List_index;
-		    $s_w_Dlinked_List_index ++;		
+
+			$prev = ConstructionDlinkedListOpt::getDlinkedListIndex();
+	
+			ConstructionDlinkedListOpt::incDlinkedListIndex();
 		} 
 		if (false !== $next){
-			$soul_writein_Dlinked_List[$next]['p'] = $s_w_Dlinked_List_index - 1;
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index - 1]['n'] = $next;
+
+			ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex() - 1,$next,'p');
+
+			ConstructionDlinkedListOpt::setDlinkedList($next,ConstructionDlinkedListOpt::getDlinkedListIndex() - 1,'n');
 		}
 		$UNIQUE_meat_index ++;
 	}
@@ -131,7 +138,7 @@ function debug_usable_array($c_lp){
 	$p_lp   = false;                            
 	$n_lp   = false;                            
 
-	global $soul_writein_Dlinked_List;
+
 
 	while (true){
 

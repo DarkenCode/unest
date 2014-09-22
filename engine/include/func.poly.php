@@ -365,7 +365,7 @@ function check_poly_usable ($c_soul_usable,$org,&$usable_poly_model,&$rand_resul
 				if (shuffle ($y)){
 					foreach ($y as $x){
 						if ($x == 'i'){
-							$r_int = rand_interger();							
+							$r_int = GenerateFunc::rand_interger();							
 							$rand_result[$a][$z] = $r_int['value'];
 							$rand_result[$a]['p_type'][$z] = 'i';
 							$rand_result[$a]['p_bits'][$z] = 32; 
@@ -484,7 +484,7 @@ function generat_poly_code($org,$soul_usable,$poly_model,$rand_result,$int3 = fa
 									if (isset($org['rel'][$z])){	
 										
                                                                                                         
-                                        $new = reloc_inc_copy_naked($org['rel'][$z]['i'],$org['rel'][$z]['c']);
+                                        $new = GenerateFunc::reloc_inc_copy_naked($org['rel'][$z]['i'],$org['rel'][$z]['c']);
 										
 										$c_rel_info[$org['rel'][$z]['i']][$new] = $c_rel_info[$org['rel'][$z]['i']][$org['rel'][$z]['c']];
 
@@ -617,12 +617,12 @@ function collect_usable_poly_model($obj,$c_soul_usable,$c_poly_strength,&$ret){
 							$ret = generat_poly_code($obj,$c_soul_usable,$poly_model_repo[$obj['operation']][$usable_poly_model[$x]],$rand_result[$x]);
 						}
 						
-						soul_stack_set($ret['code'],$ret['usable']);
+						GeneralFunc::soul_stack_set($ret['code'],$ret['usable']);
 						return true;
 					}else{
-						global $output;
+						
 						global $language;						
-						$output['warning'][] = $language['poly_repo_null'].$obj['operation'].'['.$x.']';						
+						GeneralFunc::LogInsert($language['poly_repo_null'].$obj['operation'].'['.$x.']',2);						
 					}
 					
 				}
@@ -635,46 +635,62 @@ function collect_usable_poly_model($obj,$c_soul_usable,$c_poly_strength,&$ret){
 
 
 function insert_into_list ($org,$poly_index,$asm_array,$from_soul=false){
-    global $soul_writein_Dlinked_List; 
-	global $s_w_Dlinked_List_index;
-	global $soul_writein_Dlinked_List_start;
+
+
+
     global $c_user_cnf_stack_pointer_define;
 
-    $ret = $s_w_Dlinked_List_index;
 
-    $soul_writein_Dlinked_List[$org]['302'] = $s_w_Dlinked_List_index; 
+	$ret = ConstructionDlinkedListOpt::getDlinkedListIndex();
+
+
+    ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$org,'302'); 
 
 	$c_prev = false;
-	if (isset($soul_writein_Dlinked_List[$org]['p'])){
-	    $c_prev = $soul_writein_Dlinked_List[$org]['p'];
+
+	if (ConstructionDlinkedListOpt::issetDlinkedListUnit($org,'p')){
+
+		$c_prev = ConstructionDlinkedListOpt::getDlinkedList($org,'p');
 	}
 	$c_last = false;
-	if (isset($soul_writein_Dlinked_List[$org]['n'])){
-	    $c_last = $soul_writein_Dlinked_List[$org]['n'];
+
+	if (ConstructionDlinkedListOpt::issetDlinkedListUnit($org,'n')){
+
+		$c_last = ConstructionDlinkedListOpt::getDlinkedList($org,'n');
 	}
+
     foreach ($asm_array as $a => $b){
 		if (false === $c_prev){
-			$soul_writein_Dlinked_List_start = $s_w_Dlinked_List_index;
+			ConstructionDlinkedListOpt::setListFirstUnit();
 		}else{
-			$soul_writein_Dlinked_List[$c_prev]['n'] = $s_w_Dlinked_List_index;        
-		    $soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['p'] = $c_prev;            
+
+			
+			ConstructionDlinkedListOpt::insertDlinkedListByIndex($c_prev);			
 		}
-	    $soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['c'] = $a;
-		$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['poly'] = $poly_index;    
+ 
+        ConstructionDlinkedListOpt::setDlinkedList($a,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
+ 
+        ConstructionDlinkedListOpt::setDlinkedList($poly_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'poly');
 		if ($from_soul){ 
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['soul'] = true;    		
+
+            ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'soul');
 		}
 		if (isset($b['label'])){
-			$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['label'] = $b['label'];
-		}elseif (is_effect_ipsp($b,1,$c_user_cnf_stack_pointer_define)){
-				$soul_writein_Dlinked_List[$s_w_Dlinked_List_index]['ipsp'] = true;
+
+            ConstructionDlinkedListOpt::setDlinkedList($b['label'],ConstructionDlinkedListOpt::getDlinkedListIndex(),'label');
+		}elseif (GeneralFunc::is_effect_ipsp($b,1,$c_user_cnf_stack_pointer_define)){
+
+            ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');
 		}
-		$c_prev = $s_w_Dlinked_List_index;
-		$s_w_Dlinked_List_index ++;
+
+		$c_prev = ConstructionDlinkedListOpt::getDlinkedListIndex();
+
+		ConstructionDlinkedListOpt::incDlinkedListIndex();
 	}
 	if (false !== $c_last){
-		$soul_writein_Dlinked_List[$c_prev]['n'] = $c_last;
-		$soul_writein_Dlinked_List[$c_last]['p'] = $c_prev;
+
+
+        ConstructionDlinkedListOpt::insertDlinkedList($c_prev,$c_last);
 	}
     return $ret;
 }
@@ -683,15 +699,16 @@ function insert_into_list ($org,$poly_index,$asm_array,$from_soul=false){
 
 
 function poly_start_single ($list_index,$soul_usable,$AsmResultArray,$poly_strength){    
-    global $soul_writein_Dlinked_List;
+
 	global $UNIQUE_poly_index;   
 	global $poly_result_array;
 	global $poly_result_reverse_array;
-	global $s_w_Dlinked_List_index;
+
 
 	$usable_poly_model = array();
 
-   	$poly_sub_tree = $s_w_Dlinked_List_index;  
+   
+    $poly_sub_tree = ConstructionDlinkedListOpt::getDlinkedListIndex(); 
 
 	if ($poly_strength){
 	    if (collect_usable_poly_model($AsmResultArray,$soul_usable,$poly_strength,$usable_poly_model)){
@@ -715,7 +732,7 @@ function poly_start_single ($list_index,$soul_usable,$AsmResultArray,$poly_stren
 	
     
 	while (true){
-		$c_list = $soul_writein_Dlinked_List; 
+		$c_list = ConstructionDlinkedListOpt::getDlinkedListTotal();
 		if (!isset($c_list[$poly_sub_tree])){
 		    break;
 		}    
@@ -760,12 +777,11 @@ function poly_start ($objs,$echo = false){
 	global $meat_result_array;
 	global $c_Asm_Result;
 	global $c_soul_usable;
-	global $soul_writein_Dlinked_List;
 	global $UNIQUE_poly_index;
 	global $poly_result_reverse_array;
 
 	foreach ($objs as $a){
-        $b = $soul_writein_Dlinked_List[$a];
+		$b = ConstructionDlinkedListOpt::getDlinkedList($a);
 
 		$from_soul = false;		
 		
@@ -808,7 +824,6 @@ function poly_start ($objs,$echo = false){
 			$insert_List_index = insert_into_list ($a,$UNIQUE_poly_index,$c_poly_result['code'],$from_soul);
 			$poly_result_array[$UNIQUE_poly_index] = $c_poly_result;
 			$UNIQUE_poly_index ++;            
-			
 		}	
 	}
 }

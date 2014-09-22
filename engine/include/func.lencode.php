@@ -133,7 +133,7 @@ function code_len($opt,$ignore_m = false){
 		
 	}
 
-    internal_log_save('unkown opcode : return 15 [func code_len] ',$opt);
+    GeneralFunc::internal_log_save('unkown opcode : return 15 [func code_len] ',$opt);
 
 	return 15; 
 }
@@ -187,10 +187,10 @@ function mem_addition_len($mem){
 
 function range_checker_4_debug(){    
     global $c_rel_jmp_range;
-	global $soul_writein_Dlinked_List;
-    global $soul_writein_Dlinked_List_start;
 
-    $c = $soul_writein_Dlinked_List_start;
+
+
+    $c = ConstructionDlinkedListOpt::readListFirstUnit();
 
     var_dump ($c_rel_jmp_range);
     if (is_array($c_rel_jmp_range)){
@@ -205,7 +205,7 @@ function range_checker_4_debug(){
 				var_dump ($c_rel_jmp_range[$a]);
 				foreach ($c_rel_jmp_range[$a]['unit'] as $a => $b){
 					echo "<br>$a: ";
-					var_dump ($soul_writein_Dlinked_List[$a]);
+
 				}
 				exit ('exit from range_checker_4_debug');
 			}else{

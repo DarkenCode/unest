@@ -12,12 +12,6 @@ $engin_version = 5;
 
 
 
-$output['error']   = array(); 
-$output['warning'] = array(); 
-$output['notice']  = array(); 
-
-
-
 $language = array(
     'not_support_Machine'     => 'not support current Machine',                             
 	'illegal_support_Machine' => 'illegal signal of Machine',                               
