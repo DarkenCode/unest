@@ -21,16 +21,16 @@ require_once dirname(__FILE__)."/include/intel_instruction.php";
 require_once dirname(__FILE__)."/include/intel_instruction_array.php";
 require_once dirname(__FILE__)."/include/config.inc.php";
 
-require_once dirname(__FILE__)."/include/func.poly.php";
-require_once dirname(__FILE__)."/models/model_poly.php";
 
-require_once dirname(__FILE__)."/include/func.bone.php";
-require_once dirname(__FILE__)."/models/model_bone.php";
+require dirname(__FILE__)."/organs/poly.php";
+require dirname(__FILE__)."/models/model_poly.php";
+require dirname(__FILE__)."/organs/bone.php";
+require dirname(__FILE__)."/models/model_bone.php";
+require dirname(__FILE__)."/organs/meat.php";
+OrganMeat::init();
 
-require_once dirname(__FILE__)."/include/func.meat.php";
 
-
-require_once dirname(__FILE__)."/include/func.fat.php";
+require_once dirname(__FILE__)."/organs/fat.php";
 
 require_once dirname(__FILE__)."/include/func.config.php";
 
@@ -224,8 +224,7 @@ if (!GeneralFunc::LogHasErr()){
 		if (false === get_usr_config($sec_name,$usr_cfg_file,$user_config,$user_strength,$user_cnf,$preprocess_config,false,$c_sec_name)){ 
 			GeneralFunc::LogInsert($language['without_cfg_file']);        
 		}
-        
-		
+        		
 		if (false !== $setvalue_dynamic){
 			affect_setvalue_dynamic($sec_name,$setvalue_dynamic,$user_cnf);
 		}		
@@ -260,6 +259,7 @@ if (!GeneralFunc::LogHasErr()){
 		
 		
 		reconfigure_soul_usable ($sec_name,$user_config,$user_cnf,$soul_writein_Dlinked_List_Total,$soul_usable,$soul_forbid); 
+
 		
         $init_asm_file = "[bits 32]\r\n";
         foreach ($dynamic_insert as $a => $b){			
@@ -309,9 +309,9 @@ if (!GeneralFunc::LogHasErr()){
 			    $c_user_cnf_stack_pointer_define = substr ($c_user_cnf_stack_pointer_define,0,strlen($c_user_cnf_stack_pointer_define) - 1);
 			}
 		}
-
+		
 		if (false !== $c_user_cnf_stack_pointer_define){	
-			$tmp = GenerateFunc::reset_ipsp_list_by_stack_pointer_define($c_user_cnf_stack_pointer_define,$soul_writein_Dlinked_List_Total[$sec]['list'],$StandardAsmResultArray[$sec]);
+			$tmp = GenerateFunc::reset_ipsp_list_by_stack_pointer_define($c_user_cnf_stack_pointer_define,$soul_writein_Dlinked_List_Total[$sec]['list'],$StandardAsmResultArray[$sec]);			
 		}
 
 		
@@ -430,7 +430,7 @@ if (!GeneralFunc::LogHasErr()){
 			}elseif ($c_user_strength['meat']['max'] < $c_user_strength['meat']['min']){
 				$c_user_strength['meat']['max'] = $c_user_strength['meat']['min'];
 			}
-
+			
 			$c_poly_strength = mt_rand($c_user_strength['poly']['min'],$c_user_strength['poly']['max']);
 			$c_bone_strength = mt_rand($c_user_strength['bone']['min'],$c_user_strength['bone']['max']);
 			$c_meat_strength = mt_rand($c_user_strength['meat']['min'],$c_user_strength['meat']['max']);
@@ -475,7 +475,6 @@ if (!GeneralFunc::LogHasErr()){
 			}
 			
 			shuffle($garble_process);
-
 			
 			foreach ($garble_process as $c_process){			
 				
@@ -493,7 +492,7 @@ if (!GeneralFunc::LogHasErr()){
 					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);
 					
 					if (!empty($objs)){
-						poly_start($objs,$my_params['echo']); 
+						OrganPoly::start($objs,$my_params['echo']); 
 						$exetime_record['poly'] += GeneralFunc::exetime_record($stime); 
 					}										
 				}elseif ('meat' === $c_process){
@@ -508,7 +507,7 @@ if (!GeneralFunc::LogHasErr()){
 					
 					
 					if (!empty($objs)){
-						meat_create($objs,$length * 2);  					
+						OrganMeat::start($objs,$length * 2);  					
 						$exetime_record['meat'] += GeneralFunc::exetime_record($stime); 
 					}
 				}elseif ('bone' === $c_process){
@@ -529,11 +528,11 @@ if (!GeneralFunc::LogHasErr()){
 					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);				
 
 					if (!empty($objs)){
-						bone_create($objs,$language);
+						OrganBone::start($objs,$language);
 
-						if ($multi_bone_poly){
+						if ($multi_bone_poly){							
 							foreach ($multi_bone_poly as $z){
-								poly_start($z,$my_params['echo']);
+								OrganPoly::start($z,$my_params['echo']);
 							}						
 						}
 						$exetime_record['bone'] += GeneralFunc::exetime_record($stime); 

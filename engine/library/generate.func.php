@@ -176,6 +176,27 @@ class GenerateFunc{
 		return $copy;    
 	}
 
+	
+	
+	public static function reloc_inc_copy($obj,&$old,&$new){
+		global $c_rel_info;
+		global $UniqueHead;
+		global $pattern_reloc;
+
+		if (preg_match($pattern_reloc,$obj,$tmp)){
+			$tmp = explode ('_',$tmp[0]);
+			$old[0] = $tmp[2];
+			$old[1] = $tmp[3];
+			$old[2] = $tmp[4];
+			$new    = $tmp[4];
+			while (isset($c_rel_info[$old[1]][$new])){
+					$new ++; 
+			}
+			return true;    
+		}
+		return false;
+	}
+
 
 	
 	private static function gen_asm_file_kid($c_sec,$c_obj,&$buf,&$buf_head,$enter_flag,&$reloc_info_2_rewrite_table,&$non_null_labels,$commit=''){
@@ -351,11 +372,11 @@ class GenerateFunc{
 				
 				if (isset ($current['bone'])){
 					if (1 === $bone_result_array[$current['bone']]['fat'][$current['c']]){ 
-						$buf .= fat_create(5,$enter_flag,$next,1);
+						$buf .= OrganFat::start(5,$enter_flag,$next,1);
 					}				
 				}elseif (isset ($current['poly'])){
 					if (1 === $poly_result_array[$current['poly']]['fat'][$current['c']]){ 
-						$buf .= fat_create(5,$enter_flag,$next,1);
+						$buf .= OrganFat::start(5,$enter_flag,$next,1);
 					}
 				}		
 				
@@ -392,11 +413,11 @@ class GenerateFunc{
 				
 				if (isset ($current['bone'])){
 					if (2 === $bone_result_array[$current['bone']]['fat'][$current['c']]){ 
-						$buf .= fat_create(5,$enter_flag,$next,2);
+						$buf .= OrganFat::start(5,$enter_flag,$next,2);
 					}
 				}elseif (isset ($current['poly'])){
 					if (2 === $poly_result_array[$current['poly']]['fat'][$current['c']]){ 
-						$buf .= fat_create(5,$enter_flag,$next,2);
+						$buf .= OrganFat::start(5,$enter_flag,$next,2);
 					}
 				}
 				
