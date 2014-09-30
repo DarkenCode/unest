@@ -16,9 +16,9 @@ require_once dirname(__FILE__)."/include/intel_instruction_array.php";
 
 require_once dirname(__FILE__)."/include/config.inc.php";
 
-require_once dirname(__FILE__)."/include/func.config.php";
+require dirname(__FILE__)."/library/config.func.php";
 
-require_once dirname(__FILE__)."/include/func.rel.jmp.php";
+require dirname(__FILE__)."/library/rel.jmp.func.php";
 
 require_once dirname(__FILE__)."/../nasm.inc.php";
 
@@ -34,6 +34,10 @@ $my_params = GeneralFunc::get_params($argv);
 
 $complete_finished = false; 
 register_shutdown_function('shutdown_except');
+
+
+
+ 
 
 
 if (isset($my_params['maxinput'])){
@@ -129,18 +133,19 @@ if (!GeneralFunc::LogHasErr()){
 
 
 if (!GeneralFunc::LogHasErr()){
-    $user_config = false;
-	$user_strength = false;
+
+
 	$preprocess_config = array();   
 	$protect_section   = array();   
 	$dynamic_insert    = array();   
 	$user_cnf = array();            
-	$preprocess_sec_name = array();   
 
-	if (false === get_usr_config(false,$usr_cfg_file,$user_config,$user_strength,$user_cnf,$preprocess_config,true,$preprocess_sec_name)){ 
+
+	if (false === CfgParser::get_usr_config(false,$usr_cfg_file,$user_cnf,$preprocess_config,true)){ 
 	    GeneralFunc::LogInsert($language['without_cfg_file']);        
 	}
-
+    
+	$preprocess_sec_name = CfgParser::GetPreprocess_sec();
 	if (!count($preprocess_sec_name)){
 	    GeneralFunc::LogInsert($language['without_act_sec']);        
 	}else{
@@ -160,10 +165,14 @@ if (!GeneralFunc::LogHasErr()){
 				GeneralFunc::LogInsert($language['ignore_ready_sec'].$a,3);
 			}
 		}
+        
+
+		
+
 	}
 
-	unset($user_config);
-	unset($user_strength);
+
+
 
 	if (isset($preprocess_config['protect_section'])){  
 		$protect_section = $preprocess_config['protect_section'];
@@ -374,11 +383,11 @@ if (!GeneralFunc::LogHasErr()){
 			$s_w_Dlinked_List_index = 0;
 			$prev = false;	
 			$c_solid_jmp_array = $solid_jmp_array[$sec];
-			$c_Asm_Result = $StandardAsmResultArray[$sec];
-			$lp_asm_result = count($c_Asm_Result) + 1;
+			OrgansOperator::init($sec);
+			$lp_asm_result = count($StandardAsmResultArray[$sec]) + 1;
 
 			$label_index = -1; 
-        	foreach ($c_Asm_Result as $z => $y){			
+        	foreach ($StandardAsmResultArray[$sec] as $z => $y){			
 			    $gret = ReadyFunc::generat_soul_writein_Dlinked_List($soul_writein_Dlinked_List,$z,$y,$s_w_Dlinked_List_index,$prev,$c_solid_jmp_array);
 			    unset ($c_solid_jmp_array[$z]);
 			}
@@ -447,9 +456,7 @@ if (!GeneralFunc::LogHasErr()){
         $all_valid_mem_opcode_len = array();
 		
 		
-		
-		require_once dirname(__FILE__)."/include/opcode_len_array.php";
-		require_once dirname(__FILE__)."/include/func.lencode.php";
+		require dirname(__FILE__)."/library/oplen.func.php";
 		
 		foreach ($soul_writein_Dlinked_List_Total as $number => $z){			
 			foreach ($soul_writein_Dlinked_List_Total[$number]['list'] as $a => $b){
@@ -459,7 +466,7 @@ if (!GeneralFunc::LogHasErr()){
 					if (isset($StandardAsmResultArray[$number][$b['c']]['p_type'])){
 						foreach ($StandardAsmResultArray[$number][$b['c']]['p_type'] as $c => $d){
 							if ('m' === $d){
-								$c_len = code_len($StandardAsmResultArray[$number][$b['c']],true);
+								$c_len = OpLen::code_len($StandardAsmResultArray[$number][$b['c']],true);
 								if ($c_len <= $b['len']){
 									$all_valid_mem_opcode_len[$StandardAsmResultArray[$number][$b['c']]['params'][$c]] = $b['len'] - $c_len;
 								}	
@@ -480,9 +487,9 @@ if (!GeneralFunc::LogHasErr()){
 		
 		foreach ($soul_writein_Dlinked_List_Total as $sec => $a){
 			$soul_writein_Dlinked_List = $soul_writein_Dlinked_List_Total[$sec]['list'];
-			$c_Asm_Result = $StandardAsmResultArray[$sec];
+			OrgansOperator::init($sec);
 			foreach ($soul_writein_Dlinked_List as $a => $b){
-				$tmp = get_addition_List_info($a,false,true);
+				$tmp = RelJmp::get_addition_List_info($a,false,true);
 				if (isset($tmp['rel_jmp'])){
 					$soul_writein_Dlinked_List_Total[$sec]['list'][$a]['rel_jmp'] = $tmp['rel_jmp'];
 				}
@@ -497,7 +504,7 @@ if (!GeneralFunc::LogHasErr()){
 		foreach ($soul_writein_Dlinked_List_Total as $sec => $a){
 			$soul_writein_Dlinked_List = $soul_writein_Dlinked_List_Total[$sec]['list'];
 			ConstructionDlinkedListOpt::ReadyInit();
-			if (!reset_rel_jmp_array()){ 
+			if (!RelJmp::reset_rel_jmp_array()){ 
 			    GeneralFunc::LogInsert($language['init_rel_jmp_fail']);  
 			}else{
 				$rel_jmp_pointer[$sec] = ConstructionDlinkedListOpt::ReadRelJmpPointer();
@@ -515,8 +522,7 @@ if (!GeneralFunc::LogHasErr()){
 		
 		
 		if (false === true){
-			require_once dirname(__FILE__)."/include/opcode_len_array.php";
-		    require_once dirname(__FILE__)."/include/func.lencode.php";
+		    require dirname(__FILE__)."/library/oplen.func.php";
             
 			foreach ($soul_writein_Dlinked_List_Total as $number => $b){
                 echo "<br>##########################  $number ######################";  			
@@ -525,7 +531,7 @@ if (!GeneralFunc::LogHasErr()){
 					
 					
 					}else{
-						$c_len = code_len($StandardAsmResultArray[$number][$b['c']]);
+						$c_len = OpLen::code_len($StandardAsmResultArray[$number][$b['c']]);
 						
 							echo "<br>";
 							var_dump($StandardAsmResultArray[$number][$b['c']]);
@@ -578,6 +584,10 @@ if (!GeneralFunc::LogHasErr()){
 
 			file_put_contents($rdy_file,serialize($rdy_output)); 
 		}
+
+
+	
+
 	}
 
     echo "<br><br><br><br>";
