@@ -1,56 +1,54 @@
 <?php
 
 define('UNEST.ORG', TRUE);
-ini_set('display_errors',0);
+//ini_set('display_errors',0);
 error_reporting(E_ERROR); 
-
-
+//////////////////////////////////////////
+//堆栈指针 寄存器
 $stack_pointer_reg = 'ESP';
 
+require dirname(__FILE__)."/library/generate.func.php";
+require dirname(__FILE__)."/library/general.func.php";
 
+require dirname(__FILE__)."/library/data.construction.php";
 
-
-
-
-require_once dirname(__FILE__)."/include/func.gen.php";
+require dirname(__FILE__)."/library/organ.func.php";
 
 require_once dirname(__FILE__)."/include/intel_instruction.php";
 require_once dirname(__FILE__)."/include/intel_instruction_array.php";
 require_once dirname(__FILE__)."/include/config.inc.php";
 
-require_once dirname(__FILE__)."/include/func.poly.php";
-require_once dirname(__FILE__)."/models/model_poly.php";
 
-require_once dirname(__FILE__)."/include/func.bone.php";
-require_once dirname(__FILE__)."/models/model_bone.php";
+require dirname(__FILE__)."/organs/poly.php";
+require dirname(__FILE__)."/models/model_poly.php";
+require dirname(__FILE__)."/organs/bone.php";
+require dirname(__FILE__)."/models/model_bone.php";
+require dirname(__FILE__)."/organs/meat.php";
+OrganMeat::init();
 
-require_once dirname(__FILE__)."/include/func.meat.php";
 
+require_once dirname(__FILE__)."/organs/fat.php";
 
-require_once dirname(__FILE__)."/include/func.fat.php";
-
-require_once dirname(__FILE__)."/include/func.config.php";
+require dirname(__FILE__)."/library/config.func.php";
 
 require_once dirname(__FILE__)."/../nasm.inc.php";
 
-require_once dirname(__FILE__)."/include/opcode_len_array.php";
+require dirname(__FILE__)."/library/oplen.func.php";
 
-require_once dirname(__FILE__)."/include/func.lencode.php";
+require dirname(__FILE__)."/library/rel.jmp.func.php";
 
-require_once dirname(__FILE__)."/include/func.rel.jmp.php";
+require dirname(__FILE__)."/library/debug.func.php";
 
-require_once dirname(__FILE__)."/include/func.debug.php";
+//////////////////////////////////////////
+//同时支持$_GET/$_POST/命令行输入 的参数
+$my_params = GeneralFunc::get_params($argv);
 
-
-
-$my_params = get_params($argv);
-
-
-
-$complete_finished = false; 
+//////////////////////////////////////////
+//捕获超时
+$complete_finished = false; //执行完成标志
 register_shutdown_function('shutdown_except');
-
-
+//////////////////////////////////////////
+//检查参数并构造路径等
 
 if (isset($my_params['maxstrength'])){
     $max_strength = $my_params['maxstrength'];
@@ -67,73 +65,77 @@ if (isset($my_params['maxoutput'])){
 if (isset($my_params['timelimit'])){
     set_time_limit($my_params['timelimit']);
 }else{
-    $output['error'][] = 'need param timelimit';
+    GeneralFunc::LogInsert('need param timelimit');
+}
+
+if ($my_params['echo']){
+    require_once dirname(__FILE__)."/library/debug_show.func.php";
 }
 
 if (isset($my_params['base'])){
     $base_addr = $my_params['base'];
 }else{
-    $output['error'][] = 'need param base';
+    GeneralFunc::LogInsert('need param base');
 }
 
 if (isset($my_params['log'])){
     $log_path = $base_addr.'/'.$my_params['log'];
 }else{
-    $output['error'][] = 'need param log';
+    GeneralFunc::LogInsert('need param log');
 }
 
 if (!isset($my_params['outputfile'])){
-    $output['error'][] = 'need param outputfile';
+    GeneralFunc::LogInsert('need param outputfile');
 }else{
     $outputfile = $base_addr.'/'.$my_params['outputfile'];	
 	$out_file   = $base_addr.'/'.$my_params['outputfile'].".out.asm";
 }
 
+//./poly.templates文件名默认 "$base_path".'/poly.templates' ，无需从指令输入
+//if (!isset($my_params['poly_templates'])){
+//    $output['warning'][] = 'not set poly templates filename';
+//}else{
 
+    //$poly_templates = $base_addr.'/poly.templates';//.$my_params['poly_templates'];
 
-
-
-	$poly_enable = false;                          
-    
-
-	
-	
-	
-	
-	
-			$poly_enable = true;
-	
-	
-	
-	
-	
-	
-
+	//if ($poly_templates = @file_get_contents($poly_templates)){
+	//    $poly_templates = unserialize($poly_templates);
+	//	if (count($poly_templates['poly_model_index'])){
+	//	    $poly_model_index = $poly_templates['poly_model_index'];
+	//		$poly_model_repo  = $poly_templates['poly_model_repo'];
+			
+	//	}else{
+	//	    $output['warning'][] = 'no any poly templates available';
+	//	}
+	//}else{
+	//	$output['warning'][] = 'poly templates file is empty or not exists';
+	//}	
+//}
 
 if (!isset($my_params['filename'])){
-    $output['error'][] = 'need param filename';
+    GeneralFunc::LogInsert('need param filename');
 }else{
     $filename = $my_params['filename'];
-	
-	
-	
+	//$bin_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".bin";
+	//$asm_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".asm";
+	//$rdy_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".rdy";     //obj 分析完成保存文件	
 	$obj_filename = $base_addr."/"."$filename";
 }
 
 if (!isset($my_params['cnf'])){
-    $output['error'][] = 'need param cnf';
+    GeneralFunc::LogInsert('need param cnf');
 }else{
-	$usr_cfg_file = $base_addr.'/'.$my_params['cnf']; 
+	$usr_cfg_file = $base_addr.'/'.$my_params['cnf']; //用户设置
 }
 
 if (!isset($my_params['rdy'])){
-    $output['error'][] = 'need param rdy';
+    GeneralFunc::LogInsert('need param rdy');
 }else{
 	$rdy_file = $base_addr.'/'.$my_params['rdy']; 
 }
 
 if (!is_file($obj_filename)){
-    $output['error'][] = 'file is not exist: '.$obj_filename;
+    GeneralFunc::LogInsert('file is not exist: '.$obj_filename);
 }
 
 if (isset($my_params['sd'])){
@@ -142,20 +144,20 @@ if (isset($my_params['sd'])){
     $setvalue_dynamic = false;	
 }
 
-if (empty($output['error'])){
+if (!GeneralFunc::LogHasErr()){
 
 	$cf = @file_get_contents($rdy_file);
 
 	if ($cf == false){
-		$output['error'][] = 'fail to open ready file';
+		GeneralFunc::LogInsert('fail to open ready file');
 	
 	}else{
 		
-		$cf = unserialize($cf);
+		$cf = unserialize($cf);//反序列化，并赋值  
 
 		$StandardAsmResultArray = $cf['StandardAsmResultArray'];
 		$garble_rel_info        = $cf['garble_rel_info'];
-		
+		//$solid_jmp_array        = $cf['solid_jmp_array'];
 		$UniqueHead             = $cf['UniqueHead'];
 		$CodeSectionArray       = $cf['CodeSectionArray'];
 		$soul_usable            = $cf['soul_usable'];
@@ -163,107 +165,111 @@ if (empty($output['error'])){
 		$all_valid_mem_opt_index= $cf['valid_mem_index'];
 		$sec_name               = $cf['sec_name'];
 		$soul_writein_Dlinked_List_Total = $cf['soul_writein_Dlinked_List_Total'];
-		$avmoi_ptr              = $cf['valid_mem_index_ptr']; 
+		$avmoi_ptr              = $cf['valid_mem_index_ptr']; //$all_valid_mem_opt_index 的当前编号
 		$avmoi_ptr ++;
 		$all_valid_mem_opcode_len = $cf['valid_mem_len'];
-		
-		
+		//$AffiliateUsableArray   = $cf['AffiliateUsableArray'];
+		//$soul_effect_reg        = $cf['soul_effect_reg']; //指令 影响 通用寄存器
 		$output_type            = $cf['output_type'];
-		$ready_preprocess_config= $cf['preprocess_config'];   
-		$dynamic_insert         = $cf['dynamic_insert'];      
+		$ready_preprocess_config= $cf['preprocess_config'];   //保护(不进行混淆)设置
+		$dynamic_insert         = $cf['dynamic_insert'];      //动态 插入
 
-		$preprocess_sec_name    = $cf['preprocess_sec_name']; 
+		$preprocess_sec_name    = $cf['preprocess_sec_name']; //预处理阶段收集的操作目标段 名
 
-        
-		$file_format_parser = dirname(__FILE__)."/mod.file.format/".$output_type."/out.inc.php";
+        //加载输出文件格式 解析器
+		$file_format_parser = dirname(__FILE__)."/IOFormatParser/".$output_type.".IO.php";
 		if (file_exists($file_format_parser)){
 			require $file_format_parser;
 		}else{
-			$output['error'][] = 'type without file format parser';
+			GeneralFunc::LogInsert('type without file format parser');
 		}
-        
+        //
 		$rel_jmp_range    = $cf['rel_jmp_range'];
 		$rel_jmp_pointer  = $cf['rel_jmp_pointer'];
 		$rel_jmp_switcher = $cf['rel_jmp_switcher'];
 
 		if ($engin_version !== $cf['engin_version']){
-			$output['error'][] = 'unmatch generat version: '."$engin_version".' !== '.$cf['engin_version'];
+			GeneralFunc::LogInsert('unmatch generat version: '."$engin_version".' !== '.$cf['engin_version']);
 		}
 
 		unset($cf);
 
-		if (('BIN' !== $output_type)&&('COFF' !== $output_type)){ 
-			$output['error'][] = $language['unkown_output_type']."$output_type";      
+		if (('BIN' !== $output_type)&&('COFF' !== $output_type)){ //未知的文件类型
+			GeneralFunc::LogInsert($language['unkown_output_type']."$output_type");      
 		}
 
-		if (!empty($dynamic_insert)){ 
-		    get_dynamic_insert_value($dynamic_insert);
+		if (!empty($dynamic_insert)){ //确定 POST or Get 传递进来的动态插入数据
+		    GeneralFunc::get_dynamic_insert_value($dynamic_insert);
 		}
 
-		$poly_strength          = array();   
-		$poly_result_array      = array();   
+		$poly_strength          = array();   //$cf['Poly_']; 多态强度 $poly_strength['sec'] = strength;
+		//$poly_result_array      = array();   // 记录 多态 结果
 
-		$pattern_reloc           = '/('."$UniqueHead".'RELINFO_[\d]{1,}_[\d]{1,}_[\d]{1,})/';  
-		$pattern_reloc_4_replace = '/('."$UniqueHead".'RELINFO_(\d+)_(\d+)_(\d+))/';  
+		$pattern_reloc           = '/('."$UniqueHead".'RELINFO_[\d]{1,}_[\d]{1,}_[\d]{1,})/';  //匹配 reloc 信息
+		$pattern_reloc_4_replace = '/('."$UniqueHead".'RELINFO_(\d+)_(\d+)_(\d+))/';  //匹配 reloc 信息
 
-		$mem_usage_record = array(); 
+		$mem_usage_record = array(); //内存使用记录
 		
 		$exetime_record = array();
-		$stime = 0;
-		exetime_record($stime); 
+		GeneralFunc::exetime_record(); //获取程序开始执行的时间
 
-		
-		
-		$user_config = false;
-		$user_strength = false;
-		$preprocess_config = array(); 
-		$user_cnf = array();          
-		$c_sec_name = array();
-		if (false === get_usr_config($sec_name,$usr_cfg_file,$user_config,$user_strength,$user_cnf,$preprocess_config,false,$c_sec_name)){ 
-			$output['error'][] = $language['without_cfg_file'];        
+		////////////////////////////////////////////////////////////////////////////////
+		//访问数据库 或 配置文件，
+
+
+		$preprocess_config = array(); // 预处理设置
+		$user_cnf = array();          // 用户配置(除预处理部分)
+		if (false === CfgParser::get_usr_config($sec_name,$usr_cfg_file,$user_cnf,$preprocess_config,false)){ //读取配置文件失败，不做任何处理？放弃
+			GeneralFunc::LogInsert($language['without_cfg_file']);        
 		}
-        		
+        
+		if ($my_params['echo']){
+			DebugShowFunc::my_shower_06($usr_cfg_file,$sec_name,$user_cnf);
+		}
+
+		//setvalue_dynamic 动态调整 原设置值
 		if (false !== $setvalue_dynamic){
-			affect_setvalue_dynamic($sec_name,$setvalue_dynamic,$user_cnf);
+			CfgParser::affect_setvalue_dynamic($sec_name,$setvalue_dynamic,$user_cnf);
 		}		
 			
 		
-		
-		
-		
-		
-		
-		
-		
-		
+		//echo "<br>[user configur]";
+		//foreach ($user_cnf as $a => $b){
+		//	echo "<br> $a :";
+		//	var_dump ($b);
+		//}
+		//exit;	
+		////////////////////////////////////////////////////////////////////////////////
+		//比较预处理设置项是否更改(相较ready阶段)
 		if ($ready_preprocess_config !== $preprocess_config){
-			$output['error'][] = $language['nomatch_preprocess_config'];		
+			GeneralFunc::LogInsert($language['nomatch_preprocess_config']);		
 		}
 		unset($ready_preprocess_config);
 		unset($preprocess_config);
-        
-        foreach ($c_sec_name as $a => $b){
-		    if (!isset($preprocess_sec_name[$a])){
-			    $output['error'][] = $language['new_sec_increase_rdy'].$a;
-			}
-		}
-		unset($c_sec_name);
 
-		
-		
-		
-		
-		
-		
-		
-		reconfigure_soul_usable ($sec_name,$user_config,$user_cnf,$soul_writein_Dlinked_List_Total,$soul_usable,$soul_forbid); 
+        //比较 段名是否有新增(相较ready阶段)
+		CfgParser::CmpPreprocess_sec($preprocess_sec_name);
 
-		
+
+		////////////////////////////////////////////////////////////////////////////////
+		//根据 用户 对 节表 定义，对 soul_usable 进行调整 (除soul_forbid 显式禁止的外)
+		//var_dump ($sec_name);	
+		//var_dump ($user_config);
+		//var_dump ($user_strength);
+		//var_dump ($user_config['unest_there']['normal']);
+		//exit;
+		CfgParser::reconfigure_soul_usable ($sec_name,$user_cnf,$soul_writein_Dlinked_List_Total,$soul_usable,$soul_forbid); //usable
+
+		if ($my_params['echo']){
+			DebugShowFunc::my_shower_01($CodeSectionArray,$StandardAsmResultArray,$exec_thread_list);
+		}		
+
+		//初始化 汇编输出文件 以及 动态写入 内容
         $init_asm_file = "[bits 32]\r\n";
         foreach ($dynamic_insert as $a => $b){			
 			if (isset($b['new'])){
 			    $insert_value = $b['new'];
-			}else{           
+			}else{           //无最新赋值则使用 原始值
 				$insert_value = $b['default'];
 			}
 			$init_asm_file .= '%define '.$UniqueHead.'dynamic_insert_'.$a.' '.$insert_value."\r\n";
@@ -271,29 +277,29 @@ if (empty($output['error'])){
 
 		file_put_contents($out_file,$init_asm_file);
 
-		$reloc_info_2_rewrite_table = array(); 
-											   
+		$reloc_info_2_rewrite_table = array(); //重定位信息 ,用来 重写 Obj文件中的重定位表 / 
+											   //次序与 汇编后 段头 dword 部分 相同
 
-		$non_null_labels = array();             
-												
+		$non_null_labels = array();             //应用跳转 标号 的 非 零 单位
+												//需要 编译完成后 再修改其值
 	}
 }
 
-if (empty($output['error'])){
+if (!GeneralFunc::LogHasErr()){
 
-	
+	//直接 按节表 逐个 处理，避免内存占用过多
     foreach ($CodeSectionArray as $sec => $body){
 
-        
+        //各节表 代码 原始长度
+		//echo "<br>code size: $sec: ".$body['SizeOfRawData'];
 		
-		
-		if (!empty($output['error'])){
+		if (GeneralFunc::LogHasErr()){
 		    break;
 		}
 
 		echo "<br>++++++++++++++++++++++++ $sec ++++++++++++++++++++++++++ <br>";
-        
-		
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+		//根据用户设置 stock 指针影响 修正 代码信息
 		$c_user_cnf_stack_pointer_define = false;
 		if (is_array($user_cnf[$sec]['stack_pointer_define'])){
 			foreach ($user_cnf[$sec]['stack_pointer_define'] as $a){
@@ -307,45 +313,42 @@ if (empty($output['error'])){
 			    $c_user_cnf_stack_pointer_define = substr ($c_user_cnf_stack_pointer_define,0,strlen($c_user_cnf_stack_pointer_define) - 1);
 			}
 		}
-		
-		if (false !== $c_user_cnf_stack_pointer_define){	
-			$tmp = reset_ipsp_list_by_stack_pointer_define($c_user_cnf_stack_pointer_define,$soul_writein_Dlinked_List_Total[$sec]['list'],$StandardAsmResultArray[$sec]);
-
+		if ($my_params['echo']){
+		    DebugShowFunc::my_shower_09($c_user_cnf_stack_pointer_define,$user_cnf[$sec]['stack_pointer_define']);
 		}
 
+		if (false !== $c_user_cnf_stack_pointer_define){	
+			$tmp = GenerateFunc::reset_ipsp_list_by_stack_pointer_define($c_user_cnf_stack_pointer_define,$soul_writein_Dlinked_List_Total[$sec]['list'],$StandardAsmResultArray[$sec]);
+			if ($my_params['echo']){
+			    DebugShowFunc::my_shower_08($c_user_cnf_stack_pointer_define,$tmp,$soul_writein_Dlinked_List_Total[$sec]['list'],$StandardAsmResultArray[$sec]);
+			}
+		}
+
+		////////////////////////////////////////////////////////////////////////////////////////////////
+		//顺序写入 双向链表 信息
+		ConstructionDlinkedListOpt::init($soul_writein_Dlinked_List_Total[$sec],$rel_jmp_range[$sec],$rel_jmp_pointer[$sec]);
 		
+		$org_List = $soul_writein_Dlinked_List_Total[$sec]['list']; //原始链表(未被多态/混淆的)
+		$org_length_soul_writein_Dlinked_List = count($org_List);   //原始链表 个数
+		//
+		//init Organs Arrays
+		OrgansOperator::init($sec);        
+        //
 		
-		unset ($soul_writein_Dlinked_List);
-		$soul_writein_Dlinked_List = $soul_writein_Dlinked_List_Total[$sec]['list'];
-		$s_w_Dlinked_List_index = $soul_writein_Dlinked_List_Total[$sec]['index'];
-		$soul_writein_Dlinked_List_start = 0; 
-		$org_List = $soul_writein_Dlinked_List;                                    
-		$org_length_soul_writein_Dlinked_List = count($soul_writein_Dlinked_List); 
-		
-        $c_Asm_Result  = $StandardAsmResultArray[$sec];       
-		$c_soul_usable = $soul_usable[$sec];	
-		
-        
-		$c_rel_jmp_range    = $rel_jmp_range[$sec];
-		$c_rel_jmp_pointer  = $rel_jmp_pointer[$sec];
 		$c_rel_jmp_switcher = $rel_jmp_switcher[$sec];
-		if (isset($user_cnf[$sec]['output_opcode_max'])){ 
+		if (isset($user_cnf[$sec]['output_opcode_max'])){ //设置了最大输出，则必须计算rel.jmp
             $c_rel_jmp_switcher = true;
-			$c_usable_oplen     =  $user_cnf[$sec]['output_opcode_max'] - $body['SizeOfRawData']; 
-			
-			
-			if ($c_usable_oplen < 0){         
-				$output['error'][]   = $language['section_name'].$body['name'].$language['section_number']."$sec ".$language['max_output_less_org'];
+            $tmp = ConstructionDlinkedListOpt::OplenInit($user_cnf[$sec]['output_opcode_max'] - $body['SizeOfRawData']); //用户设置的最大体积 - 当前段已有字节 = 可用
+			if (1 == $tmp){       //设置最大输出size 不足原代码，显示错误
+				GeneralFunc::LogInsert($language['section_name'].$body['name'].$language['section_number']."$sec ".$language['max_output_less_org']);
 				break;
-			}elseif ($c_usable_oplen === 0){  
-				$output['warning'][] = $language['section_name'].$body['name'].$language['section_number']."$sec ".$language['max_output_equal_org'];		
+			}elseif (2 == $tmp){  //设置最大输出size 等于 原代码，显示警告
+				GeneralFunc::LogInsert($language['section_name'].$body['name'].$language['section_number']."$sec ".$language['max_output_equal_org'],2);		
 				continue;
 			}
-		}else{
-		    $c_usable_oplen     = false;
 		}
-		
-		
+
+		//重定位信息	
 		if (isset($garble_rel_info[$sec])){
 			$c_rel_info = $garble_rel_info[$sec];
 		}else{
@@ -353,680 +356,264 @@ if (empty($output['error'])){
 		}
 
 
-		
-        
+		//测试soul_usable 项是否有问题,所有可写单位(寄存器,内存地址)和可读单位(内存地址)都写入操作代码，(注:flag目前不管)
+        //                             这样...当soul_usable有问题，我们就能通过运行结构文件发现了(除不会出错的那种问题...)
         
 
        if (true === $user_cnf[$sec]['gen4debug01']){
-		    $output['notice'][] = "gen4debug01 option was effected on section: $sec , name: ".$body['name']; 
-			debug_usable_array($soul_writein_Dlinked_List_start);
-			if ($c_rel_jmp_switcher){ 
-			    $tmp = reset_rel_jmp_array($check_rel_jmp_range,$check_rel_jmp_pointer,false,false,$soul_writein_Dlinked_List_start);
-				if (false === $tmp){  
-				    $output['error'][] = $language['debug_rel_jmp_out_range'];
+			GeneralFunc::LogInsert("gen4debug01 option was effected on section: $sec , name: ".$body['name'],3); //debug 应用,提示之
+			DebugFunc::debug_usable_array(ConstructionDlinkedListOpt::readListFirstUnit());
+			if ($c_rel_jmp_switcher){ //识别是否超过定长跳转范围，如果超过...返回error
+			    $tmp = RelJmp::reset_rel_jmp_array(false,false,ConstructionDlinkedListOpt::readListFirstUnit());
+			    if (false === $tmp){  // 失败,定长跳转超过max or 其它 ？
+				    GeneralFunc::LogInsert($language['debug_rel_jmp_out_range']);
 				}
 			}
-            
+            //var_dump ($soul_writein_Dlinked_List );
+			//exit;
 			
 		}else{
 		
 			if (isset($user_cnf[$sec]['meat_mutation'])){
 				$c_MeatMutation = $user_cnf[$sec]['meat_mutation'];
 			}else{
-				$c_MeatMutation = 10; 
-									  
+				$c_MeatMutation = 10; //血肉突变 默认值 mt_rand(1,$c_MeatMutation); if (==1){mutation...} 
+									  //         false -> not mutation
 			}
 
 			if (isset($user_cnf[$sec]['soul_focus'])){
 				$c_SoulFocus = $user_cnf[$sec]['soul_focus'];
 			}else{
-				$c_SoulFocus = 3;     
-								  
-								  
+				$c_SoulFocus = 3;     //灵魂焦点 select_obj时必须以原始代码为标记
+								  //   mt_rand(1,$c_SoulFocus); if (==1){true...} 
+								  //   if (0==$c_SoulFocus) {false}
 			}
-			
-			
+			//var_dump ($sec_name);
+			//echo "<br> $sec : <br> MeatMutation : $c_MeatMutation <br> SoulFocus : $c_SoulFocus";
 
+			////////////////////////////////////////////////////////////////////////////////////////////////
+			//生成 处理 poly,bone,meat执行顺序的数组
 			
-			
-			unset ($poly_result_array);
-			$poly_result_array = array();
-			unset ($poly_result_reverse_array);
-			$poly_result_reverse_array = array();
-			
-
-			
-			
-			unset ($bone_result_array);
-			$bone_result_array = array();      
-			
-			
-			
-			unset ($meat_result_array);
-			$meat_result_array = array();        
-			
-
-			
-			
-			
-			
-			
-			
-			$c_user_strength = $user_strength[$sec];
-			$default_max = 0;
-			if (isset($c_user_strength['default'])){
-				$default_max = intval(ceil(($org_length_soul_writein_Dlinked_List * $c_user_strength['default'])/100));
-			}
-			
-			if (!isset($c_user_strength['poly']['max'])){
-				$c_user_strength['poly']['max'] = $default_max;			
-			}
-			if (!isset($c_user_strength['poly']['min'])){
-				$c_user_strength['poly']['min'] = intval($c_user_strength['poly']['max']/2);
-			}elseif ($c_user_strength['poly']['max'] < $c_user_strength['poly']['min']){
-				$c_user_strength['poly']['max'] = $c_user_strength['poly']['min'];
-			} 
-			
-			if (!isset($c_user_strength['bone']['max'])){
-				$c_user_strength['bone']['max'] = $default_max;			
-			}
-			if (!isset($c_user_strength['bone']['min'])){
-				$c_user_strength['bone']['min'] = intval($c_user_strength['bone']['max']/2);
-			}elseif ($c_user_strength['bone']['max'] < $c_user_strength['bone']['min']){
-				$c_user_strength['bone']['max'] = $c_user_strength['bone']['min'];
-			}
-			
-			if (!isset($c_user_strength['meat']['max'])){
-				$c_user_strength['meat']['max'] = $default_max;			
-			}
-			if (!isset($c_user_strength['meat']['min'])){
-				$c_user_strength['meat']['min'] = intval($c_user_strength['meat']['max']/2);
-			}elseif ($c_user_strength['meat']['max'] < $c_user_strength['meat']['min']){
-				$c_user_strength['meat']['max'] = $c_user_strength['meat']['min'];
-			}
+			$organ_process = OrgansOperator::GenOrganProcess(CfgParser::GetStrength($sec),$org_length_soul_writein_Dlinked_List,$max_strength);
 			
 			if ($my_params['echo']){
-				var_dump ($c_user_strength);
+				var_dump ($organ_process);
 			}
 
-			$c_poly_strength = mt_rand($c_user_strength['poly']['min'],$c_user_strength['poly']['max']);
-			$c_bone_strength = mt_rand($c_user_strength['bone']['min'],$c_user_strength['bone']['max']);
-			$c_meat_strength = mt_rand($c_user_strength['meat']['min'],$c_user_strength['meat']['max']);
-			
-			
-			if (false !== $max_strength){
-				if ($c_poly_strength > $max_strength){
-					$output['notice'][] = $language['strength_too_bit'].'poly'.', ('.$c_poly_strength.' -> '.$max_strength.')';
-					$c_poly_strength = $max_strength;
-				}
-				if ($c_bone_strength > $max_strength){
-					$output['notice'][] = $language['strength_too_bit'].'bone'.', ('.$c_bone_strength.' -> '.$max_strength.')';
-					$c_bone_strength = $max_strength;
-				}
-				if ($c_meat_strength > $max_strength){
-					$output['notice'][] = $language['strength_too_bit'].'meat'.', ('.$c_meat_strength.' -> '.$max_strength.')';
-					$c_meat_strength = $max_strength;
-				}
+			if (0 == count($organ_process)){ //无任何处理
+				GeneralFunc::LogInsert($language['section_name'].$body['name'].$language['section_number']."$sec ".$language['section_without_garble'],2);			
 			}
 
-			echo '<br>poly strength: '.$c_poly_strength.' ; bone strength: '.$c_bone_strength.' ; meat strength: '.$c_meat_strength;
+			////////////////////////////////////////////////////////////////////////////////////////////////////////
+			foreach ($organ_process as $c_process){			
+				//###### 保存当前双向链表，当rel.jmp不合适时可回滚还原
+				ConstructionDlinkedListOpt::ready();
 
-
-			$garble_process = array();	
-
-			if (true === $poly_enable){
-				for ($i = $c_poly_strength;$i > 0;$i--){		    
-					$garble_process[] = 'poly';
-				}    
-			}
-
-			for ($i = $c_bone_strength;$i > 0;$i--){		    
-				$garble_process[] = 'bone';
-			}
-			
-			for ($i = $c_meat_strength;$i > 0;$i--){		    
-				$garble_process[] = 'meat';
-			}
-
-			if (0 == count($garble_process)){ 
-				$output['warning'][] = $language['section_name'].$body['name'].$language['section_number']."$sec ".$language['section_without_garble'];			
-			}
-			
-			shuffle($garble_process);
-
-			if ($my_params['echo']){
-				var_dump ($garble_process);
-			}
-			
-			foreach ($garble_process as $c_process){			
-				
-				unset ($rollback);
-				$rollback['List']            = $soul_writein_Dlinked_List;
-				$rollback['List_start']      = $soul_writein_Dlinked_List_start;
-				$rollback['List_index']      = $s_w_Dlinked_List_index;
-				$rollback['rel_jmp_range']   = $c_rel_jmp_range;
-				$rollback['rel_jmp_pointer'] = $c_rel_jmp_pointer;
-				$rollback['usable_oplen']    = $c_usable_oplen;
-				
+				//######
 				if ('poly' === $c_process){		
-					
-					
-					$pointer = array_rand($org_List); 
+					////////////////////////////////////////////////////////////////////////////////////////////////
+					//这里对目标代码进行多态
+					$pointer = array_rand($org_List); //注入点
 					$length  = mt_rand (1,$org_length_soul_writein_Dlinked_List); 
 
+					$pointer = ConstructionDlinkedListOpt::getRandDlinkedListUnit();
 
-					$pointer = array_rand($soul_writein_Dlinked_List);
-					
-
-					$objs = collect_obj($pointer,$length);
+					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);
 					
 					if (!empty($objs)){
-						poly_start($objs,$my_params['echo']); 
-						$exetime_record['poly'] += exetime_record($stime); 
-					}				
-				}elseif ('meat' === $c_process){	
-					
-					
-					$pointer = array_rand($org_List); 
+						OrganPoly::start($objs,$my_params['echo']); 
+						$exetime_record['poly'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间				
+					}										
+				}elseif ('meat' === $c_process){
+					////////////////////////////////////////////////////////////////////////////////////////////////
+					//这里对目标代码进行血肉(不含脂肪) 构建
+					$pointer = array_rand($org_List); //注入点
 					$length  = mt_rand (1,$org_length_soul_writein_Dlinked_List);                    
 
-					$pointer = array_rand($soul_writein_Dlinked_List);
-					
+					$pointer = ConstructionDlinkedListOpt::getRandDlinkedListUnit();
 
-					$objs = collect_obj($pointer,$length);
-					
-					
+					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);
+					//echo "<br>objs: ";
+					//	var_dump ($objs);
 					if (!empty($objs)){
-						meat_create($objs,$length * 2);  					
-						$exetime_record['meat'] += exetime_record($stime); 
+						OrganMeat::start($objs,$length * 2);  					
+						$exetime_record['meat'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
 					}
 				}elseif ('bone' === $c_process){
-					
-					
+					////////////////////////////////////////////////////////////////////////////////////////////////
+					//这里对目标代码进行骨架 构建	
 
-					$multi_bone_poly = false;         
+					$multi_bone_poly = false;         //多通道 骨架可能需要 多态 副本通道内单位
 					
-					$pointer = array_rand($org_List); 
+					$pointer = array_rand($org_List); //注入点
 					$length  = mt_rand (1,$org_length_soul_writein_Dlinked_List); 
 
-					$pointer = array_rand($soul_writein_Dlinked_List);
-					$length  = multi_level_rand(10,count($soul_writein_Dlinked_List));
-					
-				   
-				   
-				   
-					$objs = collect_obj($pointer,$length);				
+					$pointer = ConstructionDlinkedListOpt::getRandDlinkedListUnit();
+                    $length  = GenerateFunc::multi_level_rand(10,ConstructionDlinkedListOpt::numDlinkedList());
+					//$length = mt_rand (1,count($soul_writein_Dlinked_List));
+				   //$jj = count($soul_writein_Dlinked_List);
+				   //echo "<br> $jj -> length:";
+				   //var_dump ($length);    
+					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);				
 
 					if (!empty($objs)){
-						bone_create($objs,$output,$language);
+						OrganBone::start($objs,$language);
 
 						if ($multi_bone_poly){
 							if ($my_params['echo']){
 								echo '<br>多通道 骨架可能需要 多态 副本通道内单位:';
 								var_dump ($multi_bone_poly);
 								echo "<br><br><br>List view before poly:";
-								var_dump ($soul_writein_Dlinked_List);
+								//var_dump ($soul_writein_Dlinked_List);
 							}
 							foreach ($multi_bone_poly as $z){
-								poly_start($z,$my_params['echo']);
+								OrganPoly::start($z,$my_params['echo']);
 							}						
 						}
-						$exetime_record['bone'] += exetime_record($stime); 
+						$exetime_record['bone'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
 					}
 				}else{
-					$output['warning'][] = 'unkown act in process: '.$c_process.' at section: '.$sec.'.';
+					GeneralFunc::LogInsert('unkown act in process: '.$c_process.' at section: '.$sec.'.',2);
 					continue;
 				}
 				
-				
+				//######				
 				if ((!empty($objs)) && (true === $c_rel_jmp_switcher)){	
-					
+					//echo "<br>uuu ... ass hole";
 					$break_now = false;
-					$ret_rel_jmp_deal = reset_rel_jmp_array($c_rel_jmp_range,$c_rel_jmp_pointer,$objs,$rollback['List'],$soul_writein_Dlinked_List_start);
+					$ret_rel_jmp_deal = RelJmp::reset_rel_jmp_array($objs,ConstructionDlinkedListOpt::ReadRollingDlinkedList(),ConstructionDlinkedListOpt::readListFirstUnit());
 					if ($ret_rel_jmp_deal){
 						$rel_jmp_range_key = array();
-						foreach ($c_rel_jmp_range as $a => $b){
+						foreach (ConstructionDlinkedListOpt::readRelJmpRange() as $a => $b){
 							$rel_jmp_range_key[$a] = $a;
 						}
-						$ret_rel_jmp_deal = resize_rel_jmp_array($rel_jmp_range_key,$rollback['rel_jmp_range']); 
+						$ret_rel_jmp_deal = RelJmp::resize_rel_jmp_array($rel_jmp_range_key); //根据新range重新计算rel.jmp指令的opcode len
 					}
 
-					if ($c_usable_oplen < 0){
+					if (!ConstructionDlinkedListOpt::OplenIncrease(0)){
 						$ret_rel_jmp_deal = false;
 						$break_now = true;
-						echo "<br><font color=red>c_usable_oplen is done ... $c_usable_oplen...</font><br>";
+						echo '<br><font color=red>c_usable_oplen is done ... $c_usable_oplen...</font><br>';
 					}
 
 					if (false === $ret_rel_jmp_deal){
-					  
-					  
-					  echo "<br><font color=red>roll back...</font><br>";
-					  var_dump ($c_rel_jmp_range);				
-
-					  $soul_writein_Dlinked_List       = $rollback['List'];
-					  $soul_writein_Dlinked_List_start = $rollback['List_start'];
-					  $s_w_Dlinked_List_index          = $rollback['List_index'];
-					  $c_rel_jmp_range                 = $rollback['rel_jmp_range'];
-					  $c_rel_jmp_pointer               = $rollback['rel_jmp_pointer'];		
-					  $c_usable_oplen                  = $rollback['usable_oplen'];
+					  //备忘：roll back 应记录，避免多次踩线后回滚，浪费资源
+					  //
+					  echo "<br><font color=red>roll back...</font><br>";					  	
+                      ConstructionDlinkedListOpt::rollback();
 					}              
-					$exetime_record['adjust_rel_jmp'] += exetime_record($stime); 
+					$exetime_record['adjust_rel_jmp'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间				
 					
-					if (true === $break_now){ 
+					if (true === $break_now){ //oplen可用被突破,回滚后 放弃余下处理部分
 						break;
 					}			
 				}			
 			}
 
-			
-
-			
-
-			echo '<br><br> $c_usable_oplen with fat: ';
+			/*
+			//测试,累加总长度，比较
+			$c = $soul_writein_Dlinked_List_start;
+			$total_len = 0;
+			while (isset($soul_writein_Dlinked_List[$c])){
+				$total_len += $soul_writein_Dlinked_List[$c]['len'];
+				$c = $soul_writein_Dlinked_List[$c]['n'];
+			}
+			echo '<br> total_len $c_usable_oplen: ';
+			var_dump ($total_len);
 			var_dump ($c_usable_oplen);
+			*/
+			/*	
+			if ($my_params['echo']){			
+				//DebugShowFunc::my_shower_04($sec,$c_rel_jmp_range,$c_rel_jmp_pointer,$soul_writein_Dlinked_List_start,$soul_writein_Dlinked_List);
+				$check_rel_jmp_range   = array();
+				$check_rel_jmp_pointer = array();
+				reset_rel_jmp_array($check_rel_jmp_range,$check_rel_jmp_pointer,false,false,$soul_writein_Dlinked_List_start);
+				 
+				DebugShowFunc::my_shower_04($sec,$check_rel_jmp_range,$check_rel_jmp_pointer,$soul_writein_Dlinked_List_start,$soul_writein_Dlinked_List);
+
+
+				$a = $c_rel_jmp_range;
+				$b = $check_rel_jmp_range;
+				compare_multi_array($a,$b);
+				if ((!empty($a)) or (!empty($b))){
+					echo "<br><b><font color=red>rel_jmp range compare check diff:</font></b>";
+					var_dump ($a);
+					var_dump ($b);
+				}
+				
+				//echo "<br><b><font color=blue>start to check range (not include FAT)</font></b>:";
+				//OpLen::range_checker_4_debug();
+			}
+			*/
+			//echo '<br><br> $c_usable_oplen with fat: ';
+			//var_dump ($c_usable_oplen);
 		}
 
-	    
-		
-		if (false === gen_asm_file($out_file,$sec,$soul_writein_Dlinked_List,$c_Asm_Result,$reloc_info_2_rewrite_table,$non_null_labels)){
+	    //生成 用于编译的 源文件
+		//对混淆后代码进行处理，让编译后进行定位处理
+		if (false === GenerateFunc::gen_asm_file($out_file,$sec,$reloc_info_2_rewrite_table,$non_null_labels)){
 			if (0 === $max_output){
-				$output['error'][] = $language['too_big_output'];
+				GeneralFunc::LogInsert($language['too_big_output']);
 			}else{
-				$output['error'][] = $language['unkown_fatal_error_113'];
+				GeneralFunc::LogInsert($language['unkown_fatal_error_113']);
 			}		
 		}		
 
-		$exetime_record['gen_asm_file'] += exetime_record($stime); 
+		$exetime_record['gen_asm_file'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
 		
         $mem_usage_record[$sec] = number_format(memory_get_usage());
 
-		echo '<br><br> $c_usable_oplen with fat: ';
-		var_dump ($c_usable_oplen);
+		//echo '<br><br> $c_usable_oplen with fat: ';
+		//var_dump ($c_usable_oplen);
 	}		
 }
    
 
-	if (empty($output['error'])){			
-			
+	if (!GeneralFunc::LogHasErr()){		
+			//生成完成，开始编译
 			$report_filename = "$out_file".'.report';
-			$binary_filename = out_file_gen_name();
+			$binary_filename = IOFormatParser::out_file_gen_name();
 			
 			exec ("$nasm -f bin \"$out_file\" -o \"$binary_filename\" -Z \"$report_filename\" -Xvc");
 			
-			$exetime_record['nasm final obj'] = exetime_record($stime); 
+			$exetime_record['nasm final obj'] = GeneralFunc::exetime_record($stime); //获取程序执行的时间
 
 			if (file_exists($binary_filename)){
-				$newCodeSection = array(); 
-										   
-										   
-				out_file_format_gen();
+				$newCodeSection = array(); //$newCodeSection[节表编号][addr] 
+										   //                         [size]
+										   //                         [NumberOfRelocation]
+				IOFormatParser::out_file_format_gen();
 
-				
+				//最后比较 最终生成代码长度 是否超过 用户配置 @output_opcode_max
 				foreach ($user_cnf as $uc_sec => $v){
                     if (isset($user_cnf[$uc_sec]['output_opcode_max'])){
+						//echo "<br><font color=red><b>test $uc_sec : ".$user_cnf[$uc_sec]['output_opcode_max'].' !< '.$newCodeSection[$uc_sec]['size'].'</font></b>';
 					    if ($user_cnf[$uc_sec]['output_opcode_max'] < $newCodeSection[$uc_sec]['size']){
-							
-							$output['error'][] = $language['output_more_max'];
-							
+							GeneralFunc::LogInsert($language['output_more_max'].' (sec:'.$uc_sec.')');
+							//出错，删除result文件
 							unlink($binary_filename);
 						    break;
 						}
 					}
 				}
 				
-			}else{ 
-			    $output['error'][] = 'compile fail, generate stopped.';
+			}else{ //编译失败，参见Log文件 $report_filename
+			    GeneralFunc::LogInsert('compile fail, generate stopped.');
 			}
-			$exetime_record['others'] = exetime_record($stime); 
+			$exetime_record['others'] = GeneralFunc::exetime_record($stime); //获取程序执行的时间
 
 	}
 
-    
-	if (isset($my_params['log'])){ 
-	    file_put_contents($base_addr.'/'.$my_params['log'],json_encode($output));  
-	}
+    //输出$output[] 到日志文件,jason格式
+	//if (isset($my_params['log'])){ 
+	//    file_put_contents($base_addr.'/'.$my_params['log'],json_encode($output));  
+	//}
 
-    $complete_finished = true; 
+    $complete_finished = true; //执行完成标志
 exit;
 
 
 
-function exetime_record(&$stime){
-	
 
-	$etime=microtime(true);
-	$total=$etime-$stime;   
-	$str_total = var_export($total, TRUE);  
-	if(substr_count($str_total,"E")){  
-		$float_total = floatval(substr($str_total,5));  
-		$total = $float_total/100000;  				
-	}
-    $stime = microtime(true); 
-	return $total;
-	
-
-}
-
-
-
-
-
-
-function hex_write(&$buf,$lp,$contents,$bits = 4){
-	if (!$isHex){
-		$tmp = '%0'.($bits*2).'x';
-	    $y = sprintf($tmp,$contents);
-	}
-   	if ($bits == 4){
-		$buf[$lp + 3] = pack("H*",substr($y,0,2));
-		$buf[$lp + 2] = pack("H*",substr($y,2,2));
-		$buf[$lp + 1] = pack("H*",substr($y,4,2));
-		$buf[$lp]     = pack("H*",substr($y,6,2));
-	    return true;
-	}elseif ($bits == 2){
-		$buf[$lp + 1] = pack("H*",substr($y,0,2));
-		$buf[$lp]     = pack("H*",substr($y,2,2));	
-	}
-	return false;
-}
-
-
-
-function gen_asm_file($out_file,$a,$soul_writein_Dlinked_List,$c_Asm_Result,&$reloc_info_2_rewrite_table,&$non_null_labels){
-	global $UniqueHead;
-    global $soul_writein_Dlinked_List_start;
-    global $c_soul_usable;
-	
-	global $poly_result_array;
-	global $bone_result_array;
-	global $meat_result_array;
-
-	global $max_output; 
-
-	global $c_rel_jmp_range;
-
-	global $my_params;
-
-	$total_buf = '';	
-    $enter_flag = "\r\n";
-	    
-		if ($buf_head = out_file_buff_head($a)){
-		    $buf_head .= $enter_flag;
-		}
-
-		$buf = 'sec_'."$a".'_start:'."$enter_flag";
-		
-		
-		$next = $soul_writein_Dlinked_List_start;
-
-		while (true){
-			
-			
-			if ($max_output){
-			    $max_output --;
-			}
-
-			$current = $soul_writein_Dlinked_List[$next];
-            
-			
-			
-            if (isset ($current['bone'])){
-			    if (1 === $bone_result_array[$current['bone']]['fat'][$current['c']]){ 
-					$buf .= fat_create(5,$enter_flag,$next,1);
-				}				
-			}elseif (isset ($current['poly'])){
-				if (1 === $poly_result_array[$current['poly']]['fat'][$current['c']]){ 
-					$buf .= fat_create(5,$enter_flag,$next,1);
-				}
-			}		
-			
-            
-			
-			if ($my_params['echo']){
-				$show_len = '[List No:'.$next.'] [len:'.$current['len'].']';
-				if (isset($c_rel_jmp_range[$next])){
-					$show_len .= '[range:'.$c_rel_jmp_range[$next]['range'].']';
-				}
-			}else{
-			    $show_len = '';
-			}
-
-            if (isset($current['label'])){
-			    $buf .= $current['label']."$enter_flag";
-			}elseif (isset ($current['poly'])){	
-				$poly_comment = ';@@@ poly';
-				if (true === $current['soul']){
-					$poly_comment = ';@@@ poly [from org]';
-				}
-				gen_asm_file_kid($a,$poly_result_array[$current['poly']]['code'][$current['c']],$buf,$buf_head,$enter_flag,$reloc_info_2_rewrite_table,$non_null_labels,$poly_comment.$show_len);				
-            }elseif (isset ($current['bone'])){							
-				gen_asm_file_kid($a,$bone_result_array[$current['bone']]['code'][$current['c']],$buf,$buf_head,$enter_flag,$reloc_info_2_rewrite_table,$non_null_labels,';&&& bone'.$show_len);
-			}elseif (isset ($current['meat'])){							
-				gen_asm_file_kid($a,$meat_result_array[$current['meat']]['code'][$current['c']],$buf,$buf_head,$enter_flag,$reloc_info_2_rewrite_table,$non_null_labels,' ;*** meat'.$show_len);
-			}else{
-                gen_asm_file_kid($a,$c_Asm_Result[$current['c']],$buf,$buf_head,$enter_flag,$reloc_info_2_rewrite_table,$non_null_labels,';### org opt'.$show_len);
-			}
-            
-			
-			
-            if (isset ($current['bone'])){
-			    if (2 === $bone_result_array[$current['bone']]['fat'][$current['c']]){ 
-				    $buf .= fat_create(5,$enter_flag,$next,2);
-				}
-			}elseif (isset ($current['poly'])){
-				if (2 === $poly_result_array[$current['poly']]['fat'][$current['c']]){ 
-					$buf .= fat_create(5,$enter_flag,$next,2);
-				}
-			}
-            
-			if (isset($soul_writein_Dlinked_List[$next]['n'])){
-				$next =  $soul_writein_Dlinked_List[$next]['n'];
-				
-				
-
-			}else{
-				break;
-			}
-		}	
-
-		$buf .= 'sec_'."$a".'_end:'."$enter_flag";
-           
-		$total_buf .= "$enter_flag".";********** section $a **********"."$enter_flag";
-		$total_buf .= "$buf_head";
-		$total_buf .= "$buf";
-	
-	if (0 === $max_output){	
-	    return false;
-	}
-	
-
-    file_put_contents ($out_file,$total_buf,FILE_APPEND);
-    return true;
-
-}
-
-function gen_asm_file_kid($c_sec,$c_obj,&$buf,&$buf_head,$enter_flag,&$reloc_info_2_rewrite_table,&$non_null_labels,$commit=''){
-    global $pattern_reloc;
-	global $c_rel_info;
-	global $sec;
-    global $UniqueHead;
-
-	$asm = '';
-	
-	
-	
-	
-	$rel_param_result = false;
-
-	if (is_array($c_obj['prefix'])){
-		foreach ($c_obj['prefix'] as $z => $y){
-			$asm .= $y.' ';
-		}
-	}
-	$asm .= $c_obj['operation'].' ';
-								
-	$last_params_type = 0;      
-	$last_params_cont = "";     
-	$mem_bits = 0;              
-	if (is_array($c_obj['params'])){
-		foreach ($c_obj['params'] as $z => $y){
-			if ($z){
-				$asm .= ',';
-			}
-			
-			if (isset($c_obj['rel'][$z])){ 
-				$rel_param_result[$z]['org'] = $y;				             
-			}
-			
-			if ($c_obj['p_type'][$z] == 'm'){        
-				$mem_bits = $c_obj['p_bits'][$z];
-				
-				if ('LEA' !== $c_obj['operation']){  
-					if (8 == $c_obj['p_bits'][$z]){
-						$asm .= 'byte ';
-					}elseif (16 == $c_obj['p_bits'][$z]){
-						$asm .= 'word ';
-					}else{
-						$asm .= 'dword ';
-					}
-				}
-			}			
-			$asm .= $y;
-
-			$last_params_cont = $y;                  
-			$last_params_type = $c_obj['p_type'][$z];
-			$last_params_bits = $c_obj['p_bits'][$z];
-		}
-	}	
-
-	if (false !== $rel_param_result){
-		
-		if (count($rel_param_result) > 1){
-		    var_dump ($rel_param_result);
-		}
-		$label_buf = '';
-        foreach ($rel_param_result as $z => $y){
-            $c_rel_index = $c_obj['rel'][$z]['i'];
-			$c_rel_copy  = $c_obj['rel'][$z]['c'];
-			$c_rel_name  = $UniqueHead.'RELINFO_'.$sec.'_'.$c_rel_index.'_'.$c_rel_copy; 
-			
-			
-			
-			
-			
-			if (($c_rel_info[$c_rel_index][$c_rel_copy]['isMem'])&&($last_params_type === 'i')){
-				$asm  = substr($asm,0,strlen($asm) - strlen($last_params_cont));
-				
-				$last_params_modified_bits = $mem_bits;
-				if ((8 == $last_params_bits) or (16 == $last_params_bits) or (32 == $last_params_bits)){ 
-				    if ($last_params_bits < $mem_bits){
-					    $last_params_modified_bits = $last_params_bits;
-					}
-					
-				}
-				if (8 == $last_params_modified_bits){
-					$asm .= 'byte strict '.$last_params_cont;
-					$buf_head .= 'dd '.$c_rel_name.'_label - sec_'."$c_sec".'_start - 4 - 1'."$enter_flag";                
-				}elseif (16 == $last_params_modified_bits){
-					$asm .= 'word strict '.$last_params_cont;
-					$buf_head .= 'dd '.$c_rel_name.'_label - sec_'."$c_sec".'_start - 4 - 2'."$enter_flag";                
-				}else{
-					$asm .= 'dword strict '.$last_params_cont;
-					$buf_head .= 'dd '.$c_rel_name.'_label - sec_'."$c_sec".'_start - 4 - 4'."$enter_flag";                
-				}
-				
-				if ($mem_bits != $last_params_modified_bits){
-					echo "<br> BUG?? : $mem_bits , $last_params_bits , $last_params_modified_bits , $last_params_type";
-					echo "<br> <font color=red> $asm </font>";
-				}
-				
-			}else{
-				$buf_head .= 'dd '.$c_rel_name.'_label - sec_'."$c_sec".'_start - 4'."$enter_flag";                
-			}
-									                                                   
-			$buf_head .= 'dd '.$c_rel_info[$c_rel_index][$c_rel_copy]['SymbolTableIndex']."$enter_flag";  
-			$buf_head .= 'dw '.$c_rel_info[$c_rel_index][$c_rel_copy]['Type']."$enter_flag";
-
-			$reloc_info_2_rewrite_table[$c_sec][] = $c_rel_name;
-			if ($c_rel_info[$c_rel_index][$c_rel_copy]['isLabel']){ 
-				str_replace($c_rel_name,' strict '.$c_rel_name.'_label',$asm);
-				$asm = str_replace($c_rel_name,' strict '.$c_rel_name.'_label',$asm);
-				if ($c_rel_info[$c_rel_index][$c_rel_copy]['value'] !== '0'){
-					$non_null_labels[$sec][$c_rel_index][$c_rel_copy] = $c_rel_info[$c_rel_index][$c_rel_copy]['value'];
-				}
-			}else{                                              
-				if ($c_rel_info[$c_rel_index][$c_rel_copy]['isMem']){
-					$asm = str_replace('[','[DWORD ',$asm);                     
-					$asm = str_replace($c_rel_name,'0x'.$c_rel_info[$c_rel_index][$c_rel_copy]['value'],$asm);
-				}else{                                          
-																
-																
-					$asm = str_replace($y['org'],' strict dword '.$y['org'],$asm);
-					$asm = str_replace($c_rel_name,'0x'.$c_rel_info[$c_rel_index][$c_rel_copy]['value'],$asm);
-				}
-			}
-			$label_buf .= "$enter_flag".$c_rel_name.'_label'.' : ';
-		}
-		$buf .= $asm;
-		$buf .= $label_buf;
-	}else{			    
-		$buf .= $asm;
-	}			
-	$buf .= "$commit"."$enter_flag";
-
-    return;
-}
-
-
-
-function get_hex_2_dec($buf,$lpBuf,$size,$dec = false){
-    $tmp = '';
-	$lpBuf += $size;
-	$lpBuf --;
-	for (;$size;$size--){
-	    $tmp .= substr($buf,$lpBuf,1);
-		$lpBuf --;
-	}
-	$tmp = bin2hex($tmp);
-	if ($dec){
-		$tmp = hexdec($tmp);
-	}
-    return $tmp;
-}
-
-
-
-function get_dynamic_insert_value (&$dynamic_insert){
-	global $output;
-	global $language;
-    global $my_params;
-
-    $new_dynamic_insert = $my_params['di'];
-	if (isset($new_dynamic_insert)){
-	    if (is_array($new_dynamic_insert)){
-		    foreach ($new_dynamic_insert as $key => $value){
-			    if (isset($dynamic_insert[$key])){					
-					$tmp = get_bit_from_inter($value);
-                    if ($tmp){
-						if ($tmp <= $dynamic_insert[$key]['bits']){
-							$dynamic_insert[$key]['new'] = $value;
-						}else{
-						    $output['error'][] = $language['toobig_dynamci_insert_value'].'di['.$key.'] : '.$tmp.' > '.$dynamic_insert[$key]['bits'];	
-						}
-					}else{
-					    $output['error'][] = $language['illegal_dynamci_insert_value'].$value;	
-					}
-				}else{
-				    $output['error'][] = $language['none_dynamic_insert_key'].$key;
-				}
-			}
-		}else{
-		    $output['error'][] = $language['dynamic_insert_not_array'];
-		}
-	}
-	
-	
-	
-}
 
 ?>
