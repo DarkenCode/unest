@@ -97,7 +97,7 @@ class DebugFunc{
 
 				}
 
-				ConstructionDlinkedListOpt::setDlinkedList($prev,ConstructionDlinkedListOpt::getDlinkedListIndex(),'n');
+				ConstructionDlinkedListOpt::setDlinkedList($prev,ConstructionDlinkedListOpt::getDlinkedListIndex(),'p');
 
 				ConstructionDlinkedListOpt::setDlinkedList($c_meat_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'meat');
 
