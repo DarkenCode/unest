@@ -334,7 +334,7 @@ class GenerateFunc{
 	public static function gen_asm_file($out_file,$a,&$reloc_info_2_rewrite_table,&$non_null_labels){
 		global $UniqueHead;
 
-		global $c_soul_usable;
+		//global $c_soul_usable;
 		
 		global $max_output; //输出 最大 行数
 

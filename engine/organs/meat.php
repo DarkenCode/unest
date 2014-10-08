@@ -392,13 +392,21 @@ class OrganMeat{
 				//对多态结果进行stack可用状态设置(根据usable)
 				GeneralFunc::soul_stack_set($result['code'],$result['usable']);
 
-				OrgansOperator::Set(MEAT,self::$_index,$result);
-				self::$_index ++;
+				self::append($result);
+
 				$ret ++;
 			}
 		} 
 		return $ret;
 
+	}
+
+	//插入meat_result
+	public static function append($result){
+	    OrgansOperator::Set(MEAT,self::$_index,$result);
+		$ret = self::$_index;
+		self::$_index ++;
+		return $ret;
 	}
 
 
@@ -467,7 +475,7 @@ class OrganMeat{
 		}else{
 
 			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'n')){
-				$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($soul_writein_Dlinked_List[$List_id]['n'],'n');
+				$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList(ConstructionDlinkedListOpt::getDlinkedList($List_id,'n'),'n');
 			}else{
 				$next_inst = 'empty';
 			}

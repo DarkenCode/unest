@@ -665,9 +665,9 @@ class OrganBone{
 				}
 			}
 		}
-
-	
-
+		if ($my_params['echo']){
+			DebugShowFunc::my_shower_05 ($c_bone_model,$bone_obj,$stack_unusable,$ret,$conflict_position);
+		}
 		return $ret;
 	}
 
