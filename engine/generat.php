@@ -7,6 +7,13 @@ error_reporting(E_ERROR);
 //堆栈指针 寄存器
 $stack_pointer_reg = 'ESP';
 
+//////////////////////////////////////////
+//organs 
+define ('MEAT',1);
+define ('BONE',2);
+define ('POLY',3);
+define ('SOUL',4);
+
 require dirname(__FILE__)."/library/generate.func.php";
 require dirname(__FILE__)."/library/general.func.php";
 
@@ -20,14 +27,15 @@ require_once dirname(__FILE__)."/include/config.inc.php";
 
 
 require dirname(__FILE__)."/organs/poly.php";
-require dirname(__FILE__)."/models/model_poly.php";
+OrganPoly::init();
+
 require dirname(__FILE__)."/organs/bone.php";
-require dirname(__FILE__)."/models/model_bone.php";
+OrganBone::init();
+
 require dirname(__FILE__)."/organs/meat.php";
 OrganMeat::init();
 
-
-require_once dirname(__FILE__)."/organs/fat.php";
+require dirname(__FILE__)."/organs/fat.php";
 
 require dirname(__FILE__)."/library/config.func.php";
 

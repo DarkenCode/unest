@@ -16,7 +16,7 @@ class OrganMeat{
     public static function init(){
 		//////////////////
 		//初始化 取得 meat repo库
-		$cf = @file_get_contents(dirname(__FILE__).'/../models/model_meat.dat');
+		$cf = @file_get_contents(dirname(__FILE__).'/../templates/meat.tpl.dat');
 		if ($cf == false){
 			GeneralFunc::LogInsert('fail to open meat repo',2);
 		}else{

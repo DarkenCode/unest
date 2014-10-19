@@ -5,10 +5,19 @@ if(!defined('UNEST.ORG')) {
 }
 
 class OrganBone{
-    private static $_index = 1; //bone 唯一编号,全目标 唯一
+
+	private static $_index = 1; //bone 唯一编号,全目标 唯一
+
+    private static $_bone_model_repo;
+	private static $_bone_model_index;
+	private static $_bone_model_index_multi;
 
     public static function init(){
-	    self::$_index = 1;
+		require dirname(__FILE__)."/../templates/bone.tpl.php";
+	    //self::$_index = 1;
+		self::$_bone_model_index       = $bone_model_index;
+		self::$_bone_model_index_multi = $bone_model_index_multi;
+		self::$_bone_model_repo        = $bone_model_repo;
 	}
 
 	//清除指定 usable中 影响 ipsp的单位 (根据 双向链表 索引 开始 -> 结束 )
@@ -671,17 +680,14 @@ class OrganBone{
 		return $ret;
 	}
 
-	public static function start($bone_obj,$language){		 
+	public static function start($bone_obj,$language){	
 
-		global $bone_model_index;
-		global $bone_model_index_multi;
-		global $bone_model_repo;
 		global $MAX_INCLUDE_MULTI_PROCESS_BONE;
 
 		if (count($bone_obj) <= $MAX_INCLUDE_MULTI_PROCESS_BONE){  //可用多通道骨架 最大
-			$c_bone_model_index = $bone_model_index_multi;
+			$c_bone_model_index = self::$_bone_model_index_multi;
 		}else{
-			$c_bone_model_index = $bone_model_index;
+			$c_bone_model_index = self::$_bone_model_index;
 		}
 
 		$last_ipsp = false;
@@ -705,7 +711,7 @@ class OrganBone{
 
 			$ready_for_poly_start = ConstructionDlinkedListOpt::getDlinkedListIndex();
 
-			if (!self::collect_usable_bone_model ($bone_obj,$last_ipsp,$bone_model_repo[$z])){ //骨架出错,代表 骨架模块 有问题
+			if (!self::collect_usable_bone_model ($bone_obj,$last_ipsp,self::$_bone_model_repo[$z])){ //骨架出错,代表 骨架模块 有问题
 				GeneralFunc::LogInsert($language['fail_bone_array'].$z,2);				
 			}
 		}else{ //骨架数组为空...
