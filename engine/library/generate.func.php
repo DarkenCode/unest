@@ -389,7 +389,7 @@ class GenerateFunc{
 					if (isset ($current['poly'])){	
 						$comment = ' ;@@@ poly';
 						if (true === $current['soul']){
-							$comment = ' ;@@@ poly [from org]';
+							$comment = ' ;@@@ poly [from soul]';
 						}						
 					}elseif (isset ($current['bone'])){							
 						$comment = ' ;&&& bone';
@@ -409,6 +409,7 @@ class GenerateFunc{
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				if (ConstructionDlinkedListOpt::issetDlinkedListUnit($next,'n')){	
 					$next =  ConstructionDlinkedListOpt::getDlinkedList($next,'n');
+
 					//echo " $next -> ";
 
 				}else{

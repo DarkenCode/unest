@@ -26,6 +26,10 @@ require_once dirname(__FILE__)."/include/intel_instruction_array.php";
 require_once dirname(__FILE__)."/include/config.inc.php";
 
 
+
+require dirname(__FILE__)."/library/character.func.php";
+Character::init();
+
 require dirname(__FILE__)."/organs/poly.php";
 OrganPoly::init();
 
@@ -119,7 +123,6 @@ if (!isset($my_params['outputfile'])){
 	//	$output['warning'][] = 'poly templates file is empty or not exists';
 	//}	
 //}
-
 if (!isset($my_params['filename'])){
     GeneralFunc::LogInsert('need param filename');
 }else{
@@ -330,7 +333,7 @@ if (!GeneralFunc::LogHasErr()){
 			if ($my_params['echo']){
 			    DebugShowFunc::my_shower_08($c_user_cnf_stack_pointer_define,$tmp,$soul_writein_Dlinked_List_Total[$sec]['list'],$StandardAsmResultArray[$sec]);
 			}
-		}
+		}       
 
 		////////////////////////////////////////////////////////////////////////////////////////////////
 		//顺序写入 双向链表 信息
@@ -342,6 +345,9 @@ if (!GeneralFunc::LogHasErr()){
 		//init Organs Arrays
 		OrgansOperator::init($sec);        
         //
+		////////////////////////////////////////////////////////////////////////////////////////////////
+		//根据 双向链表 信息 初始化 character.Rate
+		Character::initDList($soul_writein_Dlinked_List_Total[$sec]['list']);
 		
 		$c_rel_jmp_switcher = $rel_jmp_switcher[$sec];
 		if (isset($user_cnf[$sec]['output_opcode_max'])){ //设置了最大输出，则必须计算rel.jmp
@@ -411,28 +417,25 @@ if (!GeneralFunc::LogHasErr()){
 			if (0 == count($organ_process)){ //无任何处理
 				GeneralFunc::LogInsert($language['section_name'].$body['name'].$language['section_number']."$sec ".$language['section_without_garble'],2);			
 			}
+// Character::show();
 
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
 			foreach ($organ_process as $c_process){			
 				//###### 保存当前双向链表，当rel.jmp不合适时可回滚还原
 				ConstructionDlinkedListOpt::ready();
-
+				Character::ready();
+               
 				//######
-				if ('poly' === $c_process){		
+				if (POLY === $c_process){		
 					////////////////////////////////////////////////////////////////////////////////////////////////
 					//这里对目标代码进行多态
-					$pointer = array_rand($org_List); //注入点
-					$length  = mt_rand (1,$org_length_soul_writein_Dlinked_List); 
-
-					$pointer = ConstructionDlinkedListOpt::getRandDlinkedListUnit();
-
-					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);
-					
-					if (!empty($objs)){
-						OrganPoly::start($objs,$my_params['echo']); 
-						$exetime_record['poly'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间				
-					}										
-				}elseif ('meat' === $c_process){
+					$obj = Character::random(POLY);
+                    
+					if (false !== $obj){
+					    OrganPoly::start($obj,$my_params['echo']); 
+						$exetime_record['poly'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
+					}									
+				}elseif (MEAT === $c_process){
 					////////////////////////////////////////////////////////////////////////////////////////////////
 					//这里对目标代码进行血肉(不含脂肪) 构建
 					$pointer = array_rand($org_List); //注入点
@@ -447,37 +450,23 @@ if (!GeneralFunc::LogHasErr()){
 						OrganMeat::start($objs,$length * 2);  					
 						$exetime_record['meat'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
 					}
-				}elseif ('bone' === $c_process){
+				}elseif (BONE === $c_process){
 					////////////////////////////////////////////////////////////////////////////////////////////////
 					//这里对目标代码进行骨架 构建	
 
-					$multi_bone_poly = false;         //多通道 骨架可能需要 多态 副本通道内单位
+					//Character::show();
+					$a = Character::random(BONE);
+					$b = Character::random(BONE);
+
+					//echo "<br><b><font color=red>".$a.' <-> '.$b."</font></b><br>";
 					
-					$pointer = array_rand($org_List); //注入点
-					$length  = mt_rand (1,$org_length_soul_writein_Dlinked_List); 
+					$objs = ConstructionDlinkedListOpt::getAmongObjs($a,$b);
 
-					$pointer = ConstructionDlinkedListOpt::getRandDlinkedListUnit();
-                    $length  = GenerateFunc::multi_level_rand(10,ConstructionDlinkedListOpt::numDlinkedList());
-					//$length = mt_rand (1,count($soul_writein_Dlinked_List));
-				   //$jj = count($soul_writein_Dlinked_List);
-				   //echo "<br> $jj -> length:";
-				   //var_dump ($length);    
-					$objs = ConstructionDlinkedListOpt::collect_obj_from_DlinkedList($pointer,$length);				
+					//var_dump ($objs);                  
+		
 
-					if (!empty($objs)){
-						OrganBone::start($objs,$language);
-
-						if ($multi_bone_poly){
-							if ($my_params['echo']){
-								echo '<br>多通道 骨架可能需要 多态 副本通道内单位:';
-								var_dump ($multi_bone_poly);
-								echo "<br><br><br>List view before poly:";
-								//var_dump ($soul_writein_Dlinked_List);
-							}
-							foreach ($multi_bone_poly as $z){
-								OrganPoly::start($z,$my_params['echo']);
-							}						
-						}
+					if (false !== $objs){
+						OrganBone::start($objs,$language);						
 						$exetime_record['bone'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
 					}
 				}else{
@@ -509,6 +498,7 @@ if (!GeneralFunc::LogHasErr()){
 					  //
 					  echo "<br><font color=red>roll back...</font><br>";					  	
                       ConstructionDlinkedListOpt::rollback();
+					  Character::rollback();
 					}              
 					$exetime_record['adjust_rel_jmp'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间				
 					

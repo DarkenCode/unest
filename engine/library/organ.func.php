@@ -1,12 +1,6 @@
 <?php
 
 //维护，操作 Organs 产生的数据结构
-
-define ('MEAT',1);
-define ('BONE',2);
-define ('POLY',3);
-define ('SOUL',4);
-
 class OrgansOperator{
     private static $_poly_result;
 	private static $_poly_result_reverse;
@@ -234,15 +228,15 @@ class OrgansOperator{
 
 			
 			for ($i = $c_poly_strength;$i > 0;$i--){		    
-				$process[] = 'poly';
+				$process[] = POLY;
 			}    
 
 			for ($i = $c_bone_strength;$i > 0;$i--){		    
-				$process[] = 'bone';
+				$process[] = BONE;
 			}
 			
 			for ($i = $c_meat_strength;$i > 0;$i--){		    
-				$process[] = 'meat';
+				$process[] = MEAT;
 			}
 			
 			shuffle($process);

@@ -107,6 +107,5 @@ $language = array(
 );
 
 $ARG_MAX = 5000;                     //当前系统命令行 最长 字符 长度 见readme  2013/04/19
-$MAX_INCLUDE_MULTI_PROCESS_BONE = 50; //多通道骨架 最多能容纳的灵魂数量
 
 ?>

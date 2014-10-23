@@ -556,7 +556,8 @@ class OrganPoly{
 		return $ret;
 	}
 
-    //根据多态目标 返回 可用多态模板数组,无可用返回false
+    //根据多态目标 返回 可用多态模板数组,无可用返回false 
+	//此处不考虑usable限制，仅根据opt,para 获取所有可用tpl
     public static function get_usable_models($obj){
         global $pattern_reloc;
 		global $c_rel_info;
@@ -608,13 +609,10 @@ class OrganPoly{
 
 	////////////////////////////////////////////
 	//对指定指令进行多态处理
-	private static function collect_usable_poly_model($obj,$c_usable,$c_poly_strength,&$ret){
+	private static function collect_usable_poly_model($obj,$c_usable,&$ret){
 		
 		$usable_poly_model = self::get_usable_models($obj);
         if ($usable_poly_model){
-		    if (mt_rand(0,$c_poly_strength) == 0){ //强度识别
-				return false;                           
-			}
 			$rand_result = array();
 			if (is_array($usable_poly_model)){
 				self::check_poly_usable ($c_usable,$obj,$usable_poly_model,$rand_result);
@@ -653,7 +651,7 @@ class OrganPoly{
 		$ret = ConstructionDlinkedListOpt::getDlinkedListIndex();
 
 
-		ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$org,'302'); //302 moved 标记
+		ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$org,'302'); //302 moved 标记  	    
 
 		$c_prev = false;
 
@@ -672,8 +670,6 @@ class OrganPoly{
 			if (false === $c_prev){
 				ConstructionDlinkedListOpt::setListFirstUnit();
 			}else{
-
-				
 				ConstructionDlinkedListOpt::insertDlinkedListByIndex($c_prev);			
 			}
 	 
@@ -681,14 +677,11 @@ class OrganPoly{
 	 
 			ConstructionDlinkedListOpt::setDlinkedList($poly_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'poly');
 			if ($from_soul){ //poly 源自 原始代码
-
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'soul');
 			}
 			if (isset($b['label'])){
-
 				ConstructionDlinkedListOpt::setDlinkedList($b['label'],ConstructionDlinkedListOpt::getDlinkedListIndex(),'label');
 			}elseif (GeneralFunc::is_effect_ipsp($b,1,$c_user_cnf_stack_pointer_define)){
-
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');
 			}
 
@@ -710,49 +703,53 @@ class OrganPoly{
 	//多态 处理
 	//
 
-	public static function start ($objs,$echo = false){ 
+	public static function start ($obj,$echo = false){ 
 
-		foreach ($objs as $a){
-			$b = ConstructionDlinkedListOpt::getDlinkedList($a);
 
-			$from_soul = false;		
-			
-			if (isset($b['label'])){          //标号 不多态
-				continue;
-			}else{
-				if (isset($b['poly'])){      //多态
-					if (true === $b['soul']){
-						$from_soul = true;	
-					}
-			    }elseif (isset($b['bone'])){ //骨架		
-			    
-				}elseif (isset($b['meat'])){ //血肉
-			    
-				}else{                                                    //原始灵魂		
-				    $from_soul = true;	
-				}
-				$c_obj    = OrgansOperator::GetByDListUnit($b,'code');
-				$c_usable = OrgansOperator::GetByDListUnit($b,'usable');
+		$b = ConstructionDlinkedListOpt::getDlinkedList($obj);
+
+		$from_soul = false;				
+
+		if (isset($b['poly'])){      //多态
+			if (true === $b['soul']){
+				$from_soul = true;	
 			}
-			//var_dump ($c_obj);
-			//var_dump ($c_usable);
-
-			$c_poly_result = array();		
-
-			if (self::collect_usable_poly_model($c_obj,$c_usable,100,$c_poly_result)){ // 1/100 的概率被放弃poly
-				//生成 多态 逆向 数组
-				OrgansOperator::SetPolyReverse(self::$_index,'i',$a);           
-				OrgansOperator::SetPolyReverse(self::$_index,'n',count($c_poly_result['code']));
-				
-				//把 多态 结果插入 代码 顺序 链表
-				$insert_List_index = self::insert_into_list ($a,self::$_index,$c_poly_result['code'],$from_soul);
-				OrgansOperator::Set(POLY,self::$_index,$c_poly_result);
-				self::$_index ++;            
-				if ($echo){
-					DebugShowFunc::my_shower_03($a,$insert_List_index,$c_poly_result);
-				}
-			}	
+		}elseif (isset($b['bone'])){ //骨架		
+		
+		}elseif (isset($b['meat'])){ //血肉
+		
+		}else{                                                    //原始灵魂		
+			$from_soul = true;	
 		}
+		$c_obj    = OrgansOperator::GetByDListUnit($b,'code');
+		$c_usable = OrgansOperator::GetByDListUnit($b,'usable');
+
+		$c_poly_result = array();		
+
+		if (self::collect_usable_poly_model($c_obj,$c_usable,$c_poly_result)){
+			//生成 多态 逆向 数组
+			OrgansOperator::SetPolyReverse(self::$_index,'i',$obj);           
+			OrgansOperator::SetPolyReverse(self::$_index,'n',count($c_poly_result['code']));
+			
+			//把 多态 结果插入 代码 顺序 链表
+			$insert_List_index = self::insert_into_list ($obj,self::$_index,$c_poly_result['code'],$from_soul);
+			OrgansOperator::Set(POLY,self::$_index,$c_poly_result);
+
+            //原单位Character.Rate清零 / 新单位init.character 初始化 & 继承原单位
+			$old = Character::getAllRate($obj);
+			Character::removeRate($obj);
+            for ($i = $insert_List_index;$i < ConstructionDlinkedListOpt::getDlinkedListIndex();$i ++){
+				$new = Character::initUnit($i,POLY);
+				Character::mergeRate($i,$new,$old);
+			}
+
+			self::$_index ++;            
+			if ($echo){
+				DebugShowFunc::my_shower_03($obj,$insert_List_index,$c_poly_result);
+			}
+		}else{ //poly失败，Rate减1
+		    Character::modifyRate(POLY,$obj,-1);
+		}	
 	}
 }
 

@@ -12,12 +12,21 @@ class OrganBone{
 	private static $_bone_model_index;
 	private static $_bone_model_index_multi;
 
+    private static $_bone_multi_max_size;
+
+	private static $_delay_remove;    //待删除(原始label 多通道后)
+
+	private static $_bone_units;          //骨架位 DListID
+	private static $_multi_bone_unit_rate;//多通道 内单位character.Rate 原值
+	private static $_multi_bone_map;      //多通道 DListID 对应关系
+
     public static function init(){
 		require dirname(__FILE__)."/../templates/bone.tpl.php";
 	    //self::$_index = 1;
 		self::$_bone_model_index       = $bone_model_index;
 		self::$_bone_model_index_multi = $bone_model_index_multi;
 		self::$_bone_model_repo        = $bone_model_repo;
+		self::$_bone_multi_max_size    = $bone_multi_max_size;
 	}
 
 	//清除指定 usable中 影响 ipsp的单位 (根据 双向链表 索引 开始 -> 结束 )
@@ -120,81 +129,6 @@ class OrganBone{
 		GeneralFunc::soul_stack_set($c_bone_result_array['code'],$c_bone_result_array['usable']);
 	}
 
-	////对 副本 多态部分进行压缩处理
-	private static function poly_compress(&$copy_buff,&$c_first,&$c_last){
-
-		$c_lp = $c_last;
-
-		$counter       = 0;
-		$buf           = array();
-		$c_count_index = false; 
-		$compress = false;
-	//echo "<br>**************************<br>";
-		while (true){
-			//echo "<br>$c_lp";
-			if (isset($copy_buff[$c_lp]['poly'])){
-				if ($c_count_index === $copy_buff[$c_lp]['poly']){
-					$counter ++;
-					$buf[] = $c_lp;
-				}else{
-					$counter = 1;
-					unset ($buf);
-					$buf[] = $c_lp;
-					$c_count_index = $copy_buff[$c_lp]['poly'];
-				}
-				if ($counter == OrgansOperator::GetPolyReverse($copy_buff[$c_lp]['poly'],'n')){ //压缩
-					$compress = true;
-					break;
-				}
-			}elseif (isset($copy_buff[$c_lp]['label'])){ //非 多态标号 ，忽略
-				$buf[] = $c_lp;
-			}else{
-				$c_count_index = false; 
-			}
-
-			if ($c_lp === $c_first){
-				break;
-			}
-			if (!isset($copy_buff[$c_lp]['p'])){			
-				break;
-			}
-			$c_lp = $copy_buff[$c_lp]['p'];
-		
-		}
-		
-		if (true === $compress){ //进行压缩
-			$lp_linked_list = OrgansOperator::GetPolyReverse($c_count_index,'i'); //压缩目标 在链表中的 index号
-
-			$copy_buff[$lp_linked_list] = ConstructionDlinkedListOpt::getDlinkedList($lp_linked_list);
-			unset($copy_buff[$lp_linked_list]['302']);
-			$next = false;		
-			//调整 相关单位 的PREV/NEXT 指针并清除 被压缩目标代码
-			foreach ($buf as $a){
-				if (false === $next){
-					$copy_buff[$lp_linked_list]['n'] = $copy_buff[$a]['n']; //压缩后 NEXT指针 继承 被压缩代码的 第一个即最后单位的NEXT(从下往上遍历)
-					if (isset($copy_buff[$copy_buff[$a]['n']])){
-						$copy_buff[$copy_buff[$a]['n']]['p'] = $lp_linked_list;
-					}
-					$next = true;
-				}
-				if ($c_first === $a){ //首单位 包含在 压缩目标中
-					$c_first = $lp_linked_list;
-				}			
-				if ($c_last  === $a){ //末单位 包含在 压缩目标中
-					$c_last  = $lp_linked_list;
-				}
-				if (isset($copy_buff[$a]['p'])){
-					$copy_buff[$lp_linked_list]['p'] = $copy_buff[$a]['p'];
-				}
-				unset ($copy_buff[$a]);
-			}	
-			if (isset($copy_buff[$copy_buff[$lp_linked_list]['p']])){
-				$copy_buff[$copy_buff[$lp_linked_list]['p']]['n'] = $lp_linked_list;
-			}
-		}
-		return $compress;
-	}
-
     // 对照 ConstructionDlinkedListOpt::remove_from_DlinkedList
 	private static function remove_from_DlinkedList($c_lp,&$lp_first,&$lp_last,&$copy_buff){
 		$prev = false;
@@ -229,7 +163,7 @@ class OrganBone{
 	}
 
 	//对骨架多通道 进行副本的复制
-	private static function soul_copy($source_first,$source_last,&$dest,&$delay_remove){
+	private static function soul_copy($source_first,$source_last,&$dest){
 
 		
 		$c_first  = $source_first;
@@ -237,7 +171,10 @@ class OrganBone{
 		$copy_buff = array(); //副本 缓存区
 		
 		while (true){
-			//echo "a $c_lp !== $source_last,";
+			
+			if (!isset(self::$_multi_bone_unit_rate[$c_lp])){
+			    self::$_multi_bone_unit_rate[$c_lp] = Character::getAllRate($c_lp);
+			}
 
 			$copy_buff[$c_lp] = ConstructionDlinkedListOpt::getDlinkedList($c_lp);
 			if ($c_lp === $source_last){
@@ -252,12 +189,6 @@ class OrganBone{
 		}
 		$c_last = $c_lp;
 
-		//对 副本 多态部分进行压缩处理
-		while (count($copy_buff) > 1){		
-			if (false === self::poly_compress($copy_buff,$c_first,$c_last)){
-				break;
-			}				
-		}
 		//去除首个单位 Prev 指针 和 末尾单位 Next 指针
 		unset ($copy_buff[$c_first]['p']);
 		unset ($copy_buff[$c_last]['n']);
@@ -273,11 +204,15 @@ class OrganBone{
 			}else{
 				$next = false;
 			}
-			if (isset($copy_buff[$c_lp]['label'])){ //标号在 副本产生时，随机保留一份(副本或正本中)		
-				if (mt_rand(0,1)){
-					$delay_remove[] = $c_lp; // 正本中清除 留到 骨架插入完成后清理
-				}else{
+			if (isset($copy_buff[$c_lp]['label'])){         //标号在 副本产生时，随机保留一份(副本或正本中)
+			    if (isset(self::$_delay_remove[$c_lp])){    //已被标识为待清除，说明已有副本替代，这里直接去掉
 					self::remove_from_DlinkedList($c_lp,$dest['first'],$dest['last'],$copy_buff);	
+				}else{
+					if (mt_rand(0,1)){
+						self::$_delay_remove[$c_lp] = $c_lp; // 正本中清除 留到 骨架插入完成后清理
+					}else{
+						self::remove_from_DlinkedList($c_lp,$dest['first'],$dest['last'],$copy_buff);	
+					}
 				}
 			}
 			if ($c_lp === $c_last){
@@ -317,11 +252,11 @@ class OrganBone{
 		global $c_rel_info;
 		global $sec;
 		global $UniqueHead;
-		global $multi_bone_poly; //多通道 骨架完成后副本部分需要被poly
-
 	   
 		$c_lp = $soul_position['first'];
 		while (true){
+            
+			self::$_multi_bone_map[$c_lp][] = ConstructionDlinkedListOpt::getDlinkedListIndex(); //multi bone Map
 
 			$tmp_multi_bone_poly[] = ConstructionDlinkedListOpt::getDlinkedListIndex();
 			//echo " ,c $c_lp !== ".$soul_position['last'].' , ';
@@ -393,7 +328,6 @@ class OrganBone{
 			ConstructionDlinkedListOpt::incDlinkedListIndex();
 		}
 
-		$multi_bone_poly[] = $tmp_multi_bone_poly;
 
 		return;
 	}
@@ -420,8 +354,7 @@ class OrganBone{
 			}elseif (isset($b['label'])){
 				$c_bone['code'][$a]['label'] = $UniqueHead.$c_bone['code'][$a]['label'].$bone_index." : ";
 				//$c_bone['code'][$a]['operation'] = $UniqueHead.$c_bone['code'][$a]['label'].$bone_index." : ";
-			}
-		
+			}		
 		}
 
 		//var_dump ($bone_obj);
@@ -447,16 +380,19 @@ class OrganBone{
 
 		//根据['copy'] 整理出 灵魂 副本
 		$copy = array();
-		$delay_remove = array();
+		$copy_count = 0;
+		self::$_delay_remove = array();
 		if (isset($c_bone['copy'])){
 			foreach ($c_bone['copy'] as $a => $b){
-				$copy[$b] = self::soul_copy($soul_position[$a]['first'],$soul_position[$a]['last'],$soul_position[$b],$delay_remove);
+				$copy[$b] = self::soul_copy($soul_position[$a]['first'],$soul_position[$a]['last'],$soul_position[$b]);
 			}
 		}
+		
+		//echo "<br>copy...";
 		//var_dump ($copy);
 		//var_dump ($c_bone);
 		//var_dump ($soul_position);
-		//echo "<br>*****************************************<br>";
+		echo "<br>*****************************************<br>";
 		//修改 链表，把骨架加入进去
 
 		$c_bone_list_start = ConstructionDlinkedListOpt::getDlinkedListIndex();
@@ -468,13 +404,11 @@ class OrganBone{
 		}
 		$c_soul_ptr = 1;
 		foreach ($c_bone['code'] as $a => $b){			    
-			if (true === $b){ //灵魂
+			if (true === $b){ //单位
 				if (isset($soul_position[$a]['first'])){ //有效
 					if (isset($copy[$a])){ //副本
 						self::insert_copy_2_list($c_prev,$copy[$a],$soul_position[$a]);
-					}else{					
-
-
+					}else{
 						ConstructionDlinkedListOpt::insertDlinkedList($c_prev,$soul_position[$a]['first']);
 						$c_prev = $soul_position[$a]['last'];
 					}				
@@ -483,44 +417,30 @@ class OrganBone{
 				if (false === $c_prev){ // 整个链表 首个单位，无 'Prev'
 					ConstructionDlinkedListOpt::setListFirstUnit();
 				}else{
-					/*
-					if (4 === $a){
-						global $c_Asm_Result;
-						echo "<br><font color=red>$a $a $a : $c_prev : $s_w_Dlinked_List_index</font><br>";
-						var_dump ($soul_writein_Dlinked_List[$c_prev]);
-
-					}*/				
-
-
 					ConstructionDlinkedListOpt::insertDlinkedListByIndex($c_prev);
 				}
 
-				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');
-
-				ConstructionDlinkedListOpt::setDlinkedList($bone_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'bone');
-
-				ConstructionDlinkedListOpt::setDlinkedList($a,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
-				if (isset($b['label'])){
-
-					ConstructionDlinkedListOpt::setDlinkedList($b['label'],ConstructionDlinkedListOpt::getDlinkedListIndex(),'label');
-				}
-				//var_dump ($soul_writein_Dlinked_List[$s_w_Dlinked_List_index]);
-
 				$c_prev = ConstructionDlinkedListOpt::getDlinkedListIndex();
 
+				ConstructionDlinkedListOpt::setDlinkedList(true,$c_prev,'ipsp');
+
+				ConstructionDlinkedListOpt::setDlinkedList($bone_index,$c_prev,'bone');
+
+				ConstructionDlinkedListOpt::setDlinkedList($a,$c_prev,'c');
+				if (isset($b['label'])){
+					ConstructionDlinkedListOpt::setDlinkedList($b['label'],$c_prev,'label');
+				}
+                self::$_bone_units[$c_prev] = $c_prev;
 				ConstructionDlinkedListOpt::incDlinkedListIndex();
 			}
 		}
 		if (false !== $c_last){
 
-
 			ConstructionDlinkedListOpt::insertDlinkedList($c_prev,$c_last);
 		}
 
-		
-
-		//正本中想需要清除的标号 
-		foreach ($delay_remove as $a){
+		//正本中想需要清除的标号
+		foreach (self::$_delay_remove as $a){
 			ConstructionDlinkedListOpt::remove_from_DlinkedList($a);
 		}
 
@@ -604,10 +524,37 @@ class OrganBone{
 			return false;
 		}
 
-		$bone_index = self::init_bone_model($c_bone_model,$bone_obj);
-		
+        self::doTearPosition($c_bone_model,$bone_obj);
+
+		$bone_index = self::init_bone_model($c_bone_model,$bone_obj);		
+	
 		return true;
 		
+	}
+
+    //撕裂位(骨架插入位) bone.Rate 减 1 , 最少为 1
+	private static function doTearPosition($c_bone_model,$bone_obj){
+	    
+		$_tear_position = array();
+		$a = reset($bone_obj); //头
+        $_tear_position[$a] = $a;
+		$a = end($bone_obj);   //尾
+        $_tear_position[$a] = $a;
+
+		//位于 ['direct']位 的单位与下一单位(如果有的话,下一单位为下一unit的开头) 
+        foreach ($c_bone_model['direct'] as $a){
+			if (isset($bone_obj[$a])){
+				$_tear_position[$bone_obj[$a]] = $bone_obj[$a];
+				if (isset($bone_obj[$a + 1])){
+					$_tear_position[$bone_obj[$a + 1]] = $bone_obj[$a + 1];
+				}
+			}
+		} 
+
+		//bone.Rate - 1
+		foreach ($_tear_position as $a){
+			Character::modifyRate(BONE,$a,-1);
+		}
 	}
 
 	//不冲突? 返回false
@@ -680,40 +627,64 @@ class OrganBone{
 		return $ret;
 	}
 
-	public static function start($bone_obj,$language){	
+	//为多通道bone单位分配character.Rate, readme.bone.txt [2014.10.22]
+	private static function resetRate(){
 
-		global $MAX_INCLUDE_MULTI_PROCESS_BONE;
+		//echo '<br> multi bone unit map';
+		foreach (self::$_multi_bone_map as $a => $b){						
+			//echo "<br>$a :::";
+			//var_dump (self::$_multi_bone_unit_rate[$a]);
+			$b[] = $a;
+			shuffle($b);
+			$addRate = 0;
+			foreach ($b as $c){				
+				if (ConstructionDlinkedListOpt::isValidID($c)){
+					if ($addRate){
+						character::cloneRate($c,self::$_multi_bone_unit_rate[$a],$addRate);
+					}
+					$addRate ++;
+				}
+			}
+		}
+	}
 
-		if (count($bone_obj) <= $MAX_INCLUDE_MULTI_PROCESS_BONE){  //可用多通道骨架 最大
+	public static function start($bone_obj,$language){
+
+		self::$_delay_remove         = array();
+		self::$_bone_units           = array();
+		self::$_multi_bone_unit_rate = array();
+		self::$_multi_bone_map       = array();
+
+
+		if (count($bone_obj) <= self::$_bone_multi_max_size){
 			$c_bone_model_index = self::$_bone_model_index_multi;
-		}else{
-			$c_bone_model_index = self::$_bone_model_index;
+		}else{ //too much obj to use multi bone templates.
+		    $c_bone_model_index = self::$_bone_model_index;
 		}
 
 		$last_ipsp = false;
-		if (is_array($bone_obj)){
-			foreach ($bone_obj as $a => $b){
-
-				if ((ConstructionDlinkedListOpt::getDlinkedList($b,'ipsp'))||(ConstructionDlinkedListOpt::getDlinkedList($b,'label'))){
-					$last_ipsp = $a; //记录 目标 骨架 数组 中 最后一个 影响 ipsp 
-				}
+		
+		foreach ($bone_obj as $a => $b){
+			if ((ConstructionDlinkedListOpt::getDlinkedList($b,'ipsp'))||(ConstructionDlinkedListOpt::getDlinkedList($b,'label'))){
+				$last_ipsp = $a; //记录 目标 骨架 数组 中 最后一个 影响 ipsp 
 			}
-		}		
+		}
+		
 		$x = array_rand($c_bone_model_index);
 		$z = $c_bone_model_index[$x];
 		echo "<br> bone repo index: $z ";
 		//$z = 2; //测试 多通道，强制指定
 		if ($z){
-			$start_index = self::$_index;
-
-			$start_lp    = ConstructionDlinkedListOpt::getDlinkedListIndex();
-
-
-			$ready_for_poly_start = ConstructionDlinkedListOpt::getDlinkedListIndex();
-
-			if (!self::collect_usable_bone_model ($bone_obj,$last_ipsp,self::$_bone_model_repo[$z])){ //骨架出错,代表 骨架模块 有问题
+			if (self::collect_usable_bone_model ($bone_obj,$last_ipsp,self::$_bone_model_repo[$z])){ //骨架出错,代表 骨架模块 有问题	
+                if (!empty(self::$_multi_bone_map)){ // set character.Rate for 多通道 bone
+					self::resetRate();	
+				}			
+				foreach (self::$_bone_units as $a){ // bone init character.Rate
+				    Character::initUnit($a,BONE);
+				}				
+			}else{
 				GeneralFunc::LogInsert($language['fail_bone_array'].$z,2);				
-			}
+			}			
 		}else{ //骨架数组为空...
 			return;   
 		}

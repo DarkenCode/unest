@@ -26,7 +26,7 @@ class ConstructionDlinkedListOpt{
 	//初始化 变量s
 	public static function init($c_soul_writein_Dlinked_List_Total,$c_rel_jmp_range,$c_rel_jmp_pointer){
 	    self::$_soul_writein_Dlinked_List = $c_soul_writein_Dlinked_List_Total['list'];	
-		self::$_s_w_Dlinked_List_index = $c_soul_writein_Dlinked_List_Total['index'];
+		self::$_s_w_Dlinked_List_index    = $c_soul_writein_Dlinked_List_Total['index'];
 		self::$_soul_writein_Dlinked_List_start = 0; //顺序写入双向链表 起始 位 编号 | 未被多态|混淆 ，肯定为 [0]
 		self::$_c_rel_jmp_range = $c_rel_jmp_range;
 		self::$_c_rel_jmp_pointer = $c_rel_jmp_pointer;
@@ -75,6 +75,41 @@ class ConstructionDlinkedListOpt{
 	//读取roll back 准备中的 list 值
 	public static function ReadRollingDlinkedList(){
 	    return self::$_rollback_soul_writein_Dlinked_List;
+	}
+
+    //获取2单位间所有单位，按次序排列
+    public static function getAmongObjs($a,$b){		
+		if ($a == $b){
+		    return array(1 => $a);
+		}		
+		$objs = self::seekNextObj($a,$b);
+        if (false === $objs){
+			$objs = self::seekNextObj($b,$a);
+		}
+        return $objs;		
+	}
+	private static function seekNextObj($c,$target){
+		$objs = array();
+		$objs[1] = $c;
+		while (isset(self::$_soul_writein_Dlinked_List[$c]['n'])){
+		    $c = self::$_soul_writein_Dlinked_List[$c]['n'];
+			$objs[] = $c;
+            if ($c == $target){
+				return $objs;
+			}  
+		}	    
+		return false;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	//
+	public static function isValidID($id){
+		if (isset(self::$_soul_writein_Dlinked_List[$id])){
+		    if (!isset(self::$_soul_writein_Dlinked_List[$id]['302'])){
+			    return true;
+			}
+		}
+	    return false;
 	}
 
     ////////////////////////////////////////////////////////////////////////////////////////////	
@@ -348,6 +383,9 @@ class ConstructionDlinkedListOpt{
 	//////////////////////////////////////////////////////////////////////////
 	//摘除 双向 链表 中的 指定单位 (对照 OrganBone::remove_from_DlinkedList)
 	public static function remove_from_DlinkedList($c_lp){
+
+		Character::removeRate($c_lp); //清character.Rate
+
 		$prev = false;
 		$next = false;
 
@@ -361,6 +399,7 @@ class ConstructionDlinkedListOpt{
 
 		//unset ($copy_buff[$c_lp]);
 		self::$_soul_writein_Dlinked_List[$c_lp]['302'] = $next;
+
 		if (false !== $prev)
 			unset (self::$_soul_writein_Dlinked_List[$prev]['n']);
 		if (false !== $next)
