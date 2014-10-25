@@ -29,8 +29,8 @@ class OrgansOperator{
 		
 		$ret = false;
 
-		if (isset(self::$_Asm_Result[$unit['c']][$branch])){
-			$ret = self::$_Asm_Result[$unit['c']][$branch];
+		if (isset(self::$_Asm_Result[$unit['c']])){
+			$ret = self::$_Asm_Result[$unit['c']];
 		}
 		
 		if ((false !== $key) and (false !== $ret)){
