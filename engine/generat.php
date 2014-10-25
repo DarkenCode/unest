@@ -429,12 +429,11 @@ if (!GeneralFunc::LogHasErr()){
 				if (POLY === $c_process){		
 					////////////////////////////////////////////////////////////////////////////////////////////////
 					//这里对目标代码进行多态
-					$obj = Character::random(POLY);
-                    
-					if (false !== $obj){
-					    OrganPoly::start($obj,$my_params['echo']); 
-						$exetime_record['poly'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
-					}									
+                    if (false !== ($obj = Character::random(POLY))){
+ 					    $objs[1] = $obj;
+ 						OrganPoly::start($obj,$my_params['echo']); 
+ 						$exetime_record['poly'] += GeneralFunc::exetime_record($stime); //获取程序执行的时间
+ 					}									
 				}elseif (MEAT === $c_process){
 					////////////////////////////////////////////////////////////////////////////////////////////////
 					//这里对目标代码进行血肉(不含脂肪) 构建
