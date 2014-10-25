@@ -402,7 +402,7 @@ class RelJmp{
 			$tmp = end($discard_objs);
 			//echo "<br><font color=blue>end: $tmp</font>";
 			if (isset($backup_List[$tmp]['n'])){
-				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['p']);
+				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['n']);
 				if (is_array($tmp_tmp)){
 					foreach ($tmp_tmp as $a => $b){
 						if ($b & 1){
@@ -432,7 +432,7 @@ class RelJmp{
 					unset ($reserve_last_pointer[$a]);
 					unset ($reserve_start_pointer[$a]);
 				}else{
-					$tmp_tmp = $rel_jmp_range[$a]['label'];
+					$tmp_tmp = ConstructionDlinkedListOpt::readRelJmpRange($a,'label');//$tmp_tmp = $rel_jmp_range[$a]['label'];
 					if (in_array($a,$discard_objs)){
 						$in_cache_label[$tmp_tmp] = ConstructionDlinkedListOpt::readRelJmpRange($a);//$rel_jmp_range[$a];
 					}else{
@@ -442,7 +442,7 @@ class RelJmp{
 			}	
 
 			foreach ($reserve_last_pointer as $a => $b){
-				$tmp_tmp = $rel_jmp_range[$a]['label'];
+				$tmp_tmp = ConstructionDlinkedListOpt::readRelJmpRange($a,'label');//$tmp_tmp = $rel_jmp_range[$a]['label'];
 				if (in_array($a,$discard_objs)){
 					$in_cache_last_label[$tmp_tmp] = ConstructionDlinkedListOpt::readRelJmpRange($a);//$rel_jmp_range[$a];
 				}else{
