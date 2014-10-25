@@ -488,6 +488,7 @@ if (!GeneralFunc::LogHasErr()){
 		foreach ($soul_writein_Dlinked_List_Total as $sec => $a){
 			$soul_writein_Dlinked_List = $soul_writein_Dlinked_List_Total[$sec]['list'];
 			OrgansOperator::init($sec);
+			ConstructionDlinkedListOpt::init($a,array(),array());
 			foreach ($soul_writein_Dlinked_List as $a => $b){
 				$tmp = RelJmp::get_addition_List_info($a,false,true);
 				if (isset($tmp['rel_jmp'])){
@@ -503,6 +504,7 @@ if (!GeneralFunc::LogHasErr()){
 		$c_usable_oplen   = false;   //ready阶段不计代码可用长度
 		foreach ($soul_writein_Dlinked_List_Total as $sec => $a){
 			$soul_writein_Dlinked_List = $soul_writein_Dlinked_List_Total[$sec]['list'];
+			ConstructionDlinkedListOpt::init($a,array(),array());
 			ConstructionDlinkedListOpt::ReadyInit();
 			if (!RelJmp::reset_rel_jmp_array()){ //rel.jmp 返回错误				
 			    GeneralFunc::LogInsert($language['init_rel_jmp_fail']);  
