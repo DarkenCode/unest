@@ -33,12 +33,11 @@ class OrganBone{
 	private static function remove_ipsp_from_usable_list($start,$end){
 
 		global $all_valid_mem_opt_index;
-        global $c_user_cnf_stack_pointer_define;
 
 		$c_lp = $start;		
 		while (true){
 
-            OrgansOperator::FilterMemUsable($c_lp,$c_user_cnf_stack_pointer_define);	   
+            OrgansOperator::FilterMemUsable($c_lp);	   
 
 			if ($c_lp === $end){
 				break;
@@ -53,8 +52,6 @@ class OrganBone{
 
 	// 从灵魂 处 继承骨架的 usable
 	private static function inherit_bone_usable(&$c_bone_result_array,$c_soul_position){
-		
-		global $c_user_cnf_stack_pointer_define;
 
 		//第一个 / 最后一个必定是 骨架单位
 		foreach ($c_bone_result_array['process'] as $x){ //多通道? 直接覆盖
@@ -107,11 +104,11 @@ class OrganBone{
 					}
 				}elseif (1 === $b){ //prev
 					if (isset($c_bone_result_array['usable'][$a]['p']['mem_opt_able'])){
-						OrgansOperator::doFilterMemUsable($c_bone_result_array['usable'][$a]['p']['mem_opt_able'],$c_user_cnf_stack_pointer_define);
+						GenerateFunc::doFilterMemUsable($c_bone_result_array['usable'][$a]['p']['mem_opt_able']);
 					}			    
 				}elseif (2 === $b){ //next
 					if (isset($c_bone_result_array['usable'][$a]['n']['mem_opt_able'])){
-						OrgansOperator::doFilterMemUsable($c_bone_result_array['usable'][$a]['n']['mem_opt_able'],$c_user_cnf_stack_pointer_define);
+						GenerateFunc::doFilterMemUsable($c_bone_result_array['usable'][$a]['n']['mem_opt_able']);
 					}			    
 				}
 			}

@@ -110,32 +110,19 @@ class OrgansOperator{
 		}
 	}
 
-	//按正则清除 可用mem表
-	public static function doFilterMemUsable(&$usable_mem,$filter){
-	    global $all_valid_mem_opt_index;
-		if (is_array($usable_mem)){
-			$tmp = $usable_mem;
-			foreach ($tmp as $i => $a){		
-				if (preg_match('/'."$filter".'/',$all_valid_mem_opt_index[$a]['code'])){
-					unset ($usable_mem[$i]);				
-				}			
-			}
-		}
-	}
-
-	public static function FilterMemUsable($unit,$filter){
+	public static function FilterMemUsable($unit){
 		if (isset ($unit['poly'])){	
-			self::doFilterMemUsable(self::$_poly_result[$unit['poly']]['usable'][$unit['c']]['p']['mem_opt_able'],$filter);
-			self::doFilterMemUsable(self::$_poly_result[$unit['poly']]['usable'][$unit['c']]['n']['mem_opt_able'],$filter);
+			GenerateFunc::doFilterMemUsable(self::$_poly_result[$unit['poly']]['usable'][$unit['c']]['p']['mem_opt_able']);
+			GenerateFunc::doFilterMemUsable(self::$_poly_result[$unit['poly']]['usable'][$unit['c']]['n']['mem_opt_able']);
 		}elseif (isset ($unit['bone'])){
-		    self::doFilterMemUsable(self::$_bone_result[$unit['bone']]['usable'][$unit['c']]['p']['mem_opt_able'],$filter);
-			self::doFilterMemUsable(self::$_bone_result[$unit['bone']]['usable'][$unit['c']]['n']['mem_opt_able'],$filter);	
+		    GenerateFunc::doFilterMemUsable(self::$_bone_result[$unit['bone']]['usable'][$unit['c']]['p']['mem_opt_able']);
+			GenerateFunc::doFilterMemUsable(self::$_bone_result[$unit['bone']]['usable'][$unit['c']]['n']['mem_opt_able']);	
 		}elseif (isset ($unit['meat'])){
-		    self::doFilterMemUsable(self::$_meat_result[$unit['meat']]['usable'][$unit['c']]['p']['mem_opt_able'],$filter);
-			self::doFilterMemUsable(self::$_meat_result[$unit['meat']]['usable'][$unit['c']]['n']['mem_opt_able'],$filter);
+		    GenerateFunc::doFilterMemUsable(self::$_meat_result[$unit['meat']]['usable'][$unit['c']]['p']['mem_opt_able']);
+			GenerateFunc::doFilterMemUsable(self::$_meat_result[$unit['meat']]['usable'][$unit['c']]['n']['mem_opt_able']);
 		}else{
-			self::doFilterMemUsable(self::$_soul_usable[$unit['c']]['p']['mem_opt_able'],$filter);	
-		    self::doFilterMemUsable(self::$_soul_usable[$unit['c']]['n']['mem_opt_able'],$filter);	
+			GenerateFunc::doFilterMemUsable(self::$_soul_usable[$unit['c']]['p']['mem_opt_able']);	
+		    GenerateFunc::doFilterMemUsable(self::$_soul_usable[$unit['c']]['n']['mem_opt_able']);	
 		}	
 	}
 

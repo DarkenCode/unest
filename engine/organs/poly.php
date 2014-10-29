@@ -645,7 +645,7 @@ class OrganPoly{
 	//把 多态 结果插入 代码 顺序 链表
 	private static function insert_into_list ($org,$poly_index,$asm_array,$from_soul=false){
 
-		global $c_user_cnf_stack_pointer_define;
+
 
 
 		$ret = ConstructionDlinkedListOpt::getDlinkedListIndex();
@@ -681,7 +681,7 @@ class OrganPoly{
 			}
 			if (isset($b['label'])){
 				ConstructionDlinkedListOpt::setDlinkedList($b['label'],ConstructionDlinkedListOpt::getDlinkedListIndex(),'label');
-			}elseif (GeneralFunc::is_effect_ipsp($b,1,$c_user_cnf_stack_pointer_define)){
+			}elseif (GenerateFunc::is_effect_ipsp($b,1)){
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');
 			}
 
@@ -703,8 +703,9 @@ class OrganPoly{
 	//多态 处理
 	//
 
-	public static function start ($obj,$echo = false){ 
-
+	public static function start ($objs,$echo = false){ 
+        
+		$obj = $objs[1];
 
 		$b = ConstructionDlinkedListOpt::getDlinkedList($obj);
 

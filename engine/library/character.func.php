@@ -58,7 +58,7 @@ class Character{
 	public static function initDList($DList){
 		self::$_rate = array();				
 		//基础赋值
-		$extra = array (BONE => 1,MEAT => 1,POLY => 1); //SOUL初始化 各单位基础值 + 1
+		$extra = array (BONE => 3,MEAT => 3,POLY => 3); //SOUL初始化 各单位基础值 + 3
 		foreach ($DList as $a => $b){
 			self::initUnit($a,SOUL,$extra);
 		}
@@ -83,7 +83,7 @@ class Character{
 				$ret[MEAT] = 2;
 			}elseif (BONE == $att){
 				$ret[MEAT] = 2;
-				
+				$ret[BONE] = 1;				
 			}elseif (SOUL == $att){
 			    $ret[BONE] = 1;
 				$ret[MEAT] = 1;
@@ -185,7 +185,7 @@ class Character{
 				}
 
 			}else{
-			    var_dump ($obj);
+			    //var_dump ($obj);
 			}
 		}
 		return $exRate;	
