@@ -9,6 +9,50 @@ if(!defined('UNEST.ORG')) {
 
 class GenerateFunc{
 
+	//
+	private static $_user_cnf_stack_pointer_define;	
+
+
+	//初始化 堆栈 正则
+	public static function initStackPointer($sec,$echo = false){
+        global $registersss;
+		global $user_cnf;
+
+		self::$_user_cnf_stack_pointer_define = false;
+		if (is_array($user_cnf[$sec]['stack_pointer_define'])){
+			foreach ($user_cnf[$sec]['stack_pointer_define'] as $a){
+				foreach ($registersss as $b => $c){
+					if (isset($c[$a])){
+						self::$_user_cnf_stack_pointer_define .=  '('.$c[$a].')|';					
+					}
+				}
+			}
+			if (false !== self::$_user_cnf_stack_pointer_define){
+			    self::$_user_cnf_stack_pointer_define = substr (self::$_user_cnf_stack_pointer_define,0,strlen(self::$_user_cnf_stack_pointer_define) - 1);
+			}
+		}
+		if ($echo){
+		    DebugShowFunc::my_shower_09(self::$_user_cnf_stack_pointer_define,$user_cnf[$sec]['stack_pointer_define']);
+		} 
+	}
+
+   	public static function is_effect_ipsp($asm,$rule = 1){
+	    return GeneralFunc::is_effect_ipsp($asm,$rule,self::$_user_cnf_stack_pointer_define);
+	}
+
+	//按正则清除 可用mem表
+	public static function doFilterMemUsable(&$usable_mem){
+	    global $all_valid_mem_opt_index;
+		if (is_array($usable_mem)){
+			$tmp = $usable_mem;
+			foreach ($tmp as $i => $a){		
+				if (preg_match('/'.self::$_user_cnf_stack_pointer_define.'/',$all_valid_mem_opt_index[$a]['code'])){
+					unset ($usable_mem[$i]);				
+				}			
+			}
+		}
+	}
+
 	//获取指令在intel instruction数组中的定义
 	public static function get_inst_define($opt,$para){
 		global $Intel_instruction;
@@ -102,18 +146,23 @@ class GenerateFunc{
 	}
 
 
-	public static function reset_ipsp_list_by_stack_pointer_define($sp_define,&$list,$soul){
-		$ret = false;
-		$tmp = $list;
-		foreach ($tmp as $i => $a){
-			if ((true !== $a['ipsp']) && (!isset($a['label']))){
-				if (true === GeneralFunc::is_effect_ipsp($soul[$a['c']],1,$sp_define)){
-					$list[$i]['ipsp'] = true;
-					$ret[$i] = true;
+	public static function reset_ipsp_list_by_stack_pointer_define(&$list,$soul,$echo = false){
+		if (false !== self::$_user_cnf_stack_pointer_define){
+			$ret = false;
+			$tmp = $list;
+			foreach ($tmp as $i => $a){
+				if ((true !== $a['ipsp']) && (!isset($a['label']))){
+					if (true ===  GeneralFunc::is_effect_ipsp($soul[$a['c']],1,self::$_user_cnf_stack_pointer_define)){
+						$list[$i]['ipsp'] = true;
+						$ret[$i] = true;
+					}
 				}
 			}
+			if ($echo){
+				DebugShowFunc::my_shower_08(self::$_user_cnf_stack_pointer_define,$ret,$list,$soul);
+			}
+			//return $ret;
 		}
-		return $ret;
 	}
 
 
@@ -389,7 +438,7 @@ class GenerateFunc{
 					if (isset ($current['poly'])){	
 						$comment = ' ;@@@ poly';
 						if (true === $current['soul']){
-							$comment = ' ;@@@ poly [from org]';
+							$comment = ' ;@@@ poly [from soul]';
 						}						
 					}elseif (isset ($current['bone'])){							
 						$comment = ' ;&&& bone';
@@ -409,6 +458,7 @@ class GenerateFunc{
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				if (ConstructionDlinkedListOpt::issetDlinkedListUnit($next,'n')){	
 					$next =  ConstructionDlinkedListOpt::getDlinkedList($next,'n');
+
 					//echo " $next -> ";
 
 				}else{

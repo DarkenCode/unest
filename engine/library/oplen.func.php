@@ -83,7 +83,7 @@ class OpLen{
 		$result = false; 
 		$oplen = 0;
 		if (!is_array($possible_arrays)){ //无匹配对象,指令?
-			echo "<br>fuck: $p_number";
+			echo "<br>no match OP: $p_number";
 			var_dump($opt);
 		}else{
 			if (0 == $p_number){

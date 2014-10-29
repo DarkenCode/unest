@@ -140,7 +140,7 @@ class RelJmp{
 		////////////////////////////////////////////
 		//开始遍历	
 		while (true){
-			
+
 			if ($c_unit === $end_unit){
 				break;
 			}
@@ -240,23 +240,6 @@ class RelJmp{
 				break;
 			}
 		}
-
-	/*
-	echo "<br>fuck final ***********************************************";
-		var_dump ($in_cache_label);
-	   
-		var_dump ($rel_jmp_range);
-		var_dump ($rel_jmp_pointer);
-
-		echo "<br>fuck in_cache_last_???<br>in_cache_src -> in_cache_last_label";
-		var_dump ($in_cache_src);	
-		var_dump ($in_cache_last_label);
-
-	echo "<br>in_cache_label -> in_cache_last_src";
-
-		var_dump ($in_cache_label);
-		var_dump ($in_cache_last_src);
-		*/
 
 		//$in_cache_last_?? 处理
 		if (false !== $in_cache_last_src){    //链表 当前范围后 还有src需要当前label进行匹配
@@ -378,7 +361,6 @@ class RelJmp{
 				}
 			}
 
-
 			////////////////////////////////////////
 			//起始单位 (新单位)
 			$reserve_start_pointer = array();
@@ -403,7 +385,8 @@ class RelJmp{
 			//echo "<br><font color=blue>end: $tmp</font>";
 			if (isset($backup_List[$tmp]['n'])){
 				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['n']);
-				if (is_array($tmp_tmp)){
+				
+				if (is_array($tmp_tmp)){					
 					foreach ($tmp_tmp as $a => $b){
 						if ($b & 1){
 							$reserve_last_pointer[$a] = $b;	
@@ -414,13 +397,14 @@ class RelJmp{
 			}else{
 				$end_unit = false;               //到链表结束为止
 			}
-	   /*
+
+            /*
 			echo "<br>vvvvvvvvvvvvvvvvvvv";
 			var_dump ($reserve_start_pointer);
 			var_dump ($reserve_last_pointer);
 			echo "<br>vvvvvvvvvvvvvvvvvvv";
-	*/
-			//$reserve_start_pointer $reserve_last_pointer 都存在的，放入 $in_cache_last_whole
+            */	   
+ 			//$reserve_start_pointer $reserve_last_pointer 都存在的，放入 $in_cache_last_whole
 			//$reserve_start_pointer 存在，且, $obj['n']不存在       放入 $in_cache_src
 			//       ..                        $obj['n']  存在       放入 $in_cache_label
 			//$reserve_last_pointer  存在，且  $obj['n']不存在       放入 $in_cache_last_src
@@ -463,14 +447,10 @@ class RelJmp{
 			}
 	/*
 	echo "<br>new arrays______________________________";
-	var_dump ($rel_jmp_range);
-	var_dump ($rel_jmp_pointer);
+	var_dump (ConstructionDlinkedListOpt::readRelJmpRange());
+	var_dump (ConstructionDlinkedListOpt::ReadRelJmpPointer());
 	echo "<br>______________________________";
 	*/
-
-
-
-
 
 			return true;        
 

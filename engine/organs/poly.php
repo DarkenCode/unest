@@ -9,6 +9,16 @@ class OrganPoly{
 
     private static $_index = 1; //poly 唯一编号，一组一个
 
+	private static $_poly_model_index;
+	private static $_poly_model_repo;
+
+    /////////////////////////////////////////////
+	public static function init(){
+	    require dirname(__FILE__)."/../templates/poly.tpl.php";
+        self::$_poly_model_index = $poly_model_index;
+		self::$_poly_model_repo  = $poly_model_repo;
+	}
+
 	
 	/////////////////////////////////////////////
 	//比较 2个内存地址是否相同，考虑重定位 副本的问题
@@ -277,7 +287,7 @@ class OrganPoly{
 	//随机部分 检查的同时 也 生成
 	//
 	private static function check_poly_usable ($c_usable,$org,&$usable_poly_model,&$rand_result){
-		global $poly_model_repo;
+
 		global $register_assort;
 		global $all_valid_mem_opt_index;
 
@@ -287,7 +297,7 @@ class OrganPoly{
 		foreach ($tmp as $a => $b){
 			//检查new stack 是否冲突
 			if (true !== $org['stack']){			
-				if (true === $poly_model_repo[$obj][$b]['new_stack']){
+				if (true === self::$_poly_model_repo[$obj][$b]['new_stack']){
 					echo "<font color=red>stack conflict!";
 					var_dump ($usable_poly_model[$a]);
 					echo '</font>';
@@ -297,8 +307,8 @@ class OrganPoly{
 			}
 			////////////////////////
 			$break = false;
-			if (is_array($poly_model_repo[$obj][$b]['new_regs']['normal'])){ //检查新增 通用 寄存器 或 内存地址
-				foreach ($poly_model_repo[$obj][$b]['new_regs']['normal'] as $c => $d){ //目前 仅考虑 32位 通用寄存器
+			if (is_array(self::$_poly_model_repo[$obj][$b]['new_regs']['normal'])){ //检查新增 通用 寄存器 或 内存地址
+				foreach (self::$_poly_model_repo[$obj][$b]['new_regs']['normal'] as $c => $d){ //目前 仅考虑 32位 通用寄存器
 					if (isset($register_assort[$org['params'][$c]])){        //原始指令参数中的通用寄存器
 						$c = $register_assort[$org['params'][$c]];
 						if (!$c_usable['n']['normal_write_able'][$c][32]){ //仅 检查 Next 部分，见 readme_poly.txt 2013/04/19
@@ -332,8 +342,8 @@ class OrganPoly{
 			if ($break){
 				continue;
 			}
-			if (is_array($poly_model_repo[$obj][$b]['new_regs']['flag'])){ //检查新增 标志 寄存器
-				foreach ($poly_model_repo[$obj][$b]['new_regs']['flag'] as $c => $d){
+			if (is_array(self::$_poly_model_repo[$obj][$b]['new_regs']['flag'])){ //检查新增 标志 寄存器
+				foreach (self::$_poly_model_repo[$obj][$b]['new_regs']['flag'] as $c => $d){
 					if (!$c_usable['n']['flag_write_able'][$c]){ //仅 检查 Next 部分，见 readme_poly.txt 2013/04/19
 						//echo "<br> $sec $line $c";
 						unset ($usable_poly_model[$a]);
@@ -346,13 +356,13 @@ class OrganPoly{
 				continue;
 			}
 			//echo "<br>+++++++++++++++++++++++++++++++++++++++++++++++<br>";
-			if (isset($poly_model_repo[$obj][$b]['rand'])){ //需要获得 随机数(寄存器/内存)
+			if (isset(self::$_poly_model_repo[$obj][$b]['rand'])){ //需要获得 随机数(寄存器/内存)
 															//
 															// 目前为简单起见，仅处理 32 位
 															//
 				$c_usable_normal = $c_usable['p']['normal_write_able'];
 				$rand_mem = false;
-				foreach ($poly_model_repo[$obj][$b]['rand'] as $z => $y){
+				foreach (self::$_poly_model_repo[$obj][$b]['rand'] as $z => $y){
 					if (shuffle ($y)){
 						foreach ($y as $x){
 							if ($x == 'i'){
@@ -372,7 +382,7 @@ class OrganPoly{
 												}
 										}
 									}
-									if ($poly_model_repo[$obj][$b]['rand_privilege'][$z] >=2){ //需要写权限
+									if (self::$_poly_model_repo[$obj][$b]['rand_privilege'][$z] >=2){ //需要写权限
 										if (false !== $c_usable_mem_writable){
 											$w = array_rand($c_usable_mem_writable);	
 											//当前指令 不含 随机 内存地址(或用来构成该地址的寄存器) 操作
@@ -391,7 +401,7 @@ class OrganPoly{
 									}
 								}
 							}elseif ($x == 'r32'){							
-								if ($poly_model_repo[$obj][$b]['rand_privilege'][$z] >=2 ){ //需要写权限
+								if (self::$_poly_model_repo[$obj][$b]['rand_privilege'][$z] >=2 ){ //需要写权限
 									if (isset($c_usable['p']['normal_write_able'])){
 										$c_usable_normal_reg = false;
 										foreach ($c_usable['p']['normal_write_able'] as $j => $k){
@@ -546,18 +556,17 @@ class OrganPoly{
 		return $ret;
 	}
 
-	////////////////////////////////////////////
-	//对指定指令进行多态处理
-	private static function collect_usable_poly_model($obj,$c_usable,$c_poly_strength,&$ret){
-		global $poly_model_index;
-		global $poly_model_repo;
-		global $pattern_reloc;
+    //根据多态目标 返回 可用多态模板数组,无可用返回false 
+	//此处不考虑usable限制，仅根据opt,para 获取所有可用tpl
+    public static function get_usable_models($obj){
+        global $pattern_reloc;
 		global $c_rel_info;
-		
 		global $stack_pointer_reg;
 		global $register_assort;
 
-		$usable_poly_model = $poly_model_index[$obj['operation']];
+	    $ret = false;
+
+		$usable_poly_model = self::$_poly_model_index[$obj['operation']];
 
 		if (is_array($usable_poly_model)){ //初步 检测是否有可用多态模板(指令名)            
 			$p_num = count($obj['p_type']);
@@ -591,33 +600,41 @@ class OrganPoly{
 				}
 			}
 			if (count($usable_poly_model)){											
-				if (mt_rand(0,$c_poly_strength) == 0){ //强度识别
-					return false;                           
-				}
-				$rand_result = array();
-				if (is_array($usable_poly_model)){
-					self::check_poly_usable ($c_usable,$obj,$usable_poly_model,$rand_result);
-					//随机获得 多态模板
-					if (count($usable_poly_model)){
+			    $ret = 	$usable_poly_model;
+			}
+		}
 
-						$x = array_rand($usable_poly_model);
+		return $ret;
+	}
 
-						if (isset($poly_model_repo[$obj['operation']][$usable_poly_model[$x]])){ //开始根据 多态模板 生成 多态 代码						        
-							if ('int3' === $x){
-								$ret = self::generat_poly_code($obj,$c_usable,$poly_model_repo[$obj['operation']][$usable_poly_model[$x]],$rand_result[$x],true);
-							}else{
-								$ret = self::generat_poly_code($obj,$c_usable,$poly_model_repo[$obj['operation']][$usable_poly_model[$x]],$rand_result[$x]);
-							}
-							//对多态结果进行stack可用状态设置(根据usable)
-							GeneralFunc::soul_stack_set($ret['code'],$ret['usable']);
-							return true;
+	////////////////////////////////////////////
+	//对指定指令进行多态处理
+	private static function collect_usable_poly_model($obj,$c_usable,&$ret){
+		
+		$usable_poly_model = self::get_usable_models($obj);
+        if ($usable_poly_model){
+			$rand_result = array();
+			if (is_array($usable_poly_model)){
+				self::check_poly_usable ($c_usable,$obj,$usable_poly_model,$rand_result);
+				//随机获得 多态模板
+				if (count($usable_poly_model)){
+
+					$x = array_rand($usable_poly_model);
+
+					if (isset(self::$_poly_model_repo[$obj['operation']][$usable_poly_model[$x]])){ //开始根据 多态模板 生成 多态 代码						        
+						if ('int3' === $x){
+							$ret = self::generat_poly_code($obj,$c_usable,self::$_poly_model_repo[$obj['operation']][$usable_poly_model[$x]],$rand_result[$x],true);
 						}else{
-							
-							global $language;						
-							GeneralFunc::LogInsert($language['poly_repo_null'].$obj['operation'].'['.$x.']',2);						
+							$ret = self::generat_poly_code($obj,$c_usable,self::$_poly_model_repo[$obj['operation']][$usable_poly_model[$x]],$rand_result[$x]);
 						}
-						
+						//对多态结果进行stack可用状态设置(根据usable)
+						GeneralFunc::soul_stack_set($ret['code'],$ret['usable']);
+						return true;
+					}else{						
+						global $language;						
+						GeneralFunc::LogInsert($language['poly_repo_null'].$obj['operation'].'['.$x.']',2);						
 					}
+					
 				}
 			}
 		}
@@ -628,13 +645,13 @@ class OrganPoly{
 	//把 多态 结果插入 代码 顺序 链表
 	private static function insert_into_list ($org,$poly_index,$asm_array,$from_soul=false){
 
-		global $c_user_cnf_stack_pointer_define;
+
 
 
 		$ret = ConstructionDlinkedListOpt::getDlinkedListIndex();
 
 
-		ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$org,'302'); //302 moved 标记
+		ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$org,'302'); //302 moved 标记  	    
 
 		$c_prev = false;
 
@@ -653,8 +670,6 @@ class OrganPoly{
 			if (false === $c_prev){
 				ConstructionDlinkedListOpt::setListFirstUnit();
 			}else{
-
-				
 				ConstructionDlinkedListOpt::insertDlinkedListByIndex($c_prev);			
 			}
 	 
@@ -662,14 +677,11 @@ class OrganPoly{
 	 
 			ConstructionDlinkedListOpt::setDlinkedList($poly_index,ConstructionDlinkedListOpt::getDlinkedListIndex(),'poly');
 			if ($from_soul){ //poly 源自 原始代码
-
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'soul');
 			}
 			if (isset($b['label'])){
-
 				ConstructionDlinkedListOpt::setDlinkedList($b['label'],ConstructionDlinkedListOpt::getDlinkedListIndex(),'label');
-			}elseif (GeneralFunc::is_effect_ipsp($b,1,$c_user_cnf_stack_pointer_define)){
-
+			}elseif (GenerateFunc::is_effect_ipsp($b,1)){
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');
 			}
 
@@ -692,48 +704,53 @@ class OrganPoly{
 	//
 
 	public static function start ($objs,$echo = false){ 
+        
+		$obj = $objs[1];
 
-		foreach ($objs as $a){
-			$b = ConstructionDlinkedListOpt::getDlinkedList($a);
+		$b = ConstructionDlinkedListOpt::getDlinkedList($obj);
 
-			$from_soul = false;		
-			
-			if (isset($b['label'])){          //标号 不多态
-				continue;
-			}else{
-				if (isset($b['poly'])){      //多态
-					if (true === $b['soul']){
-						$from_soul = true;	
-					}
-			    }elseif (isset($b['bone'])){ //骨架		
-			    
-				}elseif (isset($b['meat'])){ //血肉
-			    
-				}else{                                                    //原始灵魂		
-				    $from_soul = true;	
-				}
-				$c_obj    = OrgansOperator::GetByDListUnit($b,'code');
-				$c_usable = OrgansOperator::GetByDListUnit($b,'usable');
+		$from_soul = false;				
+
+		if (isset($b['poly'])){      //多态
+			if (true === $b['soul']){
+				$from_soul = true;	
 			}
-			//var_dump ($c_obj);
-			//var_dump ($c_usable);
-
-			$c_poly_result = array();		
-
-			if (self::collect_usable_poly_model($c_obj,$c_usable,100,$c_poly_result)){ // 1/100 的概率被放弃poly
-				//生成 多态 逆向 数组
-				OrgansOperator::SetPolyReverse(self::$_index,'i',$a);           
-				OrgansOperator::SetPolyReverse(self::$_index,'n',count($c_poly_result['code']));
-				
-				//把 多态 结果插入 代码 顺序 链表
-				$insert_List_index = self::insert_into_list ($a,self::$_index,$c_poly_result['code'],$from_soul);
-				OrgansOperator::Set(POLY,self::$_index,$c_poly_result);
-				self::$_index ++;            
-				if ($echo){
-					DebugShowFunc::my_shower_03($a,$insert_List_index,$c_poly_result);
-				}
-			}	
+		}elseif (isset($b['bone'])){ //骨架		
+		
+		}elseif (isset($b['meat'])){ //血肉
+		
+		}else{                                                    //原始灵魂		
+			$from_soul = true;	
 		}
+		$c_obj    = OrgansOperator::GetByDListUnit($b,'code');
+		$c_usable = OrgansOperator::GetByDListUnit($b,'usable');
+
+		$c_poly_result = array();		
+
+		if (self::collect_usable_poly_model($c_obj,$c_usable,$c_poly_result)){
+			//生成 多态 逆向 数组
+			OrgansOperator::SetPolyReverse(self::$_index,'i',$obj);           
+			OrgansOperator::SetPolyReverse(self::$_index,'n',count($c_poly_result['code']));
+			
+			//把 多态 结果插入 代码 顺序 链表
+			$insert_List_index = self::insert_into_list ($obj,self::$_index,$c_poly_result['code'],$from_soul);
+			OrgansOperator::Set(POLY,self::$_index,$c_poly_result);
+
+            //原单位Character.Rate清零 / 新单位init.character 初始化 & 继承原单位
+			$old = Character::getAllRate($obj);
+			Character::removeRate($obj);
+            for ($i = $insert_List_index;$i < ConstructionDlinkedListOpt::getDlinkedListIndex();$i ++){
+				$new = Character::initUnit($i,POLY);
+				Character::mergeRate($i,$new,$old);
+			}
+
+			self::$_index ++;            
+			if ($echo){
+				DebugShowFunc::my_shower_03($obj,$insert_List_index,$c_poly_result);
+			}
+		}else{ //poly失败，Rate减1
+		    Character::modifyRate(POLY,$obj,-1);
+		}	
 	}
 }
 

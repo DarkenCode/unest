@@ -16,7 +16,7 @@ class OrganMeat{
     public static function init(){
 		//////////////////
 		//初始化 取得 meat repo库
-		$cf = @file_get_contents(dirname(__FILE__).'/../models/model_meat.dat');
+		$cf = @file_get_contents(dirname(__FILE__).'/../templates/meat.tpl.dat');
 		if ($cf == false){
 			GeneralFunc::LogInsert('fail to open meat repo',2);
 		}else{
@@ -50,7 +50,7 @@ class OrganMeat{
 	// 把生成的血肉 插入 链表
 	private static function meat_insert_into_list($current_forward,$meat_generated,$direct = 'p'){
 
-		global $c_user_cnf_stack_pointer_define;
+
 
 		$prev = false;
 		$next = false;
@@ -71,9 +71,6 @@ class OrganMeat{
 			$prev = $current_forward;	
 		}
 
-	//$fuck = $prev;
-	//$fuck2 = $next;
-
 		$c_meat = self::$_index - $meat_generated;
 		
 		//echo "\r\n\r\n $current_forward [ $prev $next ], $meat_generated , $direct ,$c_meat,$UNIQUE_meat_index,$UNIQUE_meat_index";
@@ -90,7 +87,7 @@ class OrganMeat{
 
 			ConstructionDlinkedListOpt::setDlinkedList(98,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
 			
-			if (GeneralFunc::is_effect_ipsp(OrgansOperator::Get(MEAT,$c_meat,'code',98),0,$c_user_cnf_stack_pointer_define)){
+			if (GenerateFunc::is_effect_ipsp(OrgansOperator::Get(MEAT,$c_meat,'code',98),0)){
 
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');			
 
@@ -609,7 +606,6 @@ class OrganMeat{
 	//
 
 	public static function start($objs,$meat_max_number){
-
 
 		$c_total_meat_generated = 0;
 

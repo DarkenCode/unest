@@ -6,6 +6,8 @@ if(!defined('UNEST.ORG')) {
 
 //主 链表 及 相关 结构 操作 类
 
+define (MIN_REL_JMP_RANGE_RESERVE,5); //rel_jmp range 极限保留字节数 (小于此数,所有单位character.Rate清除)
+
 class ConstructionDlinkedListOpt{
     //链表记录
     private static $_soul_writein_Dlinked_List;        //双向链表 (数组结构)
@@ -22,15 +24,40 @@ class ConstructionDlinkedListOpt{
 	private static $_rollback_c_rel_jmp_range;
 	private static $_rollback_c_rel_jmp_pointer;
 	private static $_rollback_c_usable_oplen;
-    
+
+	//记录rel.jmp.range已到极限或无限 ()
+    private static $_forbid_rel_jmp;
+
+
+    //搜索所有rel_jmp列表，将所有到达range限制的单位character.Rate清除
+	public static function forbidMinRanges(){
+	    foreach (self::$_c_rel_jmp_range as $i => $v){
+			if (isset(self::$_forbid_rel_jmp[$i])){
+			    continue;
+			}elseif (false === $v['max']){  // no limit range => not need forbid check
+			    self::$_forbid_rel_jmp[$i] = true;
+			}elseif ($v['max'] <= $v['range'] + MIN_REL_JMP_RANGE_RESERVE){
+				//echo "<br>$$$$$$$$$$$$$$$$$$$$$$$$$$$$$";
+				//echo $v['max'].' <= '.$v['range']." + ".MIN_REL_JMP_RANGE_RESERVE;
+			    self::$_forbid_rel_jmp[$i] = true;
+				foreach ($v['unit'] as $u => $vv){
+				    Character::removeRate($u);
+				}
+			}
+		}
+		//var_dump (self::$_forbid_rel_jmp);
+	}
+
 	//初始化 变量s
 	public static function init($c_soul_writein_Dlinked_List_Total,$c_rel_jmp_range,$c_rel_jmp_pointer){
 	    self::$_soul_writein_Dlinked_List = $c_soul_writein_Dlinked_List_Total['list'];	
-		self::$_s_w_Dlinked_List_index = $c_soul_writein_Dlinked_List_Total['index'];
+		self::$_s_w_Dlinked_List_index    = $c_soul_writein_Dlinked_List_Total['index'];
 		self::$_soul_writein_Dlinked_List_start = 0; //顺序写入双向链表 起始 位 编号 | 未被多态|混淆 ，肯定为 [0]
 		self::$_c_rel_jmp_range = $c_rel_jmp_range;
 		self::$_c_rel_jmp_pointer = $c_rel_jmp_pointer;
 		self::$_c_usable_oplen = false;              //可用代码长度限制 剩余值 (设置为false 代表不限制代码长度)
+
+		self::$_forbid_rel_jmp = array();
 	}
 
 	//准备回滚
@@ -77,6 +104,41 @@ class ConstructionDlinkedListOpt{
 	    return self::$_rollback_soul_writein_Dlinked_List;
 	}
 
+    //获取2单位间所有单位，按次序排列
+    public static function getAmongObjs($a,$b){		
+		if ($a == $b){
+		    return array(1 => $a);
+		}		
+		$objs = self::seekNextObj($a,$b);
+        if (false === $objs){
+			$objs = self::seekNextObj($b,$a);
+		}
+        return $objs;		
+	}
+	private static function seekNextObj($c,$target){
+		$objs = array();
+		$objs[1] = $c;
+		while (isset(self::$_soul_writein_Dlinked_List[$c]['n'])){
+		    $c = self::$_soul_writein_Dlinked_List[$c]['n'];
+			$objs[] = $c;
+            if ($c == $target){
+				return $objs;
+			}  
+		}	    
+		return false;
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////////////
+	//
+	public static function isValidID($id){
+		if (isset(self::$_soul_writein_Dlinked_List[$id])){
+		    if (!isset(self::$_soul_writein_Dlinked_List[$id]['302'])){
+			    return true;
+			}
+		}
+	    return false;
+	}
+
     ////////////////////////////////////////////////////////////////////////////////////////////	
 	//读取指定unit 的 $_c_rel_jmp_pointer 值
 	public static function ReadRelJmpPointer($unit=false){
@@ -102,79 +164,6 @@ class ConstructionDlinkedListOpt{
 	    return isset(self::$_c_rel_jmp_pointer[$unit]);
 	}
 
-	///////////////////////////////////////////
-	//在objs中剔除,涉及 已无足够空间写入的有限 定长跳转 (暂定条件: 'max' - 'range' < 15)
-	//step 01: 从objs中抽掉有限 定长跳转 unit，objs -> 多个数组
-	//step 02: 多个数组中抽取最多单位的那个作为新的objs
-	//
-	private static function filter_fill_rel_jmp(&$ret,$filter=15){
-
-		//搜集 有限 定长 跳转
-		$forbid_unit = false;
-		//echo "<br><br>****************************";
-		//var_dump ($c_rel_jmp_range);
-		if (is_array(self::$_c_rel_jmp_range)){
-			foreach (self::$_c_rel_jmp_range as $a => $b){
-				if (false !== $b['max']){
-					if ($b['max'] - $b['range'] < $filter){
-						$forbid_unit[$a] = $a;
-					}
-				}
-			}
-			if ($forbid_unit){
-				//echo "<br> objs: ";
-				//var_dump ($ret);
-				//echo "<br> forbid:";
-				//var_dump ($forbid_unit);
-				$usable_objs = false;
-				$n = 0;
-				$i = 1;
-				foreach ($ret as $a => $b){
-					//echo "<br> $a:";
-					//var_dump ($c_rel_jmp_pointer[$b]);
-					//if (ConstructionDlinkedListOpt::issetRelJmpPointer($b)){
-					if (isset (self::$_c_rel_jmp_pointer[$b])){
-						foreach (self::$_c_rel_jmp_pointer[$b] as $c => $d){
-							if (isset($forbid_unit[$c])){
-								 $n ++;
-								 $i = 0;
-								 break;
-							}
-						}
-					}
-					if ($i){
-						$usable_objs[$n][$i] = $b; 
-					}
-					$i ++;			
-				}
-				//echo "<br> usable_objs:";
-				//var_dump ($usable_objs);
-				$ret = array();
-				if ($usable_objs){			
-					foreach ($usable_objs as $a => $b){
-						if (count($b) > count($ret)){
-							$ret = $b;
-						}
-					}
-				}
-				//if (count($usable_objs) > 1){
-				//	var_dump ($ret);
-				   // exit;
-				//}
-			}
-		
-
-		//echo "<br>????????????????????????????????";
-		//var_dump ($ret);
-		//foreach ($ret as $a => $b){
-		//    echo "$b:";
-		//	var_dump ($c_rel_jmp_pointer[$b]);
-		//}
-
-		}
-
-		return;
-	}
 
 	 ////////////////////////////////////////////////////////////////////////////////////////////	
 	//读取指定unit 的 $_c_rel_jmp_range; 值
@@ -348,6 +337,9 @@ class ConstructionDlinkedListOpt{
 	//////////////////////////////////////////////////////////////////////////
 	//摘除 双向 链表 中的 指定单位 (对照 OrganBone::remove_from_DlinkedList)
 	public static function remove_from_DlinkedList($c_lp){
+
+		Character::removeRate($c_lp); //清character.Rate
+
 		$prev = false;
 		$next = false;
 
@@ -361,6 +353,7 @@ class ConstructionDlinkedListOpt{
 
 		//unset ($copy_buff[$c_lp]);
 		self::$_soul_writein_Dlinked_List[$c_lp]['302'] = $next;
+
 		if (false !== $prev)
 			unset (self::$_soul_writein_Dlinked_List[$prev]['n']);
 		if (false !== $next)
@@ -440,136 +433,6 @@ class ConstructionDlinkedListOpt{
 		}
 
 		return false;
-	}
-	//////////////////////////////////////////////
-	//
-	//链表中指定的 位置，长度，搜集目标链表(注：上下同步收集，按照次序)
-	//
-	public static function collect_obj_from_DlinkedList($insert_pointer,$number){
-
-		$ret = false;
-
-		$current = $insert_pointer;
-
-		while (isset(self::$_soul_writein_Dlinked_List[$current]['302'])){ //已被转移 位	    
-			$current =  self::$_soul_writein_Dlinked_List[$current]['302'];		
-		}
-
-		//////////////////////////////////////////////////////////////////////////
-		//灵魂焦点为真,必须找到org为obj
-		global $c_MeatMutation;
-		$soulfocus = GenerateFunc::my_rand($c_MeatMutation);
-		if (($soulfocus) and (false === self::is_soul_unit(self::$_soul_writein_Dlinked_List[$current]))){
-
-			$p = $current;
-			$n = $current;	
-	//echo "<br>######################################";
-	//var_dump ($soul_writein_Dlinked_List[$current]);
-			while (true){
-				
-				if (false !== $p){
-					if (isset(self::$_soul_writein_Dlinked_List[$p]['p'])){
-						$p = self::$_soul_writein_Dlinked_List[$p]['p'];
-						//echo "<br>$p<font color=red>";
-						//var_dump ($soul_writein_Dlinked_List[$p]);
-						//echo "</font>";
-						if (self::is_soul_unit(self::$_soul_writein_Dlinked_List[$p])){
-							$current = $p;
-							break;
-						}
-					}else{
-						$p = false;
-					}
-				}
-
-				if (false !== $n){
-					if (isset(self::$_soul_writein_Dlinked_List[$n]['n'])){
-						$n = self::$_soul_writein_Dlinked_List[$n]['n'];
-						//echo "<br>$n<font color=blue>";
-						//var_dump ($soul_writein_Dlinked_List[$n]);
-						//echo "</font>";
-						if (self::is_soul_unit(self::$_soul_writein_Dlinked_List[$n])){
-							$current = $n;
-							break;
-						}
-					}else{
-						$n = false;
-					}
-				}
-
-				if ((false === $p) and (false === $n)){ //整段都没有灵魂? 不可能
-					break;
-				}
-			}	
-		}
-		
-	//	echo "<br>result: $current";
-	//	var_dump ($soul_writein_Dlinked_List[$current]);
-
-		//////////////////////////////////////////////////////////////////////////    
-
-		$current_forward  = $current;
-		$current_backward = $current;
-		$have_forward  = true;
-		$have_backward = true;
-		
-		$prev_obj = array();
-		$next_obj = array();
-
-		while ($number > 0){		
-			$meat_generated = 0;
-			
-			if (true === $have_forward){			
-				if (isset(self::$_soul_writein_Dlinked_List[$current_forward]['p'])){
-					$current_forward = self::$_soul_writein_Dlinked_List[$current_forward]['p'];
-					$prev_obj[] = $current_forward;
-					$number --;
-				}else{				
-					if (false === $have_backward){
-						break;
-					}
-					$have_forward = false;
-				}
-			}
-			if (0 == $number){
-				break;
-			}
-
-			if (true === $have_backward){
-				if (isset(self::$_soul_writein_Dlinked_List[$current_backward]['n'])){
-					$current_backward = self::$_soul_writein_Dlinked_List[$current_backward]['n'];
-					$next_obj[] = $current_backward;
-					$number --;
-				}else{
-					if (false === $have_forward){
-						break;
-					}
-					$have_backward = false;
-				}
-			}		
-		}    
-		
-		$i = 1; //返回数组key 从 1 开始
-		if (count($prev_obj) > 0){
-			$prev_obj = array_reverse($prev_obj);
-			foreach ($prev_obj as $a){
-				$ret[$i] = $a;
-				$i ++;
-			}		
-		}
-		$ret[$i] = $current;
-		$i ++;
-		if (count($next_obj) > 0){
-			foreach ($next_obj as $a){
-				$ret[$i] = $a;
-				$i++;
-			}
-		}
-		
-		//在objs中剔除,涉及 已无足够空间写入的有限 定长跳转
-		self::filter_fill_rel_jmp($ret,15);
-		
-		return $ret;
 	}
 
 
