@@ -533,10 +533,8 @@ class OrganBone{
 	private static function doTearPosition($c_bone_model,$bone_obj){
 	    
 		$_tear_position = array();
-		$a = reset($bone_obj); //头
-        $_tear_position[$a] = $a;
-		$a = end($bone_obj);   //尾
-        $_tear_position[$a] = $a;
+		$s = reset($bone_obj); //头
+		$e = end($bone_obj);   //尾
 
 		//位于 ['direct']位 的单位与下一单位(如果有的话,下一单位为下一unit的开头) 
         foreach ($c_bone_model['direct'] as $a){
@@ -547,6 +545,10 @@ class OrganBone{
 				}
 			}
 		} 
+
+        //头尾character.Rate已处理，不重复处理
+        unset ($_tear_position[$s]);
+        unset ($_tear_position[$e]);
 
 		//bone.Rate - 1
 		foreach ($_tear_position as $a){
@@ -645,7 +647,7 @@ class OrganBone{
 		}
 	}
 
-	public static function start($bone_obj,$language){
+	public static function start($bone_obj){
 
 		self::$_delay_remove         = array();
 		self::$_bone_units           = array();
@@ -680,6 +682,7 @@ class OrganBone{
 				    Character::initUnit($a,BONE);
 				}				
 			}else{
+				global $language;
 				GeneralFunc::LogInsert($language['fail_bone_array'].$z,2);				
 			}			
 		}else{ //骨架数组为空...

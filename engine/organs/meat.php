@@ -161,7 +161,7 @@ class OrganMeat{
 		}else{
 			$ret = self::$_usable_envir['ALL'];
 		}
-		
+
 		return $ret;
 
 	}
@@ -565,9 +565,10 @@ class OrganMeat{
 				}
 			}		
 			
-			//echo "<br><br>result: <br>";
-			//var_dump ($c_obj_model);
-			//var_dump ($final_usable_model);
+		//	echo "<br><br>result: <br>";
+		//	var_dump ($c_obj_model);
+		//	var_dump ($final_usable_model);
+		//	exit;
 
 		}else{ //突变～～～忽略亲缘性
 			 foreach (self::$_usable_index as $a => $b){
@@ -605,7 +606,9 @@ class OrganMeat{
 	// $meat_max_number   最大血肉可用条数
 	//
 
-	public static function start($objs,$meat_max_number){
+	public static function start($objs){
+
+        $meat_max_number = 50;
 
 		$c_total_meat_generated = 0;
 

@@ -384,25 +384,28 @@ foreach ($CodeSectionArray as $sec => $body){
             //###### 确认Organ操作目标，并character.Rate --
 			$objs = false;
             if (POLY === $c_process){
-				if (false !== ($obj = Character::random(POLY))){
-					$objs[1] = $obj;
+				if (false !== ($a = Character::random(POLY))){
+					$objs[1] = $a;
+					Character::modifyRate(POLY,$a,-1);
 				}						
 			}elseif (MEAT === $c_process){
 				$a = Character::random(MEAT);
 				$b = Character::random(MEAT);
 				$objs = ConstructionDlinkedListOpt::getAmongObjs($a,$b);
+				foreach ($objs as $a){
+					Character::modifyRate(MEAT,$a,-1);
+				}
 			}elseif (BONE === $c_process){
 				$a = Character::random(BONE);
 				$b = Character::random(BONE);	
 				$objs = ConstructionDlinkedListOpt::getAmongObjs($a,$b);
+				Character::modifyRate(BONE,$a,-1); //Bone 仅对撕裂位 character.Rate --
+				Character::modifyRate(BONE,$b,-1);
 			}else{
 				GeneralFunc::LogInsert('unkown act in process: '.$c_process.' at section: '.$sec.'.',2);
 			}			
 			if (false === $objs){
 			    continue;
-			}
-			foreach ($objs as $a){ //character.Rate --
-				Character::modifyRate($c_process,$a,-1);
 			}
 			//###### 保存当前双向链表及character.Rate，当rel.jmp不合适时可回滚还原
 			ConstructionDlinkedListOpt::ready();
@@ -411,9 +414,9 @@ foreach ($CodeSectionArray as $sec => $body){
 			if (POLY === $c_process){
 				OrganPoly::start($objs,$my_params['echo']);
 			}elseif (MEAT === $c_process){
-				OrganMeat::start($objs,50);
+				OrganMeat::start($objs);
 			}elseif (BONE === $c_process){
-				OrganBone::start($objs,$language);
+				OrganBone::start($objs);
 			}
 
 			$exetime_record['organ'][$c_process] += GeneralFunc::exetime_record($stime); //获取执行的时间

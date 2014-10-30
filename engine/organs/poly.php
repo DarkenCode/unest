@@ -703,7 +703,7 @@ class OrganPoly{
 	//多态 处理
 	//
 
-	public static function start ($objs,$echo = false){ 
+	public static function start ($objs){ 
         
 		$obj = $objs[1];
 
@@ -744,12 +744,11 @@ class OrganPoly{
 				Character::mergeRate($i,$new,$old);
 			}
 
-			self::$_index ++;            
-			if ($echo){
+			self::$_index ++;
+			global $my_params;
+			if ($my_params['echo']){
 				DebugShowFunc::my_shower_03($obj,$insert_List_index,$c_poly_result);
 			}
-		}else{ //poly失败，Rate减1
-		    Character::modifyRate(POLY,$obj,-1);
 		}	
 	}
 }

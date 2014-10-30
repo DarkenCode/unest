@@ -9,7 +9,7 @@ if(!defined('UNEST.ORG')) {
 $bone_model_index       = array(1);
 
 
-$bone_model_index_multi = array(1,2);
+$bone_model_index_multi = array(1,1,2);
 
 
 $bone_multi_max_size = 50;
