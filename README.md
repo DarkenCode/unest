@@ -1,8 +1,11 @@
-unest
+![](http://unest.org/logoa.png) unest
 =====
 
-Polymorphic Engine
+an Obfuscation Engine for binary code
 
+##Purpose
+
+unest obfuscate the binary code,obstruct malicious software analysis effectively.
 
 ##Support
 
