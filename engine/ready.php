@@ -1,7 +1,7 @@
 <?php
 
 define('UNEST.ORG', TRUE);
-//ini_set('display_errors',0);
+ini_set('display_errors',0);
 error_reporting(E_ERROR); 
 
 require dirname(__FILE__)."/library/ready.func.php";
@@ -12,8 +12,6 @@ require dirname(__FILE__)."/library/data.construction.php";
 
 require_once dirname(__FILE__)."/include/intel_instruction.php";
 
-require_once dirname(__FILE__)."/include/intel_instruction_array.php";
-
 require_once dirname(__FILE__)."/include/config.inc.php";
 
 require dirname(__FILE__)."/library/config.func.php";
@@ -21,6 +19,9 @@ require dirname(__FILE__)."/library/config.func.php";
 require dirname(__FILE__)."/library/rel.jmp.func.php";
 
 require_once dirname(__FILE__)."/../nasm.inc.php";
+
+require dirname(__FILE__)."/library/instruction.func.php";
+Instruction::init();
 
 //////////////////////////////////////////
 //堆栈指针 寄存器

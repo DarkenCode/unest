@@ -49,7 +49,7 @@ class OrganPoly{
 
 		global $all_valid_mem_opt_index;
 		global $avmoi_ptr;
-		global $register_assort;
+
 
 		foreach ($poly_model['code'] as $a => $b){ //应根据流程来走，这里简单起见，以代码顺序来走 | 直到有多态模板复杂到需要按流程来进行
 			if (isset($soul_usable['p'])){
@@ -103,7 +103,7 @@ class OrganPoly{
 				foreach ($param_forbid['p'] as $z => $y){
 					foreach ($y as $v => $w){
 						if ('r' == $org['p_type'][$v]){ //简化处理，直接去掉目标通用寄存器 所有可能位数的 可写权限
-							$standard_reg = $register_assort[$org['params'][$v]];
+							$standard_reg = Instruction::getGeneralRegIndex($org['params'][$v]);
 							unset ($poly_model['usable'][$z]['p']['normal_write_able'][$standard_reg]);
 							//除寄存器外，还需要去除所有与此寄存器相关的内存地址的usable
 							if (isset($poly_model['usable'][$z]['p']['mem_opt_able'])){
@@ -141,7 +141,7 @@ class OrganPoly{
 				foreach ($param_forbid['n'] as $z => $y){
 					foreach ($y as $v => $w){
 						if ('r' == $org['p_type'][$v]){ //简化处理，直接去掉目标通用寄存器 所有可能位数的 可写权限
-							$standard_reg = $register_assort[$org['params'][$v]];
+							$standard_reg = Instruction::getGeneralRegIndex($org['params'][$v]);
 							unset ($poly_model['usable'][$z]['n']['normal_write_able'][$standard_reg]);
 							//除寄存器外，还需要去除所有与此寄存器相关的内存地址的usable
 							if (isset($poly_model['usable'][$z]['n']['mem_opt_able'])){
@@ -182,8 +182,9 @@ class OrganPoly{
 			if (isset ($rand_forbid['p'])){
 				foreach ($rand_forbid['p'] as $z => $y){
 					foreach ($y as $v => $w){
-						if (isset ($register_assort[$rand_result[$v]])){ //通用寄存器 简化处理 不区分bits 全部取消
-							unset ($poly_model['usable'][$z]['p']['normal_write_able'][$register_assort[$rand_result[$v]]]);
+						if (Instruction::getGeneralRegIndex($rand_result[$v])){ //通用寄存器 简化处理 不区分bits 全部取消
+							$cri = Instruction::getGeneralRegIndex($rand_result[$v]);
+							unset ($poly_model['usable'][$z]['p']['normal_write_able'][$cri]);
 						}else{                                           //内存地址
 							if (isset($poly_model['usable'][$z]['p']['mem_opt_able'])){
 								$x = $poly_model['usable'][$z]['p']['mem_opt_able'];
@@ -202,8 +203,9 @@ class OrganPoly{
 			if (isset ($rand_forbid['n'])){
 				foreach ($rand_forbid['n'] as $z => $y){
 					foreach ($y as $v => $w){
-						if (isset ($register_assort[$rand_result[$v]])){ //通用寄存器 简化处理 不区分bits 全部取消
-							unset ($poly_model['usable'][$z]['n']['normal_write_able'][$register_assort[$rand_result[$v]]]);
+						if (Instruction::getGeneralRegIndex($rand_result[$v])){ //通用寄存器 简化处理 不区分bits 全部取消
+							$cri = Instruction::getGeneralRegIndex($rand_result[$v]);
+							unset ($poly_model['usable'][$z]['n']['normal_write_able'][$cri]);
 						}else{                                           //内存地址
 							if (isset($poly_model['usable'][$z]['n']['mem_opt_able'])){
 								$x = $poly_model['usable'][$z]['n']['mem_opt_able'];
@@ -288,7 +290,7 @@ class OrganPoly{
 	//
 	private static function check_poly_usable ($c_usable,$org,&$usable_poly_model,&$rand_result){
 
-		global $register_assort;
+
 		global $all_valid_mem_opt_index;
 
 		$obj = $org['operation'];
@@ -309,15 +311,15 @@ class OrganPoly{
 			$break = false;
 			if (is_array(self::$_poly_model_repo[$obj][$b]['new_regs']['normal'])){ //检查新增 通用 寄存器 或 内存地址
 				foreach (self::$_poly_model_repo[$obj][$b]['new_regs']['normal'] as $c => $d){ //目前 仅考虑 32位 通用寄存器
-					if (isset($register_assort[$org['params'][$c]])){        //原始指令参数中的通用寄存器
-						$c = $register_assort[$org['params'][$c]];
+					if (Instruction::getGeneralRegIndex($org['params'][$c])){        //原始指令参数中的通用寄存器
+						$c = Instruction::getGeneralRegIndex($org['params'][$c]);
 						if (!$c_usable['n']['normal_write_able'][$c][32]){ //仅 检查 Next 部分，见 readme_poly.txt 2013/04/19
 							//echo "<br> $sec $line $c";
 							unset ($usable_poly_model[$a]);
 							$break = true;
 							break;
 						}
-					}elseif (isset($register_assort[$c])){                   //独立的通用寄存器
+					}elseif (Instruction::getGeneralRegIndex($c)){                   //独立的通用寄存器
 						if (!$c_usable['n']['normal_write_able'][$c][32]){ 
 							unset ($usable_poly_model[$a]);
 							$break = true;
@@ -416,8 +418,8 @@ class OrganPoly{
 										}							
 									}
 								}else{                                                      //只要读权限
-									global $registersss;
-									$rand_result[$a][$z] = array_rand($registersss['32']);
+									
+									$rand_result[$a][$z] = array_rand(Instruction::getRegsByBits(32));
 									$rand_result[$a]['p_type'][$z] = 'r';
 									$rand_result[$a]['p_bits'][$z] = 32; // 整数一律 默认32位
 								}   
@@ -562,7 +564,7 @@ class OrganPoly{
         global $pattern_reloc;
 		global $c_rel_info;
 		global $stack_pointer_reg;
-		global $register_assort;
+	
 
 	    $ret = false;
 
@@ -579,7 +581,7 @@ class OrganPoly{
 							continue;
 						}
 						//r 区分出为堆栈指针的寄存器 's'
-						if ($register_assort[$obj['params'][$a]] == $stack_pointer_reg){
+						if (Instruction::getGeneralRegIndex($obj['params'][$a]) == $stack_pointer_reg){
 							$b = 's';
 						}
 					}

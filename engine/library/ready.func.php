@@ -592,7 +592,7 @@ class ReadyFunc{
 		global $normal_register_opt_array;
 		global $flag_register_opt_array;
 		global $valid_mem_opt_array;
-		global $registersss;
+
 		
 		global $soul_forbid;
 		global $soul_usable;
@@ -677,7 +677,7 @@ class ReadyFunc{
 							foreach ($f as $g => $h){							
 								if ($h == 2){ //2. 写操作 ：eax可写  => al,ah,ax,eax 可写   : 向下扩展 $normal_reg_extend_down
 									foreach ($normal_reg_extend_down[$g] as $i => $j){
-										if (isset($registersss[$i][$e]))
+										if (Instruction::getRegByIdxBits($i,$e))
 											$c_normal_reg_usable_array[$e][$i] = true;
 									}
 									foreach ($normal_reg_extend_all[$g] as $i => $j){  // 显性 禁写
@@ -688,7 +688,7 @@ class ReadyFunc{
 										unset ($c_normal_reg_usable_array[$e][$i]);
 									}
 									foreach ($normal_reg_extend_down[$g] as $i => $j){ // 显性 禁写
-										if (isset($registersss[$i][$e]))
+										if (Instruction::getRegByIdxBits($i,$e))
 											$c_forbid_normal_reg_usable_array[$e][$i] = true;
 									}
 								}
@@ -865,14 +865,14 @@ class ReadyFunc{
 	//
 	private static function deal_exec_thread_list_get($c_line,$c_asm_array,$c_thread_id,$c_bound_end,$c_solid_jmp_to,&$exec_thread_list,$list_id,&$c_enumming_array,&$list_id_ptr,&$jmp_back_record,&$bound_start){
 		
-		global $con_abs_jmp;	
+	
 		global $Intel_instruction;
 
 		while ($c_line < $c_bound_end){
 			if (isset($c_asm_array[$c_line])){
 				$exec_thread_list[$c_thread_id][$list_id][] = $c_line;
 
-				if (1 === $con_abs_jmp[$c_asm_array[$c_line]['operation']]){ //条件跳转			    
+				if (Instruction::isJmp($c_asm_array[$c_line]['operation'],1)){ //条件跳转			    
 					$list_id_ptr ++;
 					$exec_thread_list[$c_thread_id][$list_id_ptr] = $exec_thread_list[$c_thread_id][$list_id];
 					$c_enumming_array[$list_id_ptr] = $c_line + 1;		    
@@ -893,8 +893,8 @@ class ReadyFunc{
 					}
 				}
 
-				if (2 === $con_abs_jmp[$c_asm_array[$c_line]['operation']]){ //绝对跳转 (备忘:ret/jmp... 后面应无需考虑执行)
-																			 //         (         call   后面应  需考虑执行)
+				if (Instruction::isJmp($c_asm_array[$c_line]['operation'],2)){ //绝对跳转 (备忘:ret/jmp... 后面应无需考虑执行)
+																		 	  //         (         call   后面应  需考虑执行)
 					$tmp = $c_line + 1;
 					if (!$bound_start[$tmp]){					
 						$bound_start[$tmp] = true;
@@ -970,10 +970,10 @@ class ReadyFunc{
 		
 		global $Intel_instruction;
 		global $Intel_instruction_mem_opt;
-		global $total_register;
 
-		global $all_eflags_0;
-		global $register_assort;
+
+
+
 		global $normal_register_opt_array;
 		global $flag_register_opt_array;
 		global $valid_mem_opt_array;
@@ -981,15 +981,10 @@ class ReadyFunc{
 		global $UniqueHead;
 		global $pattern_reloc;  //匹配 reloc 信息
 
-		global $my_cc;
 
-		global $can_not_deal_operation; // 目前无法处理的指令
 
-		foreach ($total_register as $a => $b){
-			$pattern_regs .=  '('."$a".')|';
-		}
-		$pattern_regs = substr ($pattern_regs,0,strlen($pattern_regs) - 1);
-		
+		$pattern_regs = Instruction::genRegPattern();
+
 		$CodeSectionArray = $myTables['CodeSectionArray'];
 		foreach ($CodeSectionArray as $a => $b){
 			foreach ($AsmResultArray[$a] as $c => $d){
@@ -1041,10 +1036,10 @@ class ReadyFunc{
 								}
 								$c_param_type_complete = true;
 								$param_include_r_m = true;
-							}elseif ($total_register[$x]){
+							}elseif (Instruction::getGeneralRegBits($x)){
 								$StandardAsmResultArray[$a][$c]['p_type'][$p_ptr] = 'r';
-								$StandardAsmResultArray[$a][$c]['p_bits'][$p_ptr] = $total_register[$x];
-								$c_solid_bits[$p_ptr] = $total_register[$x];
+								$StandardAsmResultArray[$a][$c]['p_bits'][$p_ptr] = Instruction::getGeneralRegBits($x);
+								$c_solid_bits[$p_ptr] = Instruction::getGeneralRegBits($x);
 								$c_param_type_complete = true;
 								$param_include_r_m = true;
 							}elseif ('BYTE' === $x){
@@ -1069,15 +1064,16 @@ class ReadyFunc{
 							
 							//前缀 对 通用/标志 寄存器的影响//
 							foreach ($Intel_instruction[$x] as $z => $y){
-								if ($all_eflags_0[$z]){
+								if (Instruction::isEflag($z)){
 									$flag_register_opt_array[$a][$c][$z] |= $y;
-								}elseif ($total_register[$z]){ //32位指令 修改 寄存器都 为32位
-									$normal_register_opt_array[$a][$c][$register_assort[$z]][32] |= $y;
+								}elseif (Instruction::getGeneralRegBits($z)){ //32位指令 修改 寄存器都 为32位
+									$crb = Instruction::getGeneralRegBits($z);
+									$normal_register_opt_array[$a][$c][$crb][32] |= $y;
 								}
 							}
 
 						}elseif (is_array($Intel_instruction[$x])){
-							if (isset($can_not_deal_operation[$x])){ //无法处理的指令，丢弃整个段 的操作
+							if (Instruction::isCantDealInst($x)){ //无法处理的指令，丢弃整个段 的操作
 								GeneralFunc::LogInsert($language['section_name']." ".$myTables['CodeSectionArray'][$a]['name'].$language['section_number']." $a ".$language['total_linenumber']." $c , $x ".$language['canot_deal_instruction'],2);
 								$break = true;
 								break;
@@ -1087,7 +1083,7 @@ class ReadyFunc{
 							if (is_array($Intel_instruction_mem_opt[$x])){ //指令有 内存操作 (排除前缀)
 								$valid_mem_opt_array[$a][$c] = $Intel_instruction_mem_opt[$x];							
 							}
-							if ($my_cc[$x] === 'SETcc'){                   //指令对 参数 位数的影响
+							if (Instruction::isMatchCC('SETcc',$x)){                   //指令对 参数 位数的影响
 								$StandardAsmResultArray[$a][$c]['p_bits'][$p_ptr] = 8;
 							}
 						}else{ //非法了
@@ -1128,12 +1124,13 @@ class ReadyFunc{
 					}
 					//指令 对 通用/标志 寄存器的影响//
 					foreach ($c_instruction as $z => $y){
-						if ($all_eflags_0[$z]){
+						if (Instruction::isEflag($z)){
 							$flag_register_opt_array[$a][$c][$z] |= $y;
-						}elseif ($total_register[$z]){ //32位指令 修改 寄存器都 为32位
-							$normal_register_opt_array[$a][$c][$register_assort[$z]][32] |= $y;
+						}elseif (Instruction::getGeneralRegBits($z)){ //32位指令 修改 寄存器都 为32位
+							$crb = Instruction::getGeneralRegBits($z);
+							$normal_register_opt_array[$a][$c][$crb][32] |= $y;
 							
-							if ($register_assort[$z] === 'ESP'){ //指令 堆栈操作，堆栈有效
+							if (Instruction::getGeneralRegIndex($z) === 'ESP'){ //指令 堆栈操作，堆栈有效
 								$stack_used[$a][$c] = true;
 							}
 						}
@@ -1176,8 +1173,9 @@ class ReadyFunc{
 								break;
 								//$c_instruction[$z] = 3;
 							}
-							if ('r' === $StandardAsmResultArray[$a][$c]['p_type'][$z]){ //寄存器							
-								$normal_register_opt_array[$a][$c][$register_assort[$y]][$StandardAsmResultArray[$a][$c]['p_bits'][$z]] |= $c_instruction[$z];								
+							if ('r' === $StandardAsmResultArray[$a][$c]['p_type'][$z]){ //寄存器	
+								$cri = Instruction::getGeneralRegIndex($y);
+								$normal_register_opt_array[$a][$c][$cri][$StandardAsmResultArray[$a][$c]['p_bits'][$z]] |= $c_instruction[$z];								
 								if ($c_instruction[$z] > 1){
 									if ($StandardAsmResultArray[$a][$c]['params'][$z] === 'ESP'){ //参数 ESP 操作，堆栈有效性 中断
 										$stack_broke[$a][$c] = true;
@@ -1201,8 +1199,10 @@ class ReadyFunc{
 								//先判断内存指针中是否 含 寄存器，如是，则记为 读
 								if (preg_match_all('/'."$pattern_regs".'/',$y,$tmp)){
 									foreach ($tmp[0] as $w => $v){
-										$StandardAsmResultArray[$a][$c]['p_m_reg'][$z][$register_assort[$v]] = 1;
-										$normal_register_opt_array[$a][$c][$register_assort[$v]][$total_register[$v]] |= 1;
+										$cri = Instruction::getGeneralRegIndex($v);
+										$StandardAsmResultArray[$a][$c]['p_m_reg'][$z][$cri] = 1;
+										$crb = Instruction::getGeneralRegBits($v);
+										$normal_register_opt_array[$a][$c][$cri][$crb] |= 1;
 										$c_valid_mem_opt_array['reg'][] = $v;
 									}
 								}    
@@ -1236,9 +1236,9 @@ class ReadyFunc{
 					//XOR 指令特殊处理，当参数 相同时 ，参数不再为读写，而是只写入
 					if ('XOR' == $StandardAsmResultArray[$a][$c]['operation']){
 						if ($StandardAsmResultArray[$a][$c]['params'][0] === $StandardAsmResultArray[$a][$c]['params'][1]){
-							if ($register_assort[$StandardAsmResultArray[$a][$c]['params'][0]]){
+							if (Instruction::getGeneralRegIndex($StandardAsmResultArray[$a][$c]['params'][0])){
 								$c_bits = $StandardAsmResultArray[$a][$c]['p_bits'][0];
-								$c_reg  = $register_assort[$StandardAsmResultArray[$a][$c]['params'][0]];
+								$c_reg  = Instruction::getGeneralRegIndex($StandardAsmResultArray[$a][$c]['params'][0]);
 								$normal_register_opt_array[$a][$c][$c_reg][$c_bits] = 2;    
 							}     
 						}
@@ -1349,7 +1349,7 @@ class ReadyFunc{
 	//
 	public static function eip_label_replacer($AsmLastSec,&$solid_jmp_array,&$solid_jmp_to,&$myTables,&$AsmResultArray,$LineNum_Code2Reloc,$language){
 		//后面 跟 跳转 目的 标号的 跳转指令
-		global $eip_instruction;
+
 		global $UniqueHead;
 		global $user_option;
 
@@ -1366,7 +1366,7 @@ class ReadyFunc{
 				}
 				if (!$LineNum_Code2Reloc[$a][$c]){ //没有重定位
 					$tmp = explode (' ',$d['asm']);
-					if ($eip_instruction[$tmp[0]]){        //不考虑 前缀 指令 * 跳转指令前面 有可能有前缀吗？ 不可能()
+					if (Instruction::isEipInst($tmp[0])){  //不考虑 前缀 指令 * 跳转指令前面 有可能有前缀吗？ 不可能()
 														   //                   体现在反汇编级的前缀只有 Lock / rep / repz
 														   //Change DEFAULT operand size. (66)  不会体现在反汇编代码 前缀部分
 														   //Change DEFAULT address size. (67)  不会体现在反汇编代码 前缀部分

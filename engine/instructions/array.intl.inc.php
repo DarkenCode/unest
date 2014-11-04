@@ -1,42 +1,5 @@
 <?php
 
-/*
-//测试 利用已有 数组 区分 绝对跳转 条件跳转 等
-$normal_register = $total_register;
-unset ($normal_register['SP']);
-unset ($normal_register['ESP']);
-unset ($normal_register['RSP']);
-unset ($normal_register['IP']);
-unset ($normal_register['EIP']);
-unset ($normal_register['RIP']);
-foreach ($Intel_instruction as $a => $b){
-    if ($b['IP']){
-		$abs_jmp = true;
-		$color = "black";
-	    if (!$b[0]){ //无参数，绝对跳转
-		
-		}else{
-			foreach ($b as $c => $d){
-				if (($normal_register[$c]) | ($all_eflags_0[$c])){ //如果 对寄存器(通用/标志) 有读写动作，则是条件跳转，反之则为绝对跳转
-					$color = "red";
-					$abs_jmp = false;
-					break;
-				}		    
-			}				
-		}
-		echo "<br><font color = $color>'$a' => ";
-		if ($abs_jmp){
-		    echo '2,';
-		}else{
-		    echo '1,';
-		}
-		echo "</font>";
-	}
-}
-exit;
-*/
-
-
 //mem (sib) 影响指令长度
 //$mem_effect_len_array[a][b][c]  = n;
 //                      a: 首个寄存器存在为 1 ，不存在为 0                      例(大写部分): lea eax,[EAX+ecx*2+123]
@@ -66,14 +29,7 @@ $mem_effect_len_array['max'] = 5; //默认max
 
 //当段中有如下指令时无法处理，放弃整段
 $can_not_deal_operation = array(
-    //'LOOP'   => 1,
-	//'LOOPE'  => 1,
-	//'LOOPZ'  => 1,
-	//'LOOPNE' => 1,
-	//'LOOPNZ' => 1,
-	//'JCXZ'   => 1,
-	//'JECXZ'  => 1,
-	//'JRCXZ'  => 1,
+
 );
 
 
@@ -225,7 +181,7 @@ $my_cc = array(
 
 
 //所有条件跳转
-$Jcc = array(
+$Jcc_without_limit = array(
     'JA','JAE','JB','JBE','JC','JE','JG','JGE','JL','JLE','JNA','JNAE','JNB','JNBE','JNC','JNE','JNG','JNGE','JNL','JNLE','JNO','JNP','JNS','JNZ','JO','JP','JPE','JPO','JS','JZ'
 );
 

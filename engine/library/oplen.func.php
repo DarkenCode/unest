@@ -34,7 +34,7 @@ class OpLen{
 	//
 	public static function code_len($opt,$ignore_m = false){
 
-		global $range_limit_static_jmp;
+	
 		
 		if (('CALL' === $opt['operation']) and ('i' === $opt['p_type'][0])){
 			return 5;
@@ -46,15 +46,13 @@ class OpLen{
 			}
 			return 5;		
 		}
-	   
-		if (isset($range_limit_static_jmp[$opt['operation']])){
-			if ($range_limit_static_jmp[$opt['operation']] !== false){ //loop jecxz...
-				if (($opt['range'] > $range_limit_static_jmp[$opt['operation']]) and (isset($opt['range']))){
-					return false;
-				}
-				return 2;
+	     
+		if ($a = Instruction::getJmpRangeLmt($opt['operation'])){
+			if (($opt['range'] > $a) and (isset($opt['range']))){
+				return false;
 			}
-		}    
+			return 2;
+		}
 
 		global $opcode_len_arrays;
 		global $opcode_len_result;
@@ -66,16 +64,17 @@ class OpLen{
 		}
 		$p_number = count($opt['p_type']);
 
-		global $my_cc;
-		if (isset($my_cc[$opt['operation']])){ //XXXcc 条件指令
-			if ('Jcc' === $my_cc[$opt['operation']]){ //简化计算，按最大
+		
+		if (Instruction::getMatchCC($opt['operation'])){ //XXXcc 条件指令
+			if (Instruction::isMatchCC('Jcc',$opt['operation'])){ //简化计算，按最大
 				if ((isset($opt['range'])) and ($opt['range'] <= 127)){
 					return 2;
 				}
 				return 6;
 			}
-			$possible_arrays = $opcode_len_arrays[$my_cc[$opt['operation']]][$p_number];
-			$possible_result = $opcode_len_result[$my_cc[$opt['operation']]][$p_number];
+			$a = Instruction::getMatchCC($opt['operation']);
+			$possible_arrays = $opcode_len_arrays[$a][$p_number];
+			$possible_result = $opcode_len_result[$a][$p_number];
 		}else{
 			$possible_arrays = $opcode_len_arrays[$opt['operation']][$p_number];
 			$possible_result = $opcode_len_result[$opt['operation']][$p_number];

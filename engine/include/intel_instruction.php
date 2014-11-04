@@ -5,71 +5,8 @@ if(!defined('UNEST.ORG')) {
 }
 
 
-//段寄存器
-$segment_flag = array('CS' => 'CS', 'DS' => 'DS', 'SS' => 'SS', 'ES' => 'ES', 'FS' => 'FS', 'GS' => 'GS');
-
-//标志寄存器
-$all_eflags   = array('OF'     ,'SF'     ,'ZF'     ,'AF'     ,'CF'     ,'PF'     ,'DF'     ,'TF'     ,'IF'     ,'NT'     ,'RF'     );
-$all_eflags_0 = array('OF' => 1,'SF' => 1,'ZF' => 1,'AF' => 1,'CF' => 1,'PF' => 1,'DF' => 2,'TF' => 3,'IF' => 3,'NT' => 3,'RF' => 3); 
-                      //      1: status flag                                              2:control flag      3:system flag(不全)
-                      // OF      SF      ZF      AF      PF       CF      TF      IF      DF      NT  RF  <= 不含不受指令 影响的寄存器 见 
-					  //                                                                                    《 Intel® 64 and IA-32 Architectures Software Developer's 
-					  //                                                                                       Manual Volume 1:Basic Architecture 》 附录 A
-					  //
-//条件跳转指令
-//所有条件跳转只能跟随 整数，不能跟随寄存器，涉及ECX的后面只能短跳转(jcxz,loop,loopnz ...)
-$cond_jmp = array(
-  'JA'        => 1, //高于（CF=0 且 ZF=0）时短跳转
-  'JAE'       => 1,         //高于或等于 (CF=0) 时短跳转
-  'JB'        => 1,         //低于 (CF=1) 时短跳转
-  'JBE'       => 1, //低于或等于（CF=1 或 ZF=1）时短跳转
-  'JC'        => 1,         //进位 (CF=1) 时短跳转
-  'JCXZ'      => 2,         //CX 寄存器为 0 时短跳转
-  'JECXZ'     => 2,        //ECX 寄存器为 0 时短跳转
-  'JRCXZ'     => 2,        //RCX 寄存器为 0 时短跳转
-  'JE'        => 1,         //等于 (ZF=1) 时短跳转
-  'JG'        => 1,//大于（ZF=0 且 SF=OF）时短跳转
-  'JGE'       => 1, //大于或等于 (SF=OF) 时短跳转
-  'JL'        => 1, //小于 (SF<>OF) 时短跳转
-  'JLE'       => 1,//小于或等于（ZF=1 或 SF<>OF）时短跳转
-  'JNA'       => 1, //不高于（CF=1 或 ZF=1）时短跳转
-  'JNAE'      => 1,//不高于或等于 (CF=1) 时短跳转
-  'JNB'       => 1,//不低于 (CF=0) 时短跳转
-  'JNBE'      => 1,//不低于或等于（CF=0 或 ZF=0）时短跳转
-  'JNC'       => 1,//无进位 (CF=0) 时短跳转
-  'JNE'       => 1,//不相等 (ZF=0) 时短跳转
-  'JNG'       => 1,//不大于（ZF=1 或 SF<>OF）时短跳转
-  'JNGE'      => 1,//不大于或等于 (SF<>OF) 时短跳转
-  'JNL'       => 1,//不小于 (SF＝OF) 时短跳转
-  'JNLE'      => 1,//不小于或等于（ZF=0 且 SF=OF）时短跳转
-  'JNO'       => 1,//不上溢 (OF=0) 时短跳转
-  'JNP'       => 1,//奇校验 (PF=0) 时短跳转
-  'JNS'       => 1,//正数时 (SF＝0) 短跳转
-  'JNZ'       => 1,//不为零 (ZF=0) 时短跳转
-  'JO'        => 1,//上溢 (OF=1) 时短跳转
-  'JP'        => 1,//偶校验 (PF=1) 时短跳转
-  'JPE'       => 1,//偶校验 (PF=1) 时短跳转
-  'JPO'       => 1,//奇校验 (PF=0) 时短跳转
-  'JS'        => 1,//负数 (SF=1) 时短跳转
-  'JZ'        => 1,//为零 (ZF  1) 时短跳转
-  'JMPE'      => 1,//		rm32				[m:	o32 0f 00 /6]				IA64
-
-  'LOOP'      => 2,        //递减计数；计数  0 时短跳转
-  'LOOPE'     => 2,//递减计数；计数  0 且 ZF=1 时短跳转
-  'LOOPZ'     => 2,//递减计数；计数  0 且 ZF=1 时短跳转
-  'LOOPNE'    => 2,//递减计数；计数  0 且 ZF=0 时短跳转
-  'LOOPNZ'    => 2,//递减计数；计数  0 且 ZF=0 时短跳转
-  
-
-);
-
-//绝对跳转指令
-$abs_jmp = array(
-    'JMP'       => 1,
-);
-
 //所有寄存器
-
+/*
 //8bit 低位
 $register['8']  = array('AL' => 8,   'CL' => 8,  'DL' => 8,  'BL' => 8,);
 //9bit 高位
@@ -79,16 +16,18 @@ $register['16'] = array('AX' => 16,  'CX' => 16, 'DX' => 16, 'BX' => 16, 'SI' =>
 //32bit
 $register['32'] = array('EAX' => 32,'ECX' => 32,'EDX' => 32,'EBX' => 32,'ESI' => 32,'EDI' => 32, 'EBP' => 32, 'ESP' => 32, 'EIP' => 32);
 //64bit
-$register['64'] = array('RAX' => 64,'RCX' => 64,'RDX' => 64,'RBX' => 64,'RSI' => 64,'RDI' => 64, 'RBP' => 64, 'RSP' => 64, 'RIP' => 32);
+$register['64'] = array('RAX' => 64,'RCX' => 64,'RDX' => 64,'RBX' => 64,'RSI' => 64,'RDI' => 64, 'RBP' => 64, 'RSP' => 64, 'RIP' => 64);
 
 $total_register = $register['8'] + $register['9'] + $register['16'] + $register['32'] + $register['64'];
-
+*/
+/*
 $registersss['8']  = array ('EAX' => 'AL', 'ECX' => 'CL',  'EDX'=> 'DL',  'EBX' => 'BL');
 $registersss['9']  = array ('EAX' => 'AH', 'ECX' => 'CH',  'EDX'=> 'DH',  'EBX' => 'BH');
 $registersss['16'] = array ('EAX' => 'AX', 'ECX' => 'CX',  'EDX'=> 'DX',  'EBX' => 'BX', 'ESI' => 'SI',  'EDI'=> 'DI', 'EBP' => 'BP',  'ESP' => 'SP');
 $registersss['32'] = array ('EAX' => 'EAX','ECX' => 'ECX', 'EDX'=> 'EDX', 'EBX' => 'EBX','ESI' => 'ESI', 'EDI'=> 'EDI','EBP' => 'EBP', 'ESP' => 'ESP');
 $registersss['64'] = array ('EAX' => 'RAX','ECX' => 'RCX', 'EDX'=> 'RDX', 'EBX' => 'RBX','ESI' => 'RSI', 'EDI'=> 'RDI','EBP' => 'RBP', 'ESP' => 'RSP');
-
+*/
+/*
 $register_assort = array(
     'AL' => 'EAX','AH' => 'EAX','AX' => 'EAX','EAX'=> 'EAX','RAX'=> 'EAX',
 	'CL' => 'ECX','CH' => 'ECX','CX' => 'ECX','ECX'=> 'ECX','RCX'=> 'ECX',
@@ -100,7 +39,7 @@ $register_assort = array(
 								'SP' => 'ESP','ESP'=> 'ESP','RSP'=> 'ESP',
 								'IP' => 'EIP','EIP'=> 'EIP','RIP'=> 'EIP',
 );
-
+*/
 /*
 
 Format:

@@ -271,23 +271,21 @@ class CfgParser{
 	//                                   2：value 类型不符
 	//
 	private static function check_cnf_value ($name,$value,&$c_ret){
-		global $all_eflags_0;
-		global $registersss;
+		
 
 		if ('@unprotect' === $name){
 			$value = strtoupper($value);
-			if ('STATUS_FLAGS' === $value){							
-				$c_ret['unprotect']['flag']['CF'] = 1;
-				$c_ret['unprotect']['flag']['PF'] = 1;
-				$c_ret['unprotect']['flag']['AF'] = 1;
-				$c_ret['unprotect']['flag']['ZF'] = 1;
-				$c_ret['unprotect']['flag']['SF'] = 1;
-				$c_ret['unprotect']['flag']['OF'] = 1;
+			if ('STATUS_FLAGS' === $value){		
+				if (false !== ($a = Instruction::getEflags(1))){
+				    foreach ($a as $b){
+				        $c_ret['unprotect']['flag'][$b] = 1;
+					}
+				}
 				return true;
-			}elseif (isset($all_eflags_0[$value])){
+			}elseif (Instruction::isEflag($value)){
 				$c_ret['unprotect']['flag'][$value] = 1;
 				return true;
-			}elseif (isset($registersss['32'][$value])){
+			}elseif (Instruction::getRegByIdxBits(32,$value)){
 				$c_ret['unprotect']['normal'][$value]['32'] = 1;
 				return true;
 			}								 
@@ -363,7 +361,7 @@ class CfgParser{
 			}
 		}elseif ('@stack_pointer_define' === $name){
 			$value = strtoupper($value);
-			if (isset($registersss['32'][$value])){
+			if (Instruction::getRegByIdxBits(32,$value)){
 				$c_ret['stack_pointer_define'][$value] = $value;
 				return true;
 			}		

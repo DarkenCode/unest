@@ -22,10 +22,10 @@ require dirname(__FILE__)."/library/data.construction.php";
 require dirname(__FILE__)."/library/organ.func.php";
 
 require_once dirname(__FILE__)."/include/intel_instruction.php";
-require_once dirname(__FILE__)."/include/intel_instruction_array.php";
 require_once dirname(__FILE__)."/include/config.inc.php";
 
-
+require dirname(__FILE__)."/library/instruction.func.php";
+Instruction::init();
 
 require dirname(__FILE__)."/library/character.func.php";
 Character::init();

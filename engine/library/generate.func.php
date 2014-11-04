@@ -15,16 +15,15 @@ class GenerateFunc{
 
 	//初始化 堆栈 正则
 	public static function initStackPointer($sec,$echo = false){
-        global $registersss;
+  
 		global $user_cnf;
 
 		self::$_user_cnf_stack_pointer_define = false;
 		if (is_array($user_cnf[$sec]['stack_pointer_define'])){
 			foreach ($user_cnf[$sec]['stack_pointer_define'] as $a){
-				foreach ($registersss as $b => $c){
-					if (isset($c[$a])){
-						self::$_user_cnf_stack_pointer_define .=  '('.$c[$a].')|';					
-					}
+				$c_reg_array = Instruction::getRegsByIdx($a);
+				foreach ($c_reg_array as $c){
+					self::$_user_cnf_stack_pointer_define .=  '('.$c.')|';
 				}
 			}
 			if (false !== self::$_user_cnf_stack_pointer_define){

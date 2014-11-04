@@ -117,15 +117,14 @@ class OrganMeat{
 	//
 	private static function get_meat_usable_repo($flag_usable,$reg_usable,$m_r32,$m_w32){	
 
-		global $all_eflags;
-		global $registersss;
+	
+	
 
 		$ret = false;
 		
-	//var_dump ($meat_usable_envir);
-
 		$filter[] = self::$_usable_envir['ALL'];           // 不可用 部分 记录
-
+        
+        $all_eflags = Instruction::getEflags();
 		foreach ($all_eflags as $a){
 			if (!isset($flag_usable[$a])){
 				if (isset(self::$_usable_envir[$a])){
@@ -134,7 +133,7 @@ class OrganMeat{
 			}
 		}
 
-		foreach ($registersss['32'] as $a){
+		foreach (Instruction::getRegsByBits(32) as $a){
 			if (!isset($reg_usable[$a])){
 				if (isset(self::$_usable_envir[$a])){
 					$filter[] = self::$_usable_envir[$a];
@@ -176,7 +175,7 @@ class OrganMeat{
 	//生成后加入 all_valid_mem_opcode_len 数组,以供后来计算指令长度
 	//
 	private static function gen_invalid_mem_address(){    
-		global $registersss;	
+
 
 		$ret = false;
 
@@ -185,12 +184,12 @@ class OrganMeat{
 		$third  = 0;
 
 		if (mt_rand(0,3)){		
-			$ret = array_rand($registersss[32]);
+			$ret = array_rand(Instruction::getRegsByBits(32));
 			$first = 1;
 		}
 
 		if (mt_rand(0,4)){
-			$tmp = array_rand($registersss[32]);
+			$tmp = array_rand(Instruction::getRegsByBits(32));
 			if ('ESP' != $tmp){
 				if (false !== $ret){
 					$ret .= '+';
@@ -219,13 +218,10 @@ class OrganMeat{
 		$ret = '['.$ret.']';
 
 		//生成后 计算影响 指令长度 加入 all_valid_mem_opcode_len 数组
-		global $all_valid_mem_opcode_len;
-		global $mem_effect_len_array;
+		global $all_valid_mem_opcode_len;		
 		
-		$len = $mem_effect_len_array['max'];
-		if (isset($mem_effect_len_array[$first][$second][$third])){
-			$len = $mem_effect_len_array[$first][$second][$third];
-		}
+		$len = Instruction::getMemEffectLen($first,$second,$third);
+		
 		$all_valid_mem_opcode_len[$ret] = $len;
 
 		//echo "<br>fuck<b>$ret [$first][$second][$third] = $len </b><br>";
@@ -242,7 +238,7 @@ class OrganMeat{
 	//
 	private static function meat_params_generate(&$ret,$p_type,$p_bits,$p_static,$reg_usable,$mem_usable,$mem_write_usable,$opt){
 		global $Intel_instruction;
-		global $registersss;
+
 		global $c_rel_info;
 
 		//var_dump ($p_type);
@@ -279,7 +275,7 @@ class OrganMeat{
 					//$ret['p_bits'][$number] = $r_int['bits'];
 				}elseif ('r' === $type){   //寄存器，需要确认 操作(读 or 写)
 					if (1 >= $c_inst[$number]){ //只读				
-						$tmp = array_rand($registersss[$p_bits[$number]]);
+						$tmp = array_rand(Instruction::getRegsByBits($p_bits[$number]));
 					}else{                                       // 可写
 						if (is_array($reg_usable)){
 							$tmp = array_rand($reg_usable);
@@ -294,8 +290,8 @@ class OrganMeat{
 								var_dump ($opt);
 							return false;
 						}
-					}		    
-					$ret['params'][$number] = $registersss[$p_bits[$number]][$tmp];
+					}		 
+					$ret['params'][$number] = Instruction::getRegByIdxBits($p_bits[$number],$tmp);
 				}elseif ('m' === $type){   //内存，需要确认 操作(读 or 写)
 					if (-1 == $c_inst[$number]){     //无需有效的内存地址（LEA）
 						$ret['params'][$number] = self::gen_invalid_mem_address();                
@@ -325,12 +321,10 @@ class OrganMeat{
 				}
 			}
 
-			if (!isset($ret['params'][$number])){ //获取参数失败 (可能性: p_type='register',p_bits='8',$tmp='EDI' ===> edi没有8bit的形态)
+			if ((!$ret['params'][$number]) or (!isset($ret['params'][$number]))){ //获取参数失败 (可能性: p_type='register',p_bits='8',$tmp='EDI' ===> edi没有8bit的形态)
 				return false;
 			}
 		}
-		//echo $opt;
-		//var_dump ($ret['params']);
 		return true;
 		
 	}
@@ -563,13 +557,7 @@ class OrganMeat{
 						}
 					}
 				}
-			}		
-			
-		//	echo "<br><br>result: <br>";
-		//	var_dump ($c_obj_model);
-		//	var_dump ($final_usable_model);
-		//	exit;
-
+			}
 		}else{ //突变～～～忽略亲缘性
 			 foreach (self::$_usable_index as $a => $b){
 				foreach (self::$_usable_index[$a] as $repo_index){
@@ -579,11 +567,9 @@ class OrganMeat{
 					}
 				}
 			}
-			
-			//echo "<br>***********************<br>";
-			//var_dump ($c_obj_model);
-			//exit;
 		}
+        //echo '<br>$final_usable_model';
+		//var_dump ($final_usable_model);
 
 		if (false === $final_usable_model){ //无 可用模板
 			return 0;

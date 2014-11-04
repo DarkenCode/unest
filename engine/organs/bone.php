@@ -333,7 +333,7 @@ class OrganBone{
 	private static function init_bone_model(&$c_bone,$bone_obj){ 
 
 		global $UniqueHead;
-		global $Jcc;
+	
 
 		$bone_index = self::$_index;
 		self::$_index ++;
@@ -346,7 +346,7 @@ class OrganBone{
 			if (isset($b['params'][0])){ //跳转参数 最多只可能 有一个 且 为跳转目标标号
 				$c_bone['code'][$a]['params'][0] = $UniqueHead.$c_bone['code'][$a]['params'][0].$bone_index;
 				if ('Jcc' === $b['operation']){
-					$c_bone['code'][$a]['operation'] = $Jcc[array_rand($Jcc)];
+					$c_bone['code'][$a]['operation'] = Instruction::randUnLmtJcc();
 				}
 			}elseif (isset($b['label'])){
 				$c_bone['code'][$a]['label'] = $UniqueHead.$c_bone['code'][$a]['label'].$bone_index." : ";

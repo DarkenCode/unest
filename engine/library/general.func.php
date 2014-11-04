@@ -184,12 +184,12 @@ class GeneralFunc{
 	//
 	public static function is_effect_ipsp($asm,$rule = 1,$sp_define = false){
 		global $Intel_instruction;
-		global $con_abs_jmp;
+
 		global $stack_pointer_reg;
-		global $registersss;
-		global $register_assort;
+	
+
 		
-		if (isset($con_abs_jmp[$asm['operation']])){ //绝对 或 相对 跳转
+		if (Instruction::isJmp($asm['operation'])){ //绝对 或 相对 跳转
 			return true;
 		}
 
@@ -214,7 +214,7 @@ class GeneralFunc{
 						continue;
 					}
 					if ('r' === $asm['p_type'][$a]){
-						if ($register_assort[$b] == $stack_pointer_reg){
+						if (Instruction::getGeneralRegIndex($b) == $stack_pointer_reg){
 							return true;
 						}
 					}

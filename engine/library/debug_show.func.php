@@ -620,7 +620,7 @@ class DebugShowFunc{
 		global $flag_register_opt_array;
 		global $valid_mem_opt_array;
 		global $soul_usable;
-		global $registersss;
+
 		global $all_valid_mem_opt_index;
 		global $soul_forbid;
 		global $soul_writein_Dlinked_List_Total;
@@ -660,7 +660,7 @@ class DebugShowFunc{
 				if (is_array($soul_usable[$a][$c]['p']['normal_write_able'])){
 					foreach ($soul_usable[$a][$c]['p']['normal_write_able'] as $z => $v){
 						foreach ($v as $x => $w){
-							echo $registersss[$x][$z];
+							echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 					}
@@ -670,10 +670,10 @@ class DebugShowFunc{
 					foreach ($soul_forbid[$a][$c]['p']['normal'] as $z => $v){
 						echo '<del>';
 						foreach ($v as $x => $w){
-							if (!$registersss[$x][$z]){
+							if (!Instruction::getRegByIdxBits($x,$z)){
 								echo "$x - $z";
 							}else
-								echo $registersss[$x][$z];
+								echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 						echo '</del>';
@@ -849,7 +849,7 @@ class DebugShowFunc{
 				if (is_array($soul_usable[$a][$c]['n']['normal_write_able'])){
 					foreach ($soul_usable[$a][$c]['n']['normal_write_able'] as $z => $v){
 						foreach ($v as $x => $w){
-							echo $registersss[$x][$z];
+							echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 					}
@@ -859,10 +859,10 @@ class DebugShowFunc{
 					foreach ($soul_forbid[$a][$c]['n']['normal'] as $z => $v){
 						echo '<del>';
 						foreach ($v as $x => $w){
-							if (!$registersss[$x][$z]){
+							if (!Instruction::getRegByIdxBits($x,$z)){
 								echo "$x - $z";
 							}else
-								echo $registersss[$x][$z];
+								echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 						echo '</del>';

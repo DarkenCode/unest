@@ -16,7 +16,7 @@ class DebugFunc{
 	private static function gen_code_4_debug_usable_array($usable,$prev,$next,$type = '0x0cccccccc'){
 		
 		global $all_valid_mem_opt_index;
-		global $registersss;
+
 
 		
 		$result = false;
@@ -27,7 +27,7 @@ class DebugFunc{
 			foreach ($usable['normal_write_able'] as $a => $b){
 				if (isset($b[32])){ //有32位的只处理32位即可
 					$result['code'][$i]['operation'] = 'MOV';
-					$result['code'][$i]['params'][0] = $registersss[32][$a];
+					$result['code'][$i]['params'][0] = Instruction::getRegByIdxBits(32,$a);
 					$result['code'][$i]['params'][1] = $type;    				
 					$result['code'][$i]['p_type'][0] = 'r';
 					$result['code'][$i]['p_type'][1] = 'i';
@@ -37,7 +37,7 @@ class DebugFunc{
 				}else{
 					foreach ($b as $c => $d){				
 						$result['code'][$i]['operation'] = 'MOV';
-						$result['code'][$i]['params'][0] = $registersss[$c][$a];
+						$result['code'][$i]['params'][0] = Instruction::getRegByIdxBits($c,$a);
 						$result['code'][$i]['params'][1] = $type;    
 						$result['code'][$i]['p_type'][0] = 'r';
 						$result['code'][$i]['p_type'][1] = 'i';
