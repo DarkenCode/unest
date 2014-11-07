@@ -1067,8 +1067,8 @@ class ReadyFunc{
 								if (Instruction::isEflag($z)){
 									$flag_register_opt_array[$a][$c][$z] |= $y;
 								}elseif (Instruction::getGeneralRegBits($z)){ //32位指令 修改 寄存器都 为32位
-									$crb = Instruction::getGeneralRegBits($z);
-									$normal_register_opt_array[$a][$c][$crb][32] |= $y;
+									$cri = Instruction::getGeneralRegIndex($z);
+									$normal_register_opt_array[$a][$c][$cri][32] |= $y;
 								}
 							}
 
@@ -1081,7 +1081,7 @@ class ReadyFunc{
 							}
 							$StandardAsmResultArray[$a][$c]['operation'] = $x;	
 							if (is_array($Intel_instruction_mem_opt[$x])){ //指令有 内存操作 (排除前缀)
-								$valid_mem_opt_array[$a][$c] = $Intel_instruction_mem_opt[$x];							
+								$valid_mem_opt_array[$a][$c] = $Intel_instruction_mem_opt[$x];
 							}
 							if (Instruction::isMatchCC('SETcc',$x)){                   //指令对 参数 位数的影响
 								$StandardAsmResultArray[$a][$c]['p_bits'][$p_ptr] = 8;
@@ -1127,8 +1127,8 @@ class ReadyFunc{
 						if (Instruction::isEflag($z)){
 							$flag_register_opt_array[$a][$c][$z] |= $y;
 						}elseif (Instruction::getGeneralRegBits($z)){ //32位指令 修改 寄存器都 为32位
-							$crb = Instruction::getGeneralRegBits($z);
-							$normal_register_opt_array[$a][$c][$crb][32] |= $y;
+							$cri = Instruction::getGeneralRegIndex($z);
+							$normal_register_opt_array[$a][$c][$cri][32] |= $y;
 							
 							if (Instruction::getGeneralRegIndex($z) === 'ESP'){ //指令 堆栈操作，堆栈有效
 								$stack_used[$a][$c] = true;
