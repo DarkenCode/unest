@@ -9,15 +9,15 @@ class OpLen{
 
 	//计算目标指令 长度(byte)
 	//
-	//$opt['prefix']    => array(...)      //前缀
-	//    ['operation'] => string 'SUB'    //指令
-	//    ['p_type']    =>                 //参数类型
+	//$opt[PREFIX]    => array(...)      //前缀
+	//    [OPERATION] => string 'SUB'    //指令
+	//    [P_TYPE]    =>                 //参数类型
 	//                     0 => string 'r' (length=1)            // r 寄存器 i 常数 m 内存地址
 	//                     1 => string 'i' (length=1)
-	//    ['p_bits']    =>                 //参数位数
+	//    [P_BITS]    =>                 //参数位数
 	//                     0 => int 32                           //8 16 32 /寄存器分8.9.16.32 (9为16位的高位,8为低位)
 	//                     1 => int 32
-	//    ['params']    =>                 //参数
+	//    [PARAMS]    =>                 //参数
 	//                     0 => string 'ESP' (length=3)
 	//                     1 => string '0X100' (length=5)
 	//    ['range']     =>                 //当指令为rel_jmp时，且跨度已知  
@@ -36,18 +36,18 @@ class OpLen{
 
 	
 		
-		if (('CALL' === $opt['operation']) and ('i' === $opt['p_type'][0])){
+		if (('CALL' === $opt[OPERATION]) and ('i' === $opt[P_TYPE][0])){
 			return 5;
 		}
 
-		if (('JMP' === $opt['operation']) and ('i' === $opt['p_type'][0])){
+		if (('JMP' === $opt[OPERATION]) and ('i' === $opt[P_TYPE][0])){
 			if ((isset($opt['range'])) and ($opt['range'] <= 127)){
 				return 2;
 			}
 			return 5;		
 		}
 	     
-		if ($a = Instruction::getJmpRangeLmt($opt['operation'])){
+		if ($a = Instruction::getJmpRangeLmt($opt[OPERATION])){
 			if (($opt['range'] > $a) and (isset($opt['range']))){
 				return false;
 			}
@@ -59,25 +59,25 @@ class OpLen{
 		
 
 		$opcode_len = 0;
-		if (isset($opt['prefix'])){
-			$opcode_len = count($opt['prefix']);    
+		if (isset($opt[PREFIX])){
+			$opcode_len = count($opt[PREFIX]);    
 		}
-		$p_number = count($opt['p_type']);
+		$p_number = count($opt[P_TYPE]);
 
 		
-		if (Instruction::getMatchCC($opt['operation'])){ //XXXcc 条件指令
-			if (Instruction::isMatchCC('Jcc',$opt['operation'])){ //简化计算，按最大
+		if (Instruction::getMatchCC($opt[OPERATION])){ //XXXcc 条件指令
+			if (Instruction::isMatchCC('Jcc',$opt[OPERATION])){ //简化计算，按最大
 				if ((isset($opt['range'])) and ($opt['range'] <= 127)){
 					return 2;
 				}
 				return 6;
 			}
-			$a = Instruction::getMatchCC($opt['operation']);
+			$a = Instruction::getMatchCC($opt[OPERATION]);
 			$possible_arrays = $opcode_len_arrays[$a][$p_number];
 			$possible_result = $opcode_len_result[$a][$p_number];
 		}else{
-			$possible_arrays = $opcode_len_arrays[$opt['operation']][$p_number];
-			$possible_result = $opcode_len_result[$opt['operation']][$p_number];
+			$possible_arrays = $opcode_len_arrays[$opt[OPERATION]][$p_number];
+			$possible_result = $opcode_len_result[$opt[OPERATION]][$p_number];
 		}
 		$result = false; 
 		$oplen = 0;
@@ -91,12 +91,12 @@ class OpLen{
 				//内存 分析
 				if (false === $ignore_m){
 					global $all_valid_mem_opcode_len;
-					foreach ($opt['p_type'] as $a => $b){
+					foreach ($opt[P_TYPE] as $a => $b){
 						if ('m' === $b){
-							if (isset($all_valid_mem_opcode_len[$opt['params'][$a]])){
-								$oplen = $all_valid_mem_opcode_len[$opt['params'][$a]];
+							if (isset($all_valid_mem_opcode_len[$opt[PARAMS][$a]])){
+								$oplen = $all_valid_mem_opcode_len[$opt[PARAMS][$a]];
 							}else{
-								$oplen = self::mem_addition_len($opt['params'][$a]);
+								$oplen = self::mem_addition_len($opt[PARAMS][$a]);
 							}
 							break; //一个指令 仅有一个内存地址
 						}				
@@ -149,15 +149,15 @@ class OpLen{
 		$ret = 2;
 		foreach ($check as $a => $b){
 			if (isset($match_params[$b])){
-				if (isset($match_params[$b][$opt['params'][$a]])){
+				if (isset($match_params[$b][$opt[PARAMS][$a]])){
 					continue; //此参数完全符合，Next...
 				}
 			}
 
 			if (isset($match_types[$b])){
-				if (isset($match_types[$b][$opt['p_type'][$a]])){
+				if (isset($match_types[$b][$opt[P_TYPE][$a]])){
 					if (isset($match_bits[$b])){
-						if (isset($match_bits[$b][$opt['p_bits'][$a]])){
+						if (isset($match_bits[$b][$opt[P_BITS][$a]])){
 							continue; //完全符合，Next...
 						}
 					}else{
@@ -199,7 +199,7 @@ class OpLen{
 			foreach ($c_rel_jmp_range as $a => $b){
 				$range = $c_rel_jmp_range[$a]['range'];
 				
-				unset ($c_rel_jmp_range[$a]['label']);
+				unset ($c_rel_jmp_range[$a][LABEL]);
 				$len = get_code_len ($a);
 
 				if ($range !== $c_rel_jmp_range[$a]['range']){

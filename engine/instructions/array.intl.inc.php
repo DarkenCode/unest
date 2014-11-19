@@ -291,4 +291,33 @@ $eip_instruction = array('JA'        => 1, //高于（CF=0 且 ZF=0）时短跳�
 						 );
 
 
+
+
+$mem_opt = array( //所有 隐含 内存操作的指令
+    'MOVSB' => array(
+	                 array( CODE => '[ESI]',OPT  => 1,BITS => 8,REG => array('ESI')),
+	                 array( CODE => '[EDI]',OPT  => 2,BITS => 8,REG => array('EDI')),	
+               ),
+    'MOVSW' => array(
+	                 array( CODE => '[ESI]',OPT  => 1,BITS => 16,REG => array('ESI')),
+	                 array( CODE => '[EDI]',OPT  => 2,BITS => 16,REG => array('EDI')),	
+               ),
+    'MOVSD' => array(
+	                 array( CODE => '[ESI]',OPT  => 1,BITS => 32,REG => array('ESI')),
+	                 array( CODE => '[EDI]',OPT  => 2,BITS => 32,REG => array('EDI')),	
+               ),
+    'STOSB' => array(array( CODE => '[EDI]',OPT  => 2,BITS =>  8,REG => array('EDI'))),
+	'STOSW' => array(array( CODE => '[EDI]',OPT  => 2,BITS => 16,REG => array('EDI'))),
+	'STOSD' => array(array( CODE => '[EDI]',OPT  => 2,BITS => 32,REG => array('EDI'))),
+
+    'LODSB' => array(array( CODE => '[ESI]',OPT  => 1,BITS =>  8,REG => array('ESI'))),
+	'LODSW' => array(array( CODE => '[ESI]',OPT  => 1,BITS => 16,REG => array('ESI'))),
+	'LODSD' => array(array( CODE => '[ESI]',OPT  => 1,BITS => 32,REG => array('ESI'))),
+
+	'SCASB' => array(array( CODE => '[EDI]',OPT  => 1,BITS =>  8,REG => array('EDI'))),
+	'SCASW' => array(array( CODE => '[EDI]',OPT  => 1,BITS => 16,REG => array('EDI'))),
+	'SCASD' => array(array( CODE => '[EDI]',OPT  => 1,BITS => 32,REG => array('EDI'))),
+    );
+
+
 ?>

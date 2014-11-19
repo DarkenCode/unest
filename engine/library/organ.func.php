@@ -27,18 +27,18 @@ class OrgansOperator{
     //根据 双链表 单位 返回 organ 单位
 	//params:
 	//         $unit:     DList' unit (array)
-	//         $branch: 'code' | 'usable' | 'fat'
+	//         $branch: CODE | USABLE | FAT
 	//         $key: sub index  
-	public static function GetByDListUnit($unit,$branch='code',$key=false){
+	public static function GetByDListUnit($unit,$branch=CODE,$key=false){
 	    $ret = false;
-        if (isset ($unit['poly'])){
-		    $ret = self::Get(POLY,$unit['poly'],$branch,$unit['c'],$key);
-		}elseif (isset ($unit['bone'])){
-		    $ret = self::Get(BONE,$unit['bone'],$branch,$unit['c'],$key);
-		}elseif (isset ($unit['meat'])){
-		    $ret = self::Get(MEAT,$unit['meat'],$branch,$unit['c'],$key);
+        if (isset ($unit[POLY])){
+		    $ret = self::Get(POLY,$unit[POLY],$branch,$unit[C],$key);
+		}elseif (isset ($unit[BONE])){
+		    $ret = self::Get(BONE,$unit[BONE],$branch,$unit[C],$key);
+		}elseif (isset ($unit[MEAT])){
+		    $ret = self::Get(MEAT,$unit[MEAT],$branch,$unit[C],$key);
 		}else{
-		    $ret = self::Get(SOUL,$unit['c'],$branch,false,$key);
+		    $ret = self::Get(SOUL,$unit[C],$branch,false,$key);
 		}		
 		return $ret;	
 	}
@@ -65,9 +65,9 @@ class OrgansOperator{
 			    $ret = self::$_poly_result[$id][$branch][$sid];
 			}
 		}elseif (SOUL === $organ){
-		    if ('code' == $branch){
+		    if (CODE == $branch){
 			    $ret = self::$_Asm_Result[$id];
-			}elseif ('usable' == $branch){
+			}elseif (USABLE == $branch){
 			    $ret = self::$_soul_usable[$id];			
 			}
 		}
@@ -111,18 +111,18 @@ class OrgansOperator{
 	}
 
 	public static function FilterMemUsable($unit){
-		if (isset ($unit['poly'])){	
-			GenerateFunc::doFilterMemUsable(self::$_poly_result[$unit['poly']]['usable'][$unit['c']]['p']['mem_opt_able']);
-			GenerateFunc::doFilterMemUsable(self::$_poly_result[$unit['poly']]['usable'][$unit['c']]['n']['mem_opt_able']);
-		}elseif (isset ($unit['bone'])){
-		    GenerateFunc::doFilterMemUsable(self::$_bone_result[$unit['bone']]['usable'][$unit['c']]['p']['mem_opt_able']);
-			GenerateFunc::doFilterMemUsable(self::$_bone_result[$unit['bone']]['usable'][$unit['c']]['n']['mem_opt_able']);	
-		}elseif (isset ($unit['meat'])){
-		    GenerateFunc::doFilterMemUsable(self::$_meat_result[$unit['meat']]['usable'][$unit['c']]['p']['mem_opt_able']);
-			GenerateFunc::doFilterMemUsable(self::$_meat_result[$unit['meat']]['usable'][$unit['c']]['n']['mem_opt_able']);
+		if (isset ($unit[POLY])){	
+			GenerateFunc::doFilterMemUsable(self::$_poly_result[$unit[POLY]][USABLE][$unit[C]][P][MEM_OPT_ABLE]);
+			GenerateFunc::doFilterMemUsable(self::$_poly_result[$unit[POLY]][USABLE][$unit[C]][N][MEM_OPT_ABLE]);
+		}elseif (isset ($unit[BONE])){
+		    GenerateFunc::doFilterMemUsable(self::$_bone_result[$unit[BONE]][USABLE][$unit[C]][P][MEM_OPT_ABLE]);
+			GenerateFunc::doFilterMemUsable(self::$_bone_result[$unit[BONE]][USABLE][$unit[C]][N][MEM_OPT_ABLE]);	
+		}elseif (isset ($unit[MEAT])){
+		    GenerateFunc::doFilterMemUsable(self::$_meat_result[$unit[MEAT]][USABLE][$unit[C]][P][MEM_OPT_ABLE]);
+			GenerateFunc::doFilterMemUsable(self::$_meat_result[$unit[MEAT]][USABLE][$unit[C]][N][MEM_OPT_ABLE]);
 		}else{
-			GenerateFunc::doFilterMemUsable(self::$_soul_usable[$unit['c']]['p']['mem_opt_able']);	
-		    GenerateFunc::doFilterMemUsable(self::$_soul_usable[$unit['c']]['n']['mem_opt_able']);	
+			GenerateFunc::doFilterMemUsable(self::$_soul_usable[$unit[C]][P][MEM_OPT_ABLE]);	
+		    GenerateFunc::doFilterMemUsable(self::$_soul_usable[$unit[C]][N][MEM_OPT_ABLE]);	
 		}	
 	}
 
@@ -136,12 +136,12 @@ class OrgansOperator{
 	//         $direct:  1 prev   2 next
 	//
 	public static function CheckFatAble($unit,$direct = 1){
-		if (isset($unit['bone'])){
-		    if ($direct == self::$_bone_result[$unit['bone']]['fat'][$unit['c']]){
+		if (isset($unit[BONE])){
+		    if ($direct == self::$_bone_result[$unit[BONE]][FAT][$unit[C]]){
 			    return true;
 			}
-		}elseif (isset($unit['poly'])){
-		    if ($direct == self::$_poly_result[$unit['poly']]['fat'][$unit['c']]){
+		}elseif (isset($unit[POLY])){
+		    if ($direct == self::$_poly_result[$unit[POLY]][FAT][$unit[C]]){
 			    return true;
 			}
 		}
@@ -164,49 +164,49 @@ class OrgansOperator{
 				$default_max = intval(ceil(($count * $user_strength['default'])/100));
 			}
 			//
-			if (!isset($user_strength['poly']['max'])){
-				$user_strength['poly']['max'] = $default_max;			
+			if (!isset($user_strength[POLY]['max'])){
+				$user_strength[POLY]['max'] = $default_max;			
 			}
-			if (!isset($user_strength['poly']['min'])){
-				$user_strength['poly']['min'] = intval($user_strength['poly']['max']/2);
-			}elseif ($user_strength['poly']['max'] < $user_strength['poly']['min']){
-				$user_strength['poly']['max'] = $user_strength['poly']['min'];
+			if (!isset($user_strength[POLY]['min'])){
+				$user_strength[POLY]['min'] = intval($user_strength[POLY]['max']/2);
+			}elseif ($user_strength[POLY]['max'] < $user_strength[POLY]['min']){
+				$user_strength[POLY]['max'] = $user_strength[POLY]['min'];
 			} 
 			//			
-			if (!isset($user_strength['bone']['max'])){
-				$user_strength['bone']['max'] = $default_max;			
+			if (!isset($user_strength[BONE]['max'])){
+				$user_strength[BONE]['max'] = $default_max;			
 			}
-			if (!isset($user_strength['bone']['min'])){
-				$user_strength['bone']['min'] = intval($user_strength['bone']['max']/2);
-			}elseif ($user_strength['bone']['max'] < $user_strength['bone']['min']){
-				$user_strength['bone']['max'] = $user_strength['bone']['min'];
+			if (!isset($user_strength[BONE]['min'])){
+				$user_strength[BONE]['min'] = intval($user_strength[BONE]['max']/2);
+			}elseif ($user_strength[BONE]['max'] < $user_strength[BONE]['min']){
+				$user_strength[BONE]['max'] = $user_strength[BONE]['min'];
 			}
 			//
-			if (!isset($user_strength['meat']['max'])){
-				$user_strength['meat']['max'] = $default_max;			
+			if (!isset($user_strength[MEAT]['max'])){
+				$user_strength[MEAT]['max'] = $default_max;			
 			}
-			if (!isset($user_strength['meat']['min'])){
-				$user_strength['meat']['min'] = intval($user_strength['meat']['max']/2);
-			}elseif ($user_strength['meat']['max'] < $user_strength['meat']['min']){
-				$user_strength['meat']['max'] = $user_strength['meat']['min'];
+			if (!isset($user_strength[MEAT]['min'])){
+				$user_strength[MEAT]['min'] = intval($user_strength[MEAT]['max']/2);
+			}elseif ($user_strength[MEAT]['max'] < $user_strength[MEAT]['min']){
+				$user_strength[MEAT]['max'] = $user_strength[MEAT]['min'];
 			}
 
-			$c_poly_strength = mt_rand($user_strength['poly']['min'],$user_strength['poly']['max']);
-			$c_bone_strength = mt_rand($user_strength['bone']['min'],$user_strength['bone']['max']);
-			$c_meat_strength = mt_rand($user_strength['meat']['min'],$user_strength['meat']['max']);
+			$c_poly_strength = mt_rand($user_strength[POLY]['min'],$user_strength[POLY]['max']);
+			$c_bone_strength = mt_rand($user_strength[BONE]['min'],$user_strength[BONE]['max']);
+			$c_meat_strength = mt_rand($user_strength[MEAT]['min'],$user_strength[MEAT]['max']);
 
 			//是否有强度超过 最大强度设置
 			if (false !== $max_strength){
 				if ($c_poly_strength > $max_strength){
-					GeneralFunc::LogInsert('the strength number exceeds maximum of '.'poly'.', ('.$c_poly_strength.' -> '.$max_strength.')',3);
+					GeneralFunc::LogInsert('the strength number exceeds maximum of '.POLY.', ('.$c_poly_strength.' -> '.$max_strength.')',3);
 					$c_poly_strength = $max_strength;
 				}
 				if ($c_bone_strength > $max_strength){
-					GeneralFunc::LogInsert('the strength number exceeds maximum of '.'bone'.', ('.$c_bone_strength.' -> '.$max_strength.')',3);
+					GeneralFunc::LogInsert('the strength number exceeds maximum of '.BONE.', ('.$c_bone_strength.' -> '.$max_strength.')',3);
 					$c_bone_strength = $max_strength;
 				}
 				if ($c_meat_strength > $max_strength){
-					GeneralFunc::LogInsert('the strength number exceeds maximum of '.'meat'.', ('.$c_meat_strength.' -> '.$max_strength.')',3);
+					GeneralFunc::LogInsert('the strength number exceeds maximum of '.MEAT.', ('.$c_meat_strength.' -> '.$max_strength.')',3);
 					$c_meat_strength = $max_strength;
 				}
 			}

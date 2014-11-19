@@ -278,15 +278,15 @@ class CfgParser{
 			if ('STATUS_FLAGS' === $value){		
 				if (false !== ($a = Instruction::getEflags(1))){
 				    foreach ($a as $b){
-				        $c_ret['unprotect']['flag'][$b] = 1;
+				        $c_ret['unprotect'][FLAG][$b] = 1;
 					}
 				}
 				return true;
 			}elseif (Instruction::isEflag($value)){
-				$c_ret['unprotect']['flag'][$value] = 1;
+				$c_ret['unprotect'][FLAG][$value] = 1;
 				return true;
 			}elseif (Instruction::getRegByIdxBits(32,$value)){
-				$c_ret['unprotect']['normal'][$value]['32'] = 1;
+				$c_ret['unprotect'][NORMAL][$value]['32'] = 1;
 				return true;
 			}								 
 		}elseif ('@protect' === $name){
@@ -297,32 +297,32 @@ class CfgParser{
 			}
 		}elseif ('@strength_poly_max' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['poly']['max'] = intval($value);
+				$c_ret['strength'][POLY]['max'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_poly_min' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['poly']['min'] = intval($value);
+				$c_ret['strength'][POLY]['min'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_bone_max' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['bone']['max'] = intval($value);
+				$c_ret['strength'][BONE]['max'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_bone_min' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['bone']['min'] = intval($value);
+				$c_ret['strength'][BONE]['min'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_meat_max' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['meat']['max'] = intval($value);
+				$c_ret['strength'][MEAT]['max'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_meat_min' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['meat']['min'] = intval($value);
+				$c_ret['strength'][MEAT]['min'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_default' === $name){
@@ -425,67 +425,67 @@ class CfgParser{
 			foreach ($b as $c => $d){
 				$c_list = $soul_writein_Dlinked_List_Total[$d]['list'][0]; //未 多态/混淆 ，起始位默认是0
 				while (true){				
-					$f = $c_list['c']; 
+					$f = $c_list[C]; 
 					if (true === $c_define['protect']['thread_memory']){   //禁止所有内存地址 可写入 属性
-						if (is_array($soul_usable[$d][$f]['p']['mem_opt_able'])){
-							foreach ($soul_usable[$d][$f]['p']['mem_opt_able'] as $z => $y){
-								if (1 < $all_valid_mem_opt_index[$y]['opt']){
+						if (is_array($soul_usable[$d][$f][P][MEM_OPT_ABLE])){
+							foreach ($soul_usable[$d][$f][P][MEM_OPT_ABLE] as $z => $y){
+								if (1 < $all_valid_mem_opt_index[$y][OPT]){
 									$all_valid_mem_opt_index[$avmoi_ptr] = $all_valid_mem_opt_index[$y];
-									$all_valid_mem_opt_index[$avmoi_ptr]['opt'] &= 1;
-									$soul_usable[$d][$f]['p']['mem_opt_able'][$z] = $avmoi_ptr;
+									$all_valid_mem_opt_index[$avmoi_ptr][OPT] &= 1;
+									$soul_usable[$d][$f][P][MEM_OPT_ABLE][$z] = $avmoi_ptr;
 									$avmoi_ptr ++;
 								}
 							}
 						}
-						if (is_array($soul_usable[$d][$f]['n']['mem_opt_able'])){
-							foreach ($soul_usable[$d][$f]['n']['mem_opt_able'] as $z => $y){
-								if (1 < $all_valid_mem_opt_index[$y]['opt']){
+						if (is_array($soul_usable[$d][$f][N][MEM_OPT_ABLE])){
+							foreach ($soul_usable[$d][$f][N][MEM_OPT_ABLE] as $z => $y){
+								if (1 < $all_valid_mem_opt_index[$y][OPT]){
 									$all_valid_mem_opt_index[$avmoi_ptr] = $all_valid_mem_opt_index[$y];
-									$all_valid_mem_opt_index[$avmoi_ptr]['opt'] &= 1;
-									$soul_usable[$d][$f]['n']['mem_opt_able'][$z] = $avmoi_ptr;
+									$all_valid_mem_opt_index[$avmoi_ptr][OPT] &= 1;
+									$soul_usable[$d][$f][N][MEM_OPT_ABLE][$z] = $avmoi_ptr;
 									$avmoi_ptr ++;
 								}
 							}
 						}
 					}
 					//foreach ($StandardAsmResultArray[$d] as $f => $g){				
-					if (isset($c_define['flag'])){
-						foreach ($c_define['flag'] as $z => $y){
-							if (!isset($soul_forbid[$d][$f]['p']['flag'][$z])){
-								$soul_usable[$d][$f]['p']['flag_write_able'][$z] = $y;
+					if (isset($c_define[FLAG])){
+						foreach ($c_define[FLAG] as $z => $y){
+							if (!isset($soul_forbid[$d][$f][P][FLAG][$z])){
+								$soul_usable[$d][$f][P][FLAG_WRITE_ABLE][$z] = $y;
 							}
-							if (!isset($soul_forbid[$d][$f]['n']['flag'][$z])){
-								$soul_usable[$d][$f]['n']['flag_write_able'][$z] = $y;
+							if (!isset($soul_forbid[$d][$f][N][FLAG][$z])){
+								$soul_usable[$d][$f][N][FLAG_WRITE_ABLE][$z] = $y;
 							}
 						}
 					}
 					//通用寄存器，方便起见，forbid显式禁止 以寄存器为单位，不细分到位
-					if (isset($c_define['normal'])){
-						foreach ($c_define['normal'] as $z => $y){
-							if (!isset($soul_forbid[$d][$f]['p']['normal'][$z])){
-								foreach ($c_define['normal'][$z] as $x => $w){
-									$soul_usable[$d][$f]['p']['normal_write_able'][$z][$x] = $y;
+					if (isset($c_define[NORMAL])){
+						foreach ($c_define[NORMAL] as $z => $y){
+							if (!isset($soul_forbid[$d][$f][P][NORMAL][$z])){
+								foreach ($c_define[NORMAL][$z] as $x => $w){
+									$soul_usable[$d][$f][P][NORMAL_WRITE_ABLE][$z][$x] = $y;
 								}
 							}
-							if (!isset($soul_forbid[$d][$f]['n']['normal'][$z])){
-								foreach ($c_define['normal'][$z] as $x => $w){
-									$soul_usable[$d][$f]['n']['normal_write_able'][$z][$x] = $y;
+							if (!isset($soul_forbid[$d][$f][N][NORMAL][$z])){
+								foreach ($c_define[NORMAL][$z] as $x => $w){
+									$soul_usable[$d][$f][N][NORMAL_WRITE_ABLE][$z][$x] = $y;
 								}
 							}
 						}
 					}
 
 					if (true === $c_define['stack_usable']){   //设置所有栈有效 and 清除所有单位可用ESP,  见./readme/readme.config.txt
-						unset ($soul_usable[$d][$f]['p']['normal_write_able']['ESP']);
-						unset ($soul_usable[$d][$f]['n']['normal_write_able']['ESP']);
-						$soul_usable[$d][$f]['p']['stack'] = true;
-						$soul_usable[$d][$f]['n']['stack'] = true;
-						$StandardAsmResultArray[$d][$f]['stack'] = true;
+						unset ($soul_usable[$d][$f][P][NORMAL_WRITE_ABLE]['ESP']);
+						unset ($soul_usable[$d][$f][N][NORMAL_WRITE_ABLE]['ESP']);
+						$soul_usable[$d][$f][P][STACK] = true;
+						$soul_usable[$d][$f][N][STACK] = true;
+						$StandardAsmResultArray[$d][$f][STACK] = true;
 					}
 					///////////////////////////////////////////////////////
 					//
-					if (isset($c_list['n'])){
-						$c_list = $soul_writein_Dlinked_List_Total[$d]['list'][$c_list['n']];
+					if (isset($c_list[N])){
+						$c_list = $soul_writein_Dlinked_List_Total[$d]['list'][$c_list[N]];
 					}else{
 						break;
 					}

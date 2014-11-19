@@ -48,25 +48,25 @@ class OrganMeat{
 	///////////////////////////////////////////////////////////////////////////////
 	//
 	// 把生成的血肉 插入 链表
-	private static function meat_insert_into_list($current_forward,$meat_generated,$direct = 'p'){
+	private static function meat_insert_into_list($current_forward,$meat_generated,$direct = P){
 
 
 
 		$prev = false;
 		$next = false;
 
-		if ('p' === $direct){
+		if (P === $direct){
 
-			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($current_forward,'p')){		
+			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($current_forward,P)){		
 
-				$prev = ConstructionDlinkedListOpt::getDlinkedList($current_forward,'p');			
+				$prev = ConstructionDlinkedListOpt::getDlinkedList($current_forward,P);			
 			}
 			$next = $current_forward;
 		}else{
 
-			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($current_forward,'n')){		
+			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($current_forward,N)){		
 
-				$next = ConstructionDlinkedListOpt::getDlinkedList($current_forward,'n');			
+				$next = ConstructionDlinkedListOpt::getDlinkedList($current_forward,N);			
 			}
 			$prev = $current_forward;	
 		}
@@ -78,16 +78,16 @@ class OrganMeat{
 		for (;$c_meat < self::$_index;$c_meat++){
 			if (false !== $prev){
 
-				ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$prev,'n');
+				ConstructionDlinkedListOpt::setDlinkedList(ConstructionDlinkedListOpt::getDlinkedListIndex(),$prev,N);
 			}else{ //血肉 插入 首行
 				ConstructionDlinkedListOpt::setListFirstUnit();
 			}
 
-			ConstructionDlinkedListOpt::setDlinkedList($c_meat,ConstructionDlinkedListOpt::getDlinkedListIndex(),'meat');
+			ConstructionDlinkedListOpt::setDlinkedList($c_meat,ConstructionDlinkedListOpt::getDlinkedListIndex(),MEAT);
 
-			ConstructionDlinkedListOpt::setDlinkedList(98,ConstructionDlinkedListOpt::getDlinkedListIndex(),'c');
+			ConstructionDlinkedListOpt::setDlinkedList(98,ConstructionDlinkedListOpt::getDlinkedListIndex(),C);
 			
-			if (GenerateFunc::is_effect_ipsp(OrgansOperator::Get(MEAT,$c_meat,'code',98),0)){
+			if (GenerateFunc::is_effect_ipsp(OrgansOperator::Get(MEAT,$c_meat,CODE,98),0)){
 
 				ConstructionDlinkedListOpt::setDlinkedList(true,ConstructionDlinkedListOpt::getDlinkedListIndex(),'ipsp');			
 
@@ -95,7 +95,7 @@ class OrganMeat{
 
 			if (false !== $prev){
 
-				ConstructionDlinkedListOpt::setDlinkedList($prev,ConstructionDlinkedListOpt::getDlinkedListIndex(),'p');
+				ConstructionDlinkedListOpt::setDlinkedList($prev,ConstructionDlinkedListOpt::getDlinkedListIndex(),P);
 			}
 
 			$prev = ConstructionDlinkedListOpt::getDlinkedListIndex();	   
@@ -212,7 +212,7 @@ class OrganMeat{
 			$r_int = GenerateFunc::rand_interger();
 			$ret .= $r_int['value'];
 
-			$third = GenerateFunc::bits_precision_adjust($r_int['bits']);
+			$third = GenerateFunc::bits_precision_adjust($r_int[BITS]);
 		}
 
 		$ret = '['.$ret.']';
@@ -237,7 +237,7 @@ class OrganMeat{
 	// 返回 $ret['params'] , $ret['rel']
 	//
 	private static function meat_params_generate(&$ret,$p_type,$p_bits,$p_static,$reg_usable,$mem_usable,$mem_write_usable,$opt){
-		global $Intel_instruction;
+
 
 		global $c_rel_info;
 
@@ -250,14 +250,7 @@ class OrganMeat{
 		//var_dump ($mem_write_usable);
 		
 		$c_inst = false;
-		if ($Intel_instruction[$opt]['multi_op']){ //参数 个数 多套
-			$tmp = count($p_type);
-			if (isset($Intel_instruction[$opt][$tmp])){
-				$c_inst = $Intel_instruction[$opt][$tmp];
-			}
-		}else{
-			$c_inst = $Intel_instruction[$opt];
-		}
+		$c_inst = Instruction::getInstructionOpt($opt,count($p_type));
 		
 		if (false === $c_inst){                    //
 			return false;
@@ -267,12 +260,12 @@ class OrganMeat{
 		foreach ($p_type as $number => $type){
 
 			if (isset($p_static[$number])){  //有固定寄存器变量存在(当前来说此变量 仅为通用寄存器且只读，所以无需事先判断是否可用，直接使用之)
-				$ret['params'][$number] = $p_static[$number];		
+				$ret[PARAMS][$number] = $p_static[$number];		
 			}else{
 				if ('i' === $type){        //随机整数
 					$r_int = GenerateFunc::rand_interger($p_bits[$number]);
-					$ret['params'][$number] = $r_int['value'];
-					//$ret['p_bits'][$number] = $r_int['bits'];
+					$ret[PARAMS][$number] = $r_int['value'];
+					//$ret[P_BITS][$number] = $r_int[BITS];
 				}elseif ('r' === $type){   //寄存器，需要确认 操作(读 or 写)
 					if (1 >= $c_inst[$number]){ //只读				
 						$tmp = array_rand(Instruction::getRegsByBits($p_bits[$number]));
@@ -291,10 +284,10 @@ class OrganMeat{
 							return false;
 						}
 					}		 
-					$ret['params'][$number] = Instruction::getRegByIdxBits($p_bits[$number],$tmp);
+					$ret[PARAMS][$number] = Instruction::getRegByIdxBits($p_bits[$number],$tmp);
 				}elseif ('m' === $type){   //内存，需要确认 操作(读 or 写)
 					if (-1 == $c_inst[$number]){     //无需有效的内存地址（LEA）
-						$ret['params'][$number] = self::gen_invalid_mem_address();                
+						$ret[PARAMS][$number] = self::gen_invalid_mem_address();                
 					}else{
 						if (1 == $c_inst[$number]){ //只读
 							$c_mem_usable_array = $mem_usable;
@@ -306,12 +299,12 @@ class OrganMeat{
 						//var_dump ($mem_usable);
 						//var_dump ($c_mem_usable_array);
 						$tmp = array_rand($c_mem_usable_array);				
-						$ret['params'][$number] = $c_mem_usable_array[$tmp]['code'];
-						if (isset($c_mem_usable_array[$tmp]['rel'])){        // 内存地址 含 重定位信息
-							if (GenerateFunc::reloc_inc_copy($ret['params'][$number],$old,$new)){
-								$ret['params'][$number] = str_replace("$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$old[2],"$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$new,$ret['params'][$number]);
-								$ret['rel'][$number]['i'] = $old[1];
-								$ret['rel'][$number]['c'] = $new;
+						$ret[PARAMS][$number] = $c_mem_usable_array[$tmp][CODE];
+						if (isset($c_mem_usable_array[$tmp][REL])){        // 内存地址 含 重定位信息
+							if (GenerateFunc::reloc_inc_copy($ret[PARAMS][$number],$old,$new)){
+								$ret[PARAMS][$number] = str_replace("$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$old[2],"$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$new,$ret[PARAMS][$number]);
+								$ret[REL][$number]['i'] = $old[1];
+								$ret[REL][$number][C] = $new;
 								$c_rel_info[$old[1]][$new] = $c_rel_info[$old[1]][$old[2]];
 							}			    
 						}
@@ -321,7 +314,7 @@ class OrganMeat{
 				}
 			}
 
-			if ((!$ret['params'][$number]) or (!isset($ret['params'][$number]))){ //获取参数失败 (可能性: p_type='register',p_bits='8',$tmp='EDI' ===> edi没有8bit的形态)
+			if ((!$ret[PARAMS][$number]) or (!isset($ret[PARAMS][$number]))){ //获取参数失败 (可能性: p_type='register',p_bits='8',$tmp='EDI' ===> edi没有8bit的形态)
 				return false;
 			}
 		}
@@ -367,21 +360,21 @@ class OrganMeat{
 			//$meat_index = array_rand ($c_usable_meat_repo); //随机 取得 使用 模板
 			//$meat_index = $c_usable_meat_repo[$meat_index];
 
-			$result['code'][98] = $usable_meat_repo;
-			$result['usable'][98]['p'] = $c_usable_array;
-			$result['usable'][98]['n'] = $c_usable_array;
+			$result[CODE][98] = $usable_meat_repo;
+			$result[USABLE][98][P] = $c_usable_array;
+			$result[USABLE][98][N] = $c_usable_array;
 			
 			$success = true; 
 			
-			if (isset($usable_meat_repo['p_type'])){ //有参数，则根据type/bits 生成参数
-				$success = self::meat_params_generate($result['code'][98],$usable_meat_repo['p_type'],$usable_meat_repo['p_bits'],$usable_meat_repo['static'],$reg_usable,$mem_usable,$mem_write_usable,$usable_meat_repo['operation']);
+			if (isset($usable_meat_repo[P_TYPE])){ //有参数，则根据type/bits 生成参数
+				$success = self::meat_params_generate($result[CODE][98],$usable_meat_repo[P_TYPE],$usable_meat_repo[P_BITS],$usable_meat_repo['static'],$reg_usable,$mem_usable,$mem_write_usable,$usable_meat_repo[OPERATION]);
 			}
 
 			if (true === $success){		
-				//var_dump ($result['code']);
-				//var_dump ($result['usable']);
+				//var_dump ($result[CODE]);
+				//var_dump ($result[USABLE]);
 				//对多态结果进行stack可用状态设置(根据usable)
-				GeneralFunc::soul_stack_set($result['code'],$result['usable']);
+				GeneralFunc::soul_stack_set($result[CODE],$result[USABLE]);
 
 				self::append($result);
 
@@ -435,11 +428,11 @@ class OrganMeat{
 	// 得到对应usable，并开始生成血肉 单位
 	//
 
-	private static function meat_start($List_id,$direct = 'p'){
+	private static function meat_start($List_id,$direct = P){
 
 		global $all_valid_mem_opt_index;
 		
-		if ('p' === $direct){
+		if (P === $direct){
 			$fat_direct = 1;
 		}else{
 			$fat_direct = 2;
@@ -449,28 +442,28 @@ class OrganMeat{
 		    return 0;
 		}
 
-        $c_usable_array = OrgansOperator::GetByDListUnit(ConstructionDlinkedListOpt::getDlinkedList($List_id),'usable',$direct);
+        $c_usable_array = OrgansOperator::GetByDListUnit(ConstructionDlinkedListOpt::getDlinkedList($List_id),USABLE,$direct);
 
 		//根据 亲缘性 获得可用 血肉指令集
 		$prev_inst = false; //前指令
 		$next_inst = false; //后指令
-		if ('p' === $direct){
+		if (P === $direct){
 
-			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'p')){
+			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,P)){
 
-				$prev_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList(ConstructionDlinkedListOpt::getDlinkedList($List_id,'p'),'p');
+				$prev_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList(ConstructionDlinkedListOpt::getDlinkedList($List_id,P),P);
 			}else{
 				$prev_inst = 'empty';
 			}
-			$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($List_id,'n');
+			$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($List_id,N);
 		}else{
 
-			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,'n')){
-				$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList(ConstructionDlinkedListOpt::getDlinkedList($List_id,'n'),'n');
+			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($List_id,N)){
+				$next_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList(ConstructionDlinkedListOpt::getDlinkedList($List_id,N),N);
 			}else{
 				$next_inst = 'empty';
 			}
-			$prev_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($List_id,'p');
+			$prev_inst = ConstructionDlinkedListOpt::get_inst_from_DlinkedList($List_id,P);
 		}
 		//echo "<br>$prev_inst $next_inst<br>";
 
@@ -498,13 +491,13 @@ class OrganMeat{
 		$reg_usable  = false;
 		$mem_usable  = false;
 		$mem_write_usable = false; //内存地址 可写
-		$flag_usable = $c_usable_array['flag_write_able'];
+		$flag_usable = $c_usable_array[FLAG_WRITE_ABLE];
 		$m_w32 = false;
 		$m_r32 = false;
 
 		// 简单起见，目前仅处理 32位 可用信息
-		if (is_array($c_usable_array['normal_write_able'])){
-			foreach ($c_usable_array['normal_write_able'] as $a => $b){
+		if (is_array($c_usable_array[NORMAL_WRITE_ABLE])){
+			foreach ($c_usable_array[NORMAL_WRITE_ABLE] as $a => $b){
 				if ($b[32]){
 					if ('ESP' !== $a){  //这里简单化处理，应该判断stack是否为可用，则判断对应的ESP操作
 						$reg_usable[$a] = true;
@@ -513,14 +506,14 @@ class OrganMeat{
 			}
 		}
 		
-		if (is_array($c_usable_array['mem_opt_able'])){
-			foreach ($c_usable_array['mem_opt_able'] as $a => $b){
+		if (is_array($c_usable_array[MEM_OPT_ABLE])){
+			foreach ($c_usable_array[MEM_OPT_ABLE] as $a => $b){
 				//var_dump ($all_valid_mem_opt_index[$b]); 
 
-				if ($all_valid_mem_opt_index[$b]['bits'] == 32){
+				if ($all_valid_mem_opt_index[$b][BITS] == 32){
 					$mem_usable[] = $all_valid_mem_opt_index[$b];				
 					$m_r32 = true;
-					if ($all_valid_mem_opt_index[$b]['opt'] > 1){
+					if ($all_valid_mem_opt_index[$b][OPT] > 1){
 						$mem_write_usable[] = $all_valid_mem_opt_index[$b];
 						$m_w32 = true;
 					}
@@ -609,14 +602,14 @@ class OrganMeat{
 				$first_unit = $a;
 			}		
 			$last_unit = $a;
-			if (self::meat_start ($a,'p')){ //生成完成，加入List链表
-				self::meat_insert_into_list($a,1,'p');
+			if (self::meat_start ($a,P)){ //生成完成，加入List链表
+				self::meat_insert_into_list($a,1,P);
 				$meat_max_number --;
 				$c_total_meat_generated ++;
 				$new_meat_gen = true;
 			}	
-			if (self::meat_start ($a,'n')){ //生成完成，加入List链表
-				self::meat_insert_into_list($a,1,'n');
+			if (self::meat_start ($a,N)){ //生成完成，加入List链表
+				self::meat_insert_into_list($a,1,N);
 				$meat_max_number --;	
 				$c_total_meat_generated ++;
 				$new_meat_gen = true;
@@ -640,22 +633,22 @@ class OrganMeat{
 			while (($current_unit != $last_unit) and ($meat_max_number > 0)){
 				
 
-				if (!ConstructionDlinkedListOpt::issetDlinkedListUnit($current_unit,'n')){ //这里去下一个，绕过新建血肉 
+				if (!ConstructionDlinkedListOpt::issetDlinkedListUnit($current_unit,N)){ //这里去下一个，绕过新建血肉 
 					$current_unit = false;
 				}else{
 
-					$current_unit = ConstructionDlinkedListOpt::getDlinkedList($current_unit,'n');
+					$current_unit = ConstructionDlinkedListOpt::getDlinkedList($current_unit,N);
 				}
 
-				if (self::meat_start ($current_unit,'p')){ //生成完成，加入List链表
-					self::meat_insert_into_list($current_unit,1,'p');
+				if (self::meat_start ($current_unit,P)){ //生成完成，加入List链表
+					self::meat_insert_into_list($current_unit,1,P);
 					$meat_max_number --;
 					$c_total_meat_generated ++;
 					$new_meat_gen = true;
 				}
 
-				if (self::meat_start ($current_unit,'n')){ //生成完成，加入List链表
-					self::meat_insert_into_list($current_unit,1,'n');
+				if (self::meat_start ($current_unit,N)){ //生成完成，加入List链表
+					self::meat_insert_into_list($current_unit,1,N);
 					$meat_max_number --;
 					$c_total_meat_generated ++;
 					$new_meat_gen = true;

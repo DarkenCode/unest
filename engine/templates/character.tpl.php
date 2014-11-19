@@ -2,11 +2,11 @@
 
 //
 //copyright www.unest.org
-//character ä¼˜å…ˆçº§åŠ (å‡)æƒçº§
+//character ÓÅÏÈ¼¶¼Ó(¼õ)È¨¼¶
 //$character_tpl[type][organ][descriptor] = extended Rate 
 
 
-$character_tpl[CTPL_OPT][POLY]['RET']  = 1; //é‡æ“ä½œæŒ‡ä»¤'RET'ï¼Œå¤šæ€åŠ æƒ 1
+$character_tpl[CTPL_OPT][POLY]['RET']  = 1; //Óö²Ù×÷Ö¸Áî'RET'£¬¶àÌ¬¼ÓÈ¨ 1
 
 $character_tpl[CTPL_OPT][POLY]['CALL'] = 2;
 

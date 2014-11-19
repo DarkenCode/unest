@@ -1,18 +1,10 @@
 <?php
 
-define('UNEST.ORG', TRUE);
-//ini_set('display_errors',0);
-error_reporting(E_ERROR); 
 //////////////////////////////////////////
 //堆栈指针 寄存器
 $stack_pointer_reg = 'ESP';
 
-//////////////////////////////////////////
-//organs 
-define ('MEAT',1);
-define ('BONE',2);
-define ('POLY',3);
-define ('SOUL',4);
+require dirname(__FILE__)."/include/common.inc.php";
 
 require dirname(__FILE__)."/library/generate.func.php";
 require dirname(__FILE__)."/library/general.func.php";
@@ -20,9 +12,6 @@ require dirname(__FILE__)."/library/general.func.php";
 require dirname(__FILE__)."/library/data.construction.php";
 
 require dirname(__FILE__)."/library/organ.func.php";
-
-require_once dirname(__FILE__)."/include/intel_instruction.php";
-require_once dirname(__FILE__)."/include/config.inc.php";
 
 require dirname(__FILE__)."/library/instruction.func.php";
 Instruction::init();
@@ -176,8 +165,8 @@ if (!GeneralFunc::LogHasErr()){
 		$rel_jmp_pointer  = $cf['rel_jmp_pointer'];
 		$rel_jmp_switcher = $cf['rel_jmp_switcher'];
 
-		if ($engin_version !== $cf['engin_version']){
-			GeneralFunc::LogInsert('unmatch generat version: '."$engin_version".' !== '.$cf['engin_version']);
+		if (ENGIN_VER !== $cf['engin_version']){
+			GeneralFunc::LogInsert('unmatch generat version: '.ENGIN_VER.' !== '.$cf['engin_version']);
 		}
 
 		unset($cf);
@@ -244,7 +233,7 @@ if (!GeneralFunc::LogHasErr()){
 		//var_dump ($sec_name);	
 		//var_dump ($user_config);
 		//var_dump ($user_strength);
-		//var_dump ($user_config['unest_there']['normal']);
+		//var_dump ($user_config['unest_there'][NORMAL]);
 		//exit;
 		CfgParser::reconfigure_soul_usable ($sec_name,$user_cnf,$soul_writein_Dlinked_List_Total,$soul_usable,$soul_forbid); //usable
 

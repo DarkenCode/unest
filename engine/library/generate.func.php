@@ -45,30 +45,30 @@ class GenerateFunc{
 		if (is_array($usable_mem)){
 			$tmp = $usable_mem;
 			foreach ($tmp as $i => $a){		
-				if (preg_match('/'.self::$_user_cnf_stack_pointer_define.'/',$all_valid_mem_opt_index[$a]['code'])){
+				if (preg_match('/'.self::$_user_cnf_stack_pointer_define.'/',$all_valid_mem_opt_index[$a][CODE])){
 					unset ($usable_mem[$i]);				
 				}			
 			}
 		}
 	}
 
-	//获取指令在intel instruction数组中的定义
-	public static function get_inst_define($opt,$para){
-		global $Intel_instruction;
-		$ret = false;
-		if (isset($Intel_instruction[$opt])){
-			$ret = $Intel_instruction[$opt];
-			if (isset($ret['multi_op'])){
-				$para_count = intval(count($para));
-				if (isset($ret[$para_count])){
-					$ret = $ret[$para_count];
-				}else{
-					$ret = false;
-				}
-			}
-		}
-		return $ret;
-	}	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
 	
 	//////////////////////////////////////////////////
 	//位数精度调整 (高 -> 低)
@@ -150,8 +150,8 @@ class GenerateFunc{
 			$ret = false;
 			$tmp = $list;
 			foreach ($tmp as $i => $a){
-				if ((true !== $a['ipsp']) && (!isset($a['label']))){
-					if (true ===  GeneralFunc::is_effect_ipsp($soul[$a['c']],1,self::$_user_cnf_stack_pointer_define)){
+				if ((true !== $a['ipsp']) && (!isset($a[LABEL]))){
+					if (true ===  GeneralFunc::is_effect_ipsp($soul[$a[C]],1,self::$_user_cnf_stack_pointer_define)){
 						$list[$i]['ipsp'] = true;
 						$ret[$i] = true;
 					}
@@ -168,7 +168,7 @@ class GenerateFunc{
 	///////////////////////////////////
 	//随机 整数
 	//返回 $ret['value'] = 12
-	//         ['bits']  = 8  
+	//         [BITS]  = 8  
 	//
 	public static function rand_interger($bits = false){
 
@@ -179,7 +179,7 @@ class GenerateFunc{
 		$tmp = $usable_bits;
 
 		$new_ret['value'] = 1;
-		$new_ret['bits']  = 4;
+		$new_ret[BITS]  = 4;
 			
 		if (false !== $bits){ //往下覆盖，如指定 16位，包含 16,8,4位
 			foreach ($tmp as $a => $b){
@@ -208,7 +208,7 @@ class GenerateFunc{
 			}
 		}
 		$new_ret['value'] = $ret;
-		$new_ret['bits']  = $bits;
+		$new_ret[BITS]  = $bits;
 		return $new_ret;
 	}
 
@@ -259,33 +259,33 @@ class GenerateFunc{
 		//         (ready部分限制了源码 一条指令 至多一个重定位，Poly 可导致一条指令 多个重定位)
 		$rel_param_result = false;
 
-		if (is_array($c_obj['prefix'])){
-			foreach ($c_obj['prefix'] as $z => $y){
+		if (is_array($c_obj[PREFIX])){
+			foreach ($c_obj[PREFIX] as $z => $y){
 				$asm .= $y.' ';
 			}
 		}
-		$asm .= $c_obj['operation'].' ';
+		$asm .= $c_obj[OPERATION].' ';
 									//                    _
 		$last_params_type = 0;      // 最后参数 是否为 i   |
 		$last_params_cont = "";     // 最后参数            |
 		$mem_bits = 0;              // 内存参数 位数      _| 
-		if (is_array($c_obj['params'])){
-			foreach ($c_obj['params'] as $z => $y){
+		if (is_array($c_obj[PARAMS])){
+			foreach ($c_obj[PARAMS] as $z => $y){
 				if ($z){
 					$asm .= ',';
 				}
 				
-				if (isset($c_obj['rel'][$z])){ //if (preg_match($pattern_reloc,$y,$tmp)){
+				if (isset($c_obj[REL][$z])){ //if (preg_match($pattern_reloc,$y,$tmp)){
 					$rel_param_result[$z]['org'] = $y;				             
 				}
 				
-				if ($c_obj['p_type'][$z] == 'm'){        //内存指针 参数，每个指令至多有一条
-					$mem_bits = $c_obj['p_bits'][$z];
+				if ($c_obj[P_TYPE][$z] == 'm'){        //内存指针 参数，每个指令至多有一条
+					$mem_bits = $c_obj[P_BITS][$z];
 					//根据位数给内存指针加前缀
-					if ('LEA' !== $c_obj['operation']){  //lea eax,[...]
-						if (8 == $c_obj['p_bits'][$z]){
+					if ('LEA' !== $c_obj[OPERATION]){  //lea eax,[...]
+						if (8 == $c_obj[P_BITS][$z]){
 							$asm .= 'byte ';
-						}elseif (16 == $c_obj['p_bits'][$z]){
+						}elseif (16 == $c_obj[P_BITS][$z]){
 							$asm .= 'word ';
 						}else{
 							$asm .= 'dword ';
@@ -295,8 +295,8 @@ class GenerateFunc{
 				$asm .= $y;
 
 				$last_params_cont = $y;                  //最后一个参数
-				$last_params_type = $c_obj['p_type'][$z];//最后一个参数 类型
-				$last_params_bits = $c_obj['p_bits'][$z];//最后一个参数 位数
+				$last_params_type = $c_obj[P_TYPE][$z];//最后一个参数 类型
+				$last_params_bits = $c_obj[P_BITS][$z];//最后一个参数 位数
 			}
 		}	
 
@@ -307,11 +307,11 @@ class GenerateFunc{
 			}
 			$label_buf = '';
 			foreach ($rel_param_result as $z => $y){
-				$c_rel_index = $c_obj['rel'][$z]['i'];
-				$c_rel_copy  = $c_obj['rel'][$z]['c'];
+				$c_rel_index = $c_obj[REL][$z]['i'];
+				$c_rel_copy  = $c_obj[REL][$z][C];
 				$c_rel_name  = $UniqueHead.'RELINFO_'.$sec.'_'.$c_rel_index.'_'.$c_rel_copy; 
 				
-				//$c_rel = explode ('_',$y['rel']);
+				//$c_rel = explode ('_',$y[REL]);
 				//
 				//当重定位 类型 isMem 且 最后参数为 imm，则重定位 不在末 4位，特殊处理，见 readme.reloc.txt
 				//VirtualAddress
@@ -430,23 +430,23 @@ class GenerateFunc{
 					$show_len = '';
 				}
 
-				if (isset($current['label'])){
-					$buf .= $current['label']."$enter_flag";
+				if (isset($current[LABEL])){
+					$buf .= $current[LABEL]."$enter_flag";
 				}else{
 					$comment = '';
-					if (isset ($current['poly'])){	
+					if (isset ($current[POLY])){	
 						$comment = ' ;@@@ poly';
-						if (true === $current['soul']){
+						if (true === $current[SOUL]){
 							$comment = ' ;@@@ poly [from soul]';
 						}						
-					}elseif (isset ($current['bone'])){							
+					}elseif (isset ($current[BONE])){							
 						$comment = ' ;&&& bone';
-					}elseif (isset ($current['meat'])){	
+					}elseif (isset ($current[MEAT])){	
 						$comment = ' ;*** meat';
 					}else{
 						$comment = ';### org opt';
 					}
-					self::gen_asm_file_kid($a,OrgansOperator::GetByDListUnit($current,'code'),$buf,$buf_head,$enter_flag,$reloc_info_2_rewrite_table,$non_null_labels,$comment.$show_len);					
+					self::gen_asm_file_kid($a,OrgansOperator::GetByDListUnit($current,CODE),$buf,$buf_head,$enter_flag,$reloc_info_2_rewrite_table,$non_null_labels,$comment.$show_len);					
 				}
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				//next.fat? -> 加入脂肪
@@ -455,8 +455,8 @@ class GenerateFunc{
 					$buf .= OrganFat::start(5,$enter_flag,$next,1);
 				}
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-				if (ConstructionDlinkedListOpt::issetDlinkedListUnit($next,'n')){	
-					$next =  ConstructionDlinkedListOpt::getDlinkedList($next,'n');
+				if (ConstructionDlinkedListOpt::issetDlinkedListUnit($next,N)){	
+					$next =  ConstructionDlinkedListOpt::getDlinkedList($next,N);
 
 					//echo " $next -> ";
 

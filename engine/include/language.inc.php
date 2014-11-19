@@ -1,15 +1,4 @@
 <?php
-
-if(!defined('UNEST.ORG')) {
-        exit('Access Denied');
-}
-
-
-//用户可设置变量部分
-$user_option['del_last_nop'] = true; //自动去掉节表末尾用来对齐的 nop 以及 0xcch
-
-$engin_version = 5;                  //主版本号,避免ready生成的rdy文件被不匹配的generat处理
-
 /*语言文件*/
 $language = array(
     'not_support_Machine'     => 'not support current Machine',                             //'不支持的Machine标志 ',
@@ -105,7 +94,4 @@ $language = array(
 
 
 );
-
-$ARG_MAX = 5000;                     //当前系统命令行 最长 字符 长度 见readme  2013/04/19
-
 ?>

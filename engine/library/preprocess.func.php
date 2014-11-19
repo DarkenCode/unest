@@ -36,22 +36,22 @@ class PreprocessFunc{
 								//指令参数是否含有整数且不为重定位目标
 								//var_dump ($StandardAsmResultArray[$sec_id][$prev_line]); 
 								$last_int_param_no = false;
-								foreach ($StandardAsmResultArray[$sec_id][$prev_line]['p_type'] as $p_number => $type){ //取得最后一个整数参数
+								foreach ($StandardAsmResultArray[$sec_id][$prev_line][P_TYPE] as $p_number => $type){ //取得最后一个整数参数
 									if ('i' === $type){
 										$last_int_param_no = $p_number;
 										break;
 									}
 								}
-								if ((false !== $last_int_param_no) and (!isset($StandardAsmResultArray[$sec_id][$prev_line]['rel'][$last_int_param_no]))){
-									$ret[$y['org']]['default']  = $StandardAsmResultArray[$sec_id][$prev_line]['params'][$last_int_param_no];	
+								if ((false !== $last_int_param_no) and (!isset($StandardAsmResultArray[$sec_id][$prev_line][REL][$last_int_param_no]))){
+									$ret[$y['org']]['default']  = $StandardAsmResultArray[$sec_id][$prev_line][PARAMS][$last_int_param_no];	
 									if (1 == $y['size']){
-										$ret[$y['org']]['bits'] = 8;					    
+										$ret[$y['org']][BITS] = 8;					    
 									}elseif (2 == $y['size']){
-										$ret[$y['org']]['bits'] = 16;								
+										$ret[$y['org']][BITS] = 16;								
 									}elseif (4 == $y['size']){
-										$ret[$y['org']]['bits'] = 32;								
+										$ret[$y['org']][BITS] = 32;								
 									}								
-									$StandardAsmResultArray[$sec_id][$prev_line]['params'][$last_int_param_no] = $UniqueHead.'dynamic_insert_'.$y['org'];
+									$StandardAsmResultArray[$sec_id][$prev_line][PARAMS][$last_int_param_no] = $UniqueHead.'dynamic_insert_'.$y['org'];
 									//var_dump ($last_int_param_no);
 									unset ($dynamic_insert_array[$sec_id][$z]);
 								}

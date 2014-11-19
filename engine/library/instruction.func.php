@@ -21,6 +21,10 @@ class Instruction{
 	private static $_jcc_without_limit;
 	private static $_con_abs_jmp;
 	private static $_eip_instruction;
+	private static $_mem_opt;
+   
+    //*** 指令集
+	private static $_instruction;
 
 	public static function show(){		
 		echo '<br>self::$_register';
@@ -61,8 +65,46 @@ class Instruction{
 		self::$_jcc_without_limit      = $Jcc_without_limit;
 		self::$_con_abs_jmp            = $con_abs_jmp;
 		self::$_eip_instruction        = $eip_instruction;
+		self::$_mem_opt                = $mem_opt;
+
+		//***
+		require dirname(__FILE__)."/../instructions/intl.inc.php";
+		self::$_instruction = $Intel_instruction;
 	}
 
+    //是否是prefix
+	public static function isPrefixInst($inst){
+	    return (isset(self::$_instruction[$inst]['isPrefix']));
+	}
+    //是否是数据定义指令
+	public static function isDataInst($inst){
+	    return (isset(self::$_instruction[$inst]['data']));
+	}
+	//获取指令 数组 / $par 忽略参数个数 (肯定此inst无多参，如prefix;数据定义 或 仅需判断inst是否有效)
+	public static function getInstructionOpt($inst,$par=false){
+		$ret = false;
+	    if (isset(self::$_instruction[$inst])){
+		    if (isset(self::$_instruction[$inst]['multi_op'])){
+				if (false === $par){
+				    $ret = true;
+				}else if (isset(self::$_instruction[$inst][$par])){
+					$ret = self::$_instruction[$inst][$par];
+				}			
+			}else{
+				$ret = self::$_instruction[$inst];
+			}
+		}
+		return $ret;
+	}
+
+	public static function getMemOpt($inst){
+		if (isset(self::$_mem_opt[$inst])){
+			return self::$_mem_opt[$inst];
+		}else{
+			return false;
+		}
+	}
+	
 	public static function isEipInst($inst){
 	    return self::$_eip_instruction[$inst];
 	}
@@ -151,7 +193,7 @@ class Instruction{
 	public static function genRegPattern(){
 		$ret = "";
 	    foreach (self::$_register_total as $a => $b){
-			$ret .=  '('."$a".')|';
+			$ret .=  '(?<![0-9A-Z])'.'('."$a".')'.'(?![0-9A-Z]+)'.'|';
 		}
 		$ret = substr ($ret,0,strlen($ret) - 1);
 		return $ret;

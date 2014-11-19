@@ -1,18 +1,12 @@
-<?php
+<?php 
 
-define('UNEST.ORG', TRUE);
-ini_set('display_errors',0);
-error_reporting(E_ERROR); 
+require dirname(__FILE__)."/include/common.inc.php";
 
 require dirname(__FILE__)."/library/ready.func.php";
 require dirname(__FILE__)."/library/general.func.php";
 require dirname(__FILE__)."/library/preprocess.func.php";
 
 require dirname(__FILE__)."/library/data.construction.php";
-
-require_once dirname(__FILE__)."/include/intel_instruction.php";
-
-require_once dirname(__FILE__)."/include/config.inc.php";
 
 require dirname(__FILE__)."/library/config.func.php";
 
@@ -296,17 +290,17 @@ if (!GeneralFunc::LogHasErr()){
 
 		//
 		$StandardAsmResultArray = array();	//保存 标准化后 的代码  [line_number] => array(
-											//                                             'prefix'[] => 前缀
-											//                                             'operation'=> 指令
-											//                                             'params'[] => array ( 参数
+											//                                             'PREFIX'[] => 前缀
+											//                                             'OPERATION'=> 指令
+											//                                             'PARAMS'[] => array ( 参数
 											//                                                               '0' => 'eax';
 											//                                                               '1' => '1'
 											//                                                               '2' => '[eax+0x0]'
 											//                                                           )
-											//                                             'p_type'[] => array ( 参数类型
+											//                                             'P_TYPE'[] => array ( 参数类型
 											//                                                               '0' => 'r','1' => 'i','2' => 'm'
 											//                                                           )
-											//                                             'p_bits'[] => array ( 参数位数
+											//                                             'P_BITS'[] => array ( 参数位数
 											//                                                               '0' => 32, '1' => 0 //整数无位数, '2' => 32
 											//                                                           )
 
@@ -360,10 +354,10 @@ if (!GeneralFunc::LogHasErr()){
 		$exetime_record['usable register and memory'] = GeneralFunc::exetime_record(); //获取程序执行的时间
 
 		//压缩相同 可用内存 描述，以减少 生成配置文件的体积 readme 2013/04/02
-		//$all_valid_mem_opt_record  = array(); //有效内存  集 ['code']['bits'][opt] = index number | [函数 中 局部变量]
-		$all_valid_mem_opt_index   = array();   //有效内存索引 [index number] = 'code' => '[...]'
-												//                              'bits' => 8/16/32
-												//                              'opt'  => 1/2/3
+		//$all_valid_mem_opt_record  = array(); //有效内存  集 [CODE][BITS][opt] = index number | [函数 中 局部变量]
+		$all_valid_mem_opt_index   = array();   //有效内存索引 [index number] = CODE => '[...]'
+												//                              BITS => 8/16/32
+												//                              OPT  => 1/2/3
 		$soul_usable = ReadyFunc::compress_same_char_output($soul_usable,$all_valid_mem_opt_index);        
 		
 		$exetime_record['compress same char to output'] = GeneralFunc::exetime_record(); //获取程序执行的时间
@@ -435,17 +429,17 @@ if (!GeneralFunc::LogHasErr()){
 		    foreach ($b as $c => $sec_id){
 				$c_list = $soul_writein_Dlinked_List_Total[$sec_id]['list'][0]; //起始位默认是0
 				while (true){					  
-                    $f = $c_list['c'];				    
-					if (true === $soul_usable[$sec_id][$f]['p']['stack']){ //堆栈有效
-					    unset($soul_usable[$sec_id][$f]['p']['normal_write_able'][$stack_pointer_reg]);
-                        $soul_forbid[$sec_id][$f]['p']['normal'][$stack_pointer_reg][32] = true;
+                    $f = $c_list[C];				    
+					if (true === $soul_usable[$sec_id][$f][P][STACK]){ //堆栈有效
+					    unset($soul_usable[$sec_id][$f][P][NORMAL_WRITE_ABLE][$stack_pointer_reg]);
+                        $soul_forbid[$sec_id][$f][P][NORMAL][$stack_pointer_reg][32] = true;
 					}
-					if (true === $soul_usable[$sec_id][$f]['n']['stack']){ //堆栈有效
-					    unset($soul_usable[$sec_id][$f]['n']['normal_write_able'][$stack_pointer_reg]);
-                        $soul_forbid[$sec_id][$f]['n']['normal'][$stack_pointer_reg][32] = true;
+					if (true === $soul_usable[$sec_id][$f][N][STACK]){ //堆栈有效
+					    unset($soul_usable[$sec_id][$f][N][NORMAL_WRITE_ABLE][$stack_pointer_reg]);
+                        $soul_forbid[$sec_id][$f][N][NORMAL][$stack_pointer_reg][32] = true;
 					}
-					if (isset($c_list['n'])){
-						$c_list = $soul_writein_Dlinked_List_Total[$sec_id]['list'][$c_list['n']];
+					if (isset($c_list[N])){
+						$c_list = $soul_writein_Dlinked_List_Total[$sec_id]['list'][$c_list[N]];
 					}else{
 						break;
 					}
@@ -461,15 +455,15 @@ if (!GeneralFunc::LogHasErr()){
 		
 		foreach ($soul_writein_Dlinked_List_Total as $number => $z){			
 			foreach ($soul_writein_Dlinked_List_Total[$number]['list'] as $a => $b){
-				if (isset($b['label'])){
+				if (isset($b[LABEL])){
 				
 				}else{
-					if (isset($StandardAsmResultArray[$number][$b['c']]['p_type'])){
-						foreach ($StandardAsmResultArray[$number][$b['c']]['p_type'] as $c => $d){
+					if (isset($StandardAsmResultArray[$number][$b[C]][P_TYPE])){
+						foreach ($StandardAsmResultArray[$number][$b[C]][P_TYPE] as $c => $d){
 							if ('m' === $d){
-								$c_len = OpLen::code_len($StandardAsmResultArray[$number][$b['c']],true);
+								$c_len = OpLen::code_len($StandardAsmResultArray[$number][$b[C]],true);
 								if ($c_len <= $b['len']){
-									$all_valid_mem_opcode_len[$StandardAsmResultArray[$number][$b['c']]['params'][$c]] = $b['len'] - $c_len;
+									$all_valid_mem_opcode_len[$StandardAsmResultArray[$number][$b[C]][PARAMS][$c]] = $b['len'] - $c_len;
 								}	
 							}
 						}
@@ -530,14 +524,14 @@ if (!GeneralFunc::LogHasErr()){
 			foreach ($soul_writein_Dlinked_List_Total as $number => $b){
                 echo "<br>##########################  $number ######################";  			
 				foreach ($soul_writein_Dlinked_List_Total[$number]['list'] as $a => $b){
-					if (isset($b['label'])){
+					if (isset($b[LABEL])){
 					
 					
 					}else{
-						$c_len = OpLen::code_len($StandardAsmResultArray[$number][$b['c']]);
+						$c_len = OpLen::code_len($StandardAsmResultArray[$number][$b[C]]);
 						//if ($b['len'] !== $c_len){
 							echo "<br>";
-							var_dump($StandardAsmResultArray[$number][$b['c']]);
+							var_dump($StandardAsmResultArray[$number][$b[C]]);
 							echo "<br>len = ".$b['len'];
 							echo " = $c_len";
 						//}
@@ -577,7 +571,7 @@ if (!GeneralFunc::LogHasErr()){
 		  //$rdy_output['soul_effect_reg']        =	$normal_register_opt_array;
 	      //$rdy_output['AffiliateUsableArray']            = $AffiliateUsableArray;
 			$rdy_output['output_type']                     = $output_type; //binary or coff 
-			$rdy_output['engin_version']                   = $engin_version;
+			$rdy_output['engin_version']                   = ENGIN_VER;
 			$rdy_output['preprocess_config']               = $preprocess_config;
 			$rdy_output['dynamic_insert']                  = $dynamic_insert_result;
 			
