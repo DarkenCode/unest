@@ -234,7 +234,7 @@ class IOFormatParser{
 
 		global $language;
 		global $myTables;
-		global $my_params;
+
 		global $buf;
 		global $preprocess_sec_name;
 
@@ -244,7 +244,7 @@ class IOFormatParser{
 		
 		//分析COFF格式，并获得需要的数组返回
 		$myTables = array(); 
-		if (!self::analysis_coff($buf,$language,$myTables,$my_params['echo'])){
+		if (!self::analysis_coff($buf,$language,$myTables)){
 			GeneralFunc::LogInsert('analysis coff fail.');
 			//var_dump ($output);
 			//exit;
@@ -266,7 +266,7 @@ class IOFormatParser{
 	//
 	//
 	//
-	private static function analysis_coff($buf,$language,&$ret,$DebugShow = false){
+	private static function analysis_coff($buf,$language,&$ret){
 		
 		$lpObj = 0;
 		$machine = self::get_hex_2_dec($buf,$lpObj,2); //取Machine域
@@ -394,7 +394,7 @@ class IOFormatParser{
 			$SecNum ++;
 		}
 
-		if ($DebugShow){
+		if (defined('DEBUG_ECHO')){
 			echo "<br><br>**************** section  一览 ************<br>";
 			echo "<table border = 1><tr><td>段编号</td><td>段描述基址</td><td>段名</td><td>PointerToRawData</td><td>SizeOfRawData</td><td>PointerToRelocation</td><td>NumberOfRelocation</td><td>Characteristics(L)</td><td>Characteristics(H)</td></tr>";
 			foreach ($CodeSectionArray as $SecNum => $b){
@@ -581,7 +581,7 @@ class IOFormatParser{
 			$symbalTableIndex ++;
 		}    
 
-		if ($DebugShow){
+		if (defined('DEBUG_ECHO')){
 			$i = 1;
 			echo "<br>Symbole table objects<table border = 1>";
 			echo "<tr><td>i</td><td>No.</td><td>Name</td><td>base</td><td>Length</td><td>NumberOfRelocations</td><td>NumberOfLinenumbers</td><td>CheckSum</td><td>Number</td><td>Selection</td></tr>";
@@ -664,8 +664,8 @@ class IOFormatParser{
 		global $CodeSectionArray;
 		global $reloc_info_2_rewrite_table;
 		global $non_null_labels;
-		global $obj_filename;
-
+		    
+			$obj_filename = CfgParser::params(obj_filename);
 
 			//编译成功，开始解析
 			$binary_file_buf = file_get_contents($binary_filename);

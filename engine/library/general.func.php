@@ -10,14 +10,14 @@ if(!defined('UNEST.ORG')) {
 //
 function shutdown_except(){
     global $complete_finished;
-	global $log_path;
+
 	global $exetime_record;
     if ((!$complete_finished)&&(!GeneralFunc::LogHasErr())){
 		GeneralFunc::LogInsert('unexpected shutdown, maximum execution time exceeded or other errors');
 	}
 	$output = GeneralFunc::LogRead();
     //输出$output[] 到日志文件,jason格式
-	file_put_contents($log_path,json_encode($output));  
+	file_put_contents(CfgParser::params('log'),json_encode($output));  
 
 	var_dump ($output);
 	var_dump ($exetime_record);
@@ -76,25 +76,6 @@ class GeneralFunc{
 		return $total;
 		/**************************************/
 	}    
-
-    //
-	//////////////////////////////////////////////
-	 //
-	 //支持命令行/Get/Post 提交 的参数
-	 //返回    $ret['key'] = value
-	//注：argv 优先于 REQUEST ,argv 参数序用双引号 generat.php "a=b&c=d..."
-	public static function get_params($argv){
-		$ret = false;
-	 
-		if (is_array($_REQUEST)){
-			$ret = $_REQUEST;
-		}	
-		if (count($argv) > 1){
-			parse_str($argv[1],$ret);
-		}
-		return $ret;
-	 }
-
 
 	///////////////////////////////////////////////////
 	//根据usable前后stack确定指令的stack环境(可用or 不可用)
@@ -234,9 +215,9 @@ class GeneralFunc{
 	public static function get_dynamic_insert_value (&$dynamic_insert){
 
 		global $language;
-		global $my_params;
 
-		$new_dynamic_insert = $my_params['di'];
+
+		$new_dynamic_insert = CfgParser::params('di');
 		if (isset($new_dynamic_insert)){
 			if (is_array($new_dynamic_insert)){
 				foreach ($new_dynamic_insert as $key => $value){

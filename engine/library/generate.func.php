@@ -14,13 +14,13 @@ class GenerateFunc{
 
 
 	//初始化 堆栈 正则
-	public static function initStackPointer($sec,$echo = false){
+	public static function initStackPointer($sec){
   
-		global $user_cnf;
+		$c_user_cnf = CfgParser::get_user_cnf($sec);
 
 		self::$_user_cnf_stack_pointer_define = false;
-		if (is_array($user_cnf[$sec]['stack_pointer_define'])){
-			foreach ($user_cnf[$sec]['stack_pointer_define'] as $a){
+		if (is_array($c_user_cnf['stack_pointer_define'])){
+			foreach ($c_user_cnf['stack_pointer_define'] as $a){
 				$c_reg_array = Instruction::getRegsByIdx($a);
 				foreach ($c_reg_array as $c){
 					self::$_user_cnf_stack_pointer_define .=  '('.$c.')|';
@@ -30,8 +30,8 @@ class GenerateFunc{
 			    self::$_user_cnf_stack_pointer_define = substr (self::$_user_cnf_stack_pointer_define,0,strlen(self::$_user_cnf_stack_pointer_define) - 1);
 			}
 		}
-		if ($echo){
-		    DebugShowFunc::my_shower_09(self::$_user_cnf_stack_pointer_define,$user_cnf[$sec]['stack_pointer_define']);
+		if (defined('DEBUG_ECHO')){
+		    DebugShowFunc::my_shower_09(self::$_user_cnf_stack_pointer_define,$c_user_cnf['stack_pointer_define']);
 		} 
 	}
 
@@ -145,7 +145,7 @@ class GenerateFunc{
 	}
 
 
-	public static function reset_ipsp_list_by_stack_pointer_define(&$list,$soul,$echo = false){
+	public static function reset_ipsp_list_by_stack_pointer_define(&$list,$soul){
 		if (false !== self::$_user_cnf_stack_pointer_define){
 			$ret = false;
 			$tmp = $list;
@@ -157,7 +157,7 @@ class GenerateFunc{
 					}
 				}
 			}
-			if ($echo){
+			if (defined('DEBUG_ECHO')){
 				DebugShowFunc::my_shower_08(self::$_user_cnf_stack_pointer_define,$ret,$list,$soul);
 			}
 			//return $ret;
@@ -227,7 +227,7 @@ class GenerateFunc{
 	//重定位信息副本累加
 	public static function reloc_inc_copy($obj,&$old,&$new){
 		global $c_rel_info;
-		global $UniqueHead;
+
 		global $pattern_reloc;
 
 		if (preg_match($pattern_reloc,$obj,$tmp)){
@@ -250,7 +250,7 @@ class GenerateFunc{
 		global $pattern_reloc;
 		global $c_rel_info;
 		global $sec;
-		global $UniqueHead;
+
 
 		$asm = '';
 		//当前指令 含有的重定位 (完整参数) 如： UNEST_RELINFO_104_3_2 + 123 
@@ -309,7 +309,7 @@ class GenerateFunc{
 			foreach ($rel_param_result as $z => $y){
 				$c_rel_index = $c_obj[REL][$z]['i'];
 				$c_rel_copy  = $c_obj[REL][$z][C];
-				$c_rel_name  = $UniqueHead.'RELINFO_'.$sec.'_'.$c_rel_index.'_'.$c_rel_copy; 
+				$c_rel_name  = UNIQUEHEAD.'RELINFO_'.$sec.'_'.$c_rel_index.'_'.$c_rel_copy; 
 				
 				//$c_rel = explode ('_',$y[REL]);
 				//
@@ -380,7 +380,7 @@ class GenerateFunc{
 
 	
 	public static function gen_asm_file($out_file,$a,&$reloc_info_2_rewrite_table,&$non_null_labels){
-		global $UniqueHead;
+
 
 		//global $c_soul_usable;
 		
@@ -388,7 +388,7 @@ class GenerateFunc{
 
 
 
-		global $my_params;
+
 
 		$total_buf = '';	
 		$enter_flag = "\r\n";//"<br>";//"\r\n";
@@ -419,7 +419,7 @@ class GenerateFunc{
 				//*/
 				////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				//内容
-				if ($my_params['echo']){
+				if (defined('DEBUG_ECHO')){
 					$show_len = '[List No:'.$next.'] [len:'.$current['len'].']';
 					if (ConstructionDlinkedListOpt::issetRelJmpRange($next)){//	if (isset($c_rel_jmp_range[$next])){
 						$show_len .= '[range (without Fat):';

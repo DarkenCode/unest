@@ -248,7 +248,7 @@ class OrganBone{
 
 		global $c_rel_info;
 		global $sec;
-		global $UniqueHead;
+
 	   
 		$c_lp = $soul_position['first'];
 		while (true){
@@ -294,7 +294,7 @@ class OrganBone{
 					$c_rel_info[$old_rel_i][$new] = $c_rel_info[$old_rel_i][$old_rel_c];
 					
                     $tmp = OrgansOperator::Get(BONE,$tmp_tmp,CODE,99,PARAMS,$old_rel_n);
-					$tmp = str_replace("$UniqueHead".'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$old_rel_c,"$UniqueHead".'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$new,$tmp);
+					$tmp = str_replace(UNIQUEHEAD.'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$old_rel_c,UNIQUEHEAD.'RELINFO_'.$sec.'_'.$old_rel_i.'_'.$new,$tmp);
                     OrgansOperator::Set(BONE,$tmp_tmp,$tmp,array(CODE,99,PARAMS,$old_rel_n));					
 
 					//var_dump ($bone_result_array[$soul_writein_Dlinked_List[$s_w_Dlinked_List_index][BONE]][CODE]);
@@ -332,7 +332,7 @@ class OrganBone{
 	//对骨架进行初始化(label & Jcc)
 	private static function init_bone_model(&$c_bone,$bone_obj){ 
 
-		global $UniqueHead;
+
 	
 
 		$bone_index = self::$_index;
@@ -344,13 +344,13 @@ class OrganBone{
 		//补完骨架中的label 标号
 		foreach ($c_bone[CODE] as $a => $b){
 			if (isset($b[PARAMS][0])){ //跳转参数 最多只可能 有一个 且 为跳转目标标号
-				$c_bone[CODE][$a][PARAMS][0] = $UniqueHead.$c_bone[CODE][$a][PARAMS][0].$bone_index;
+				$c_bone[CODE][$a][PARAMS][0] = UNIQUEHEAD.$c_bone[CODE][$a][PARAMS][0].$bone_index;
 				if ('Jcc' === $b[OPERATION]){
 					$c_bone[CODE][$a][OPERATION] = Instruction::randUnLmtJcc();
 				}
 			}elseif (isset($b[LABEL])){
-				$c_bone[CODE][$a][LABEL] = $UniqueHead.$c_bone[CODE][$a][LABEL].$bone_index." : ";
-				//$c_bone[CODE][$a][OPERATION] = $UniqueHead.$c_bone[CODE][$a][LABEL].$bone_index." : ";
+				$c_bone[CODE][$a][LABEL] = UNIQUEHEAD.$c_bone[CODE][$a][LABEL].$bone_index." : ";
+				//$c_bone[CODE][$a][OPERATION] = UNIQUEHEAD.$c_bone[CODE][$a][LABEL].$bone_index." : ";
 			}		
 		}
 
@@ -559,7 +559,7 @@ class OrganBone{
 	//不冲突? 返回false
 	//  冲突? 返回冲突位置 -> 
 	private static function check_bone_stack_conflict($c_bone_model,$bone_obj){
-		global $my_params;
+
 		$i = 0;
 		$stack_unusable = false; //[P] = false -> 前禁用
 		$ret = false;
@@ -620,7 +620,7 @@ class OrganBone{
 				}
 			}
 		}
-		if ($my_params['echo']){
+		if (defined('DEBUG_ECHO')){
 			DebugShowFunc::my_shower_05 ($c_bone_model,$bone_obj,$stack_unusable,$ret,$conflict_position);
 		}
 		return $ret;

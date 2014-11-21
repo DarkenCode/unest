@@ -25,13 +25,13 @@ class OrganPoly{
 	// DWORD [DWORD FS:UNEST_RELINFO_104_71_2] === DWORD [DWORD FS:UNEST_RELINFO_104_71_0]
 	private static function is_same_mem($a,$b){
 		global $pattern_reloc_4_replace;
-		global $UniqueHead;
+
 						
 		if ($a === $b){
 			return true;
 		}
 		//考虑重定位
-		$replacement = "$UniqueHead".'RELINFO_'.'$2_$3';
+		$replacement = UNIQUEHEAD.'RELINFO_'.'$2_$3';
 		$a = preg_replace($pattern_reloc_4_replace,$replacement,$a); 
 		$b = preg_replace($pattern_reloc_4_replace,$replacement,$b); 
 
@@ -444,7 +444,7 @@ class OrganPoly{
 	//
 	private static function generat_poly_code($org,$soul_usable,$poly_model,$rand_result,$int3 = false){
 		global $c_rel_info;
-		global $UniqueHead;
+
 
 		global $sec;
 			$ret = array();
@@ -466,7 +466,7 @@ class OrganPoly{
 			//修正参数中 数据(固定跳转/原参数继承/...)
 			foreach ($poly_model[CODE] as $a => $b){//        foreach ($poly_model[OPERATION] as $a => $b){
 					if (isset($b[LABEL])){
-						$ret[CODE][$a][LABEL] = $UniqueHead.$b[LABEL].self::$_index." : ";
+						$ret[CODE][$a][LABEL] = UNIQUEHEAD.$b[LABEL].self::$_index." : ";
 						continue;
 					}	
 
@@ -478,7 +478,7 @@ class OrganPoly{
 					foreach ($bb as $c => $d){
 							if ('SOLID_JMP_' === substr($d,0,10)){ //固定跳转标号
 									$tmp = explode ('_',$d);
-									$d = $UniqueHead.$d.self::$_index;                                                  
+									$d = UNIQUEHEAD.$d.self::$_index;                                                  
 							}else{
 								//原参数的继承
 								if (preg_match_all('/(p_)([\d]{1,})/',$d,$mat)){
@@ -501,7 +501,7 @@ class OrganPoly{
 											//echo "<br>first:";
 											//var_dump ($org[PARAMS][$z]);
 											$c_org_params = 
-											str_replace("$UniqueHead".'RELINFO_'.$sec.'_'.$org[REL][$z]['i'].'_'.$org[REL][$z][C],"$UniqueHead".'RELINFO_'.$sec.'_'.$org[REL][$z]['i'].'_'.$new,$org[PARAMS][$z]);
+											str_replace(UNIQUEHEAD.'RELINFO_'.$sec.'_'.$org[REL][$z]['i'].'_'.$org[REL][$z][C],UNIQUEHEAD.'RELINFO_'.$sec.'_'.$org[REL][$z]['i'].'_'.$new,$org[PARAMS][$z]);
 											//echo "<br>last: $c ".$org[REL]['i'].' '.$new;
 											//var_dump ($c_org_params);
 											//$ret[CODE][$a][REL][N] = $c;
@@ -530,7 +530,7 @@ class OrganPoly{
 												//exit;
 												$rand_rel_inc[$z] = true;
 												$c_rel_info[$old[1]][$new] = $c_rel_info[$old[1]][$old[2]];
-												$rand_result[$z] = str_replace("$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$old[2],"$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$new,$rand_result[$z]);
+												$rand_result[$z] = str_replace(UNIQUEHEAD.'RELINFO_'.$old[0].'_'.$old[1].'_'.$old[2],UNIQUEHEAD.'RELINFO_'.$old[0].'_'.$old[1].'_'.$new,$rand_result[$z]);
 												$ret[CODE][$a][REL][$c]['i'] = $old[1];
 												$ret[CODE][$a][REL][$c][C] = $new;
 											}
@@ -747,8 +747,8 @@ class OrganPoly{
 			}
 
 			self::$_index ++;
-			global $my_params;
-			if ($my_params['echo']){
+
+			if (defined('DEBUG_ECHO')){
 				DebugShowFunc::my_shower_03($obj,$insert_List_index,$c_poly_result);
 			}
 		}	

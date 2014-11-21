@@ -463,7 +463,7 @@ class RelJmp{
 	//
 	public static function get_addition_List_info($unit,$get_len=false,$get_rel_jmp=false){
 
-		global $UniqueHead;
+
 
 		
 
@@ -476,7 +476,7 @@ class RelJmp{
 		}else{
 			
 			if ($get_rel_jmp){ //获取 rel_jmp 信息
-				if ((Instruction::isJmpStatic($c_opt[OPERATION])) and (0 === strpos($c_opt[PARAMS][0],"$UniqueHead".'SOLID_JMP_'))){ //定长跳转
+				if ((Instruction::isJmpStatic($c_opt[OPERATION])) and (0 === strpos($c_opt[PARAMS][0],UNIQUEHEAD.'SOLID_JMP_'))){ //定长跳转
 					$ret['rel_jmp']['max'] = Instruction::getJmpRangeLmt($c_opt[OPERATION]);
 					$ret['rel_jmp'][LABEL] = $c_opt[PARAMS][0].' : ';
 				}

@@ -22,86 +22,39 @@ Instruction::init();
 $stack_pointer_reg = 'ESP';
 
 //////////////////////////////////////////
-//同时支持$_GET/$_POST/命令行输入 的参数
-$my_params = GeneralFunc::get_params($argv);
-
-//////////////////////////////////////////
 //捕获超时
 $complete_finished = false; //执行完成标志
 register_shutdown_function('shutdown_except');
+
 //////////////////////////////////////////
-//检查参数并构造路径等
-if ($my_params['echo']){
-    require_once dirname(__FILE__)."/library/debug_show.func.php";
+//同时支持$_GET/$_POST/命令行输入 的参数
+CfgParser::get_params($argv);
+
+if (!GeneralFunc::LogHasErr()){
+	if (CfgParser::params('echo')){
+		require dirname(__FILE__)."/library/debug_show.func.php";
+	}	
+
+	set_time_limit(CfgParser::params('timelimit'));	
+
+	$file_format_parser = dirname(__FILE__)."/IOFormatParser/".CfgParser::params('type').".IO.php";
+	
+	if (file_exists($file_format_parser)){
+		require $file_format_parser;
+	}else{
+		GeneralFunc::LogInsert('type without file format parser');
+	}
+	$bin_file = CfgParser::params('_file').".bin";
+	$asm_file = CfgParser::params('_file').".asm";
+	$rdy_file = CfgParser::params('_file').".rdy";     //obj 分析完成保存文件
+	$out_file = CfgParser::params('_file').".out.asm";	
+
+	define ('UNIQUEHEAD','UNEST_'); //独特的头部标志，防止与代码中字符冲突 (如冲突，增加随机字符，注:禁止增加下划线 英文字符必须为大写)
+	$pattern_reloc = '/('.UNIQUEHEAD.'RELINFO_[\d]{1,}_[\d]{1,}_[\d]{1,})/';  //匹配 reloc 信息	
 }
-
-if (isset($my_params['maxinput'])){
-    $max_input = $my_params['maxinput'];
-}else{
-    $max_input = false;
+if (defined('DEBUG_ECHO')){
+		CfgParser::params_show();
 }
-
-if (isset($my_params['timelimit'])){
-    set_time_limit($my_params['timelimit']);
-}else{
-    GeneralFunc::LogInsert('need param timelimit');
-}
-if (isset($my_params['base'])){
-    $base_addr = $my_params['base'];
-}else{
-    GeneralFunc::LogInsert('need param base');
-}
-if (isset($my_params['log'])){
-    $log_path = $base_addr.'/'.$my_params['log'];
-}else{
-    GeneralFunc::LogInsert('need param log');
-}
-if (!isset($my_params['path'])){
-    GeneralFunc::LogInsert('need param path');
-}
-
-if (!isset($my_params['filename'])){
-    GeneralFunc::LogInsert('need param filename');
-}else{
-    $input_filename = $base_addr.'/'.$my_params['path'].'/'.$my_params['filename'];
-}
-
-if (!isset($my_params['cnf'])){
-    GeneralFunc::LogInsert('need param cnf');
-}else{
-	$usr_cfg_file = $base_addr.'/'.$my_params['cnf']; //用户设置
-}
-
-
-if ('bin' === $my_params['type']){
-    $output_type = 'BIN';
-}elseif ('coff' === $my_params['type']){	
-	$output_type = 'COFF';
-}else{
-	GeneralFunc::LogInsert('need param type');
-}
-
-$file_format_parser = dirname(__FILE__)."/IOFormatParser/".$output_type.".IO.php";
-
-if (file_exists($file_format_parser)){
-	require $file_format_parser;
-}else{
-    GeneralFunc::LogInsert('type without file format parser');
-}
-
-if (!isset($my_params['output'])){
-    GeneralFunc::LogInsert('need param output');
-}else{
-	$bin_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".bin";
-	$asm_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".asm";
-	$rdy_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".rdy";     //obj 分析完成保存文件
-	$out_file = $base_addr.'/'.$my_params['output'].'/'.$my_params['filename'].".out.asm";	
-}
-
-
-$UniqueHead = 'UNEST_'; //独特的头部标志，防止与代码中字符冲突 (如冲突，增加随机字符，注:禁止增加下划线 英文字符必须为大写)
-$pattern_reloc = '/('."$UniqueHead".'RELINFO_[\d]{1,}_[\d]{1,}_[\d]{1,})/';  //匹配 reloc 信息
-
 if (!GeneralFunc::LogHasErr()){
 	////////////////////////////////////////////////////////
 
@@ -111,14 +64,14 @@ if (!GeneralFunc::LogHasErr()){
 	////////////////////////////////////////////////////////
 	//目标处理文件格式处理
 		$myTables = array();
-		$handle = fopen($input_filename,'rb');
+		$handle = fopen(CfgParser::params('filename'),'rb');
 		if (!$handle){
-			GeneralFunc::LogInsert('fail to open file:'.$input_filename);
+			GeneralFunc::LogInsert('fail to open file:'.CfgParser::params('filename'));
 		}else{
-			$buf = fread($handle,filesize($input_filename));
+			$buf = fread($handle,filesize(CfgParser::params('filename')));
 			fclose($handle);
 
-			$input_filesize = filesize($input_filename);
+			$input_filesize = filesize(CfgParser::params('filename'));
 			
 			IOFormatParser::in_file_format();
 			$exetime_record['analysis_input_file_format'] = GeneralFunc::exetime_record(); //获取程序执行的时间
@@ -129,16 +82,8 @@ if (!GeneralFunc::LogHasErr()){
 //读取配置文件
 if (!GeneralFunc::LogHasErr()){
 
-
-	$preprocess_config = array();   // 预处理设置
 	$protect_section   = array();   // 保护段设置
 	$dynamic_insert    = array();   // 动态赋值设置
-	$user_cnf = array();            // 用户配置(除预处理部分)
-
-
-	if (false === CfgParser::get_usr_config(false,$usr_cfg_file,$user_cnf,$preprocess_config,true)){ //读取配置文件失败，不做任何处理？放弃
-	    GeneralFunc::LogInsert($language['without_cfg_file']);        
-	}
     
 	$preprocess_sec_name = CfgParser::GetPreprocess_sec();
 	if (!count($preprocess_sec_name)){
@@ -161,7 +106,7 @@ if (!GeneralFunc::LogHasErr()){
 			}
 		}
         
-		if ($my_params['echo']){
+		if (defined('DEBUG_ECHO')){
 			DebugShowFunc::my_shower_07($myTables['CodeSectionArray'],$ignore_sec);
 		}
 	}
@@ -169,15 +114,15 @@ if (!GeneralFunc::LogHasErr()){
 
 
 
-	if (isset($preprocess_config['protect_section'])){  // 保护段设置
-		$protect_section = $preprocess_config['protect_section'];
+	if (CfgParser::get_preprocess_config('protect_section')){  // 保护段设置
+		$protect_section = CfgParser::get_preprocess_config('protect_section');
 		//检测是否重叠保护段
 		if (PreprocessFunc::is_overlap_section($protect_section)){
 			GeneralFunc::LogInsert($language['overlay_protect_section']);      
 		}	
 	}
-	if (isset($preprocess_config['dynamic_insert'])){  // 动态写入设置
-		$dynamic_insert = $preprocess_config['dynamic_insert'];
+	if (CfgParser::get_preprocess_config('dynamic_insert')){  // 动态写入设置
+		$dynamic_insert = CfgParser::get_preprocess_config('dynamic_insert');
 		//检测是否重叠保护段
 		if (PreprocessFunc::is_overlap_section($dynamic_insert)){
 			GeneralFunc::LogInsert($language['overlay_dynamic_insert']);      
@@ -555,8 +500,8 @@ if (!GeneralFunc::LogHasErr()){
 			//初始化完成，将数据保存入文档，供给下一步骤使用 
 			$rdy_output['StandardAsmResultArray']          = $StandardAsmResultArray;
 			$rdy_output['garble_rel_info']                 = $garble_rel_info;
-			//$rdy_output['solid_jmp_array']                 = $solid_jmp_array;
-			$rdy_output['UniqueHead']                      = $UniqueHead;
+		  //$rdy_output['solid_jmp_array']                 = $solid_jmp_array;
+			$rdy_output['UniqueHead']                      = UNIQUEHEAD;
 			$rdy_output['CodeSectionArray']                = $myTables['CodeSectionArray'];
 
 			$rdy_output['preprocess_sec_name']             = $preprocess_sec_name;
@@ -570,9 +515,9 @@ if (!GeneralFunc::LogHasErr()){
 			$rdy_output['soul_writein_Dlinked_List_Total'] = $soul_writein_Dlinked_List_Total;
 		  //$rdy_output['soul_effect_reg']        =	$normal_register_opt_array;
 	      //$rdy_output['AffiliateUsableArray']            = $AffiliateUsableArray;
-			$rdy_output['output_type']                     = $output_type; //binary or coff 
+			$rdy_output['output_type']                     = CfgParser::params('type'); //binary or coff 
 			$rdy_output['engin_version']                   = ENGIN_VER;
-			$rdy_output['preprocess_config']               = $preprocess_config;
+			$rdy_output['preprocess_config']               = CfgParser::get_preprocess_config();
 			$rdy_output['dynamic_insert']                  = $dynamic_insert_result;
 			
 			$rdy_output['rel_jmp_range']    = $rel_jmp_range;
@@ -582,7 +527,7 @@ if (!GeneralFunc::LogHasErr()){
 			file_put_contents($rdy_file,serialize($rdy_output)); 
 		}
 
-		if ($my_params['echo']){
+		if (defined('DEBUG_ECHO')){
 			DebugShowFunc::my_shower_01($myTables['CodeSectionArray'],$StandardAsmResultArray,$exec_thread_list);
 		}
 	}

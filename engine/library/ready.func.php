@@ -976,7 +976,7 @@ class ReadyFunc{
 		global $flag_register_opt_array;
 		global $valid_mem_opt_array;
 
-		global $UniqueHead;
+
 		global $pattern_reloc;  //匹配 reloc 信息
 
 
@@ -1276,7 +1276,7 @@ class ReadyFunc{
 	//对重定位 目标 进行标号/define 变量名替换
 	//
 	public static function rel_label_replacer(&$myTables,&$AsmResultArray,$LineNum_Code2Reloc,$language){
-		global $UniqueHead;
+
 		foreach ($LineNum_Code2Reloc as $a => $b){
 			//echo "<br>******** $a *************<br>";
 			foreach ($b as $c => $d){
@@ -1314,7 +1314,7 @@ class ReadyFunc{
 						$tmp_asm[0] = str_replace('DWORD','',$tmp_asm[0]);
 						$myTables['RelocArray'][$a][$e]['isLabel'] = true;
 					}
-					$tmp_asm[$i] = "$UniqueHead".'RELINFO_'."$a".'_'."$e".'_0';
+					$tmp_asm[$i] = UNIQUEHEAD.'RELINFO_'."$a".'_'."$e".'_0';
 
 					$AsmResultArray[$a][$c]['asm'] = '';
 					/*
@@ -1344,7 +1344,7 @@ class ReadyFunc{
 	public static function eip_label_replacer($AsmLastSec,&$solid_jmp_array,&$solid_jmp_to,&$myTables,&$AsmResultArray,$LineNum_Code2Reloc,$language){
 		//后面 跟 跳转 目的 标号的 跳转指令
 
-		global $UniqueHead;
+
 		global $user_option;
 
 		foreach ($myTables['CodeSectionArray'] as $a => $b){
@@ -1382,7 +1382,7 @@ class ReadyFunc{
 								unset ($myTables['CodeSectionArray'][$a]);
 								break;
 							}
-							$tmp[$f] = "$UniqueHead".'SOLID_JMP_'."$i".'_FROM_'."$c"; //Label 号 "$UniqueHead"."solid_jmp_DEST_from_SOURCE":
+							$tmp[$f] = UNIQUEHEAD.'SOLID_JMP_'."$i".'_FROM_'."$c"; //Label 号 UNIQUEHEAD."solid_jmp_DEST_from_SOURCE":
 							$solid_jmp_array[$a][$i][] = $tmp[$f].' : ';                 //标号 加个冒号
 							$solid_jmp_to[$a][$c] = $i;
 							$AsmResultArray[$a][$c]['asm'] = implode(' ',$tmp);
@@ -1630,7 +1630,7 @@ class ReadyFunc{
 	////             -s124 124bit 为 段 界限符 (从偏移设置开始计算，此例即为相对于开头的01byte偏移)
 	////
 	public static function collect_and_disasm($bin_file,$asm_file,$disasm,$CodeSectionArray,$buff,&$bin_filesize,$protect_sec,&$p_sec_abs,$language,$DebugShow = false){
-		global $max_input; //限制的最大行数
+		$max_input = CfgParser::params('maxinput'); //限制的最大行数
 
 		$output_line_number = 0 ; //生成的汇编文件总行数
 

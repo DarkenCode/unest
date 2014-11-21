@@ -4,6 +4,8 @@ if(!defined('UNEST.ORG')) {
         exit('Access Denied');
 }
 
+define ('DEBUG_ECHO',true);
+
 //显示
 $INFO_SHOW = true;
 
@@ -85,62 +87,6 @@ class DebugShowFunc{
 		}
 		echo '</table>';    
 	}
-
-	//显示用户设置
-	public static function my_shower_06($usr_cfg_file,$sec_name,$user_cnf){
-		echo "<br>============= 显示用户设置 ( $usr_cfg_file ) ============= <br>";
-		foreach ($sec_name as $sec_name_show => $a){
-			$save = false;
-			$total_sec_num = array();
-			$table_name = array();
-			$table_value = array();
-			$table_name[] = "sec name";
-			$table_value[] = $sec_name_show;
-			$table_name[] = "sec number";		
-			foreach ($a as $sec_num){	
-				$total_sec_num[$sec_num] = $sec_num;    
-			}
-			$table_value[] = $total_sec_num;
-			
-			$a = $sec_num;
-			$b = $user_cnf[$a];
-					
-			if (is_array($b)){
-				foreach ($b as $z => $y){
-					$table_name[]  = $z;
-					$table_value[] = $y;
-				}
-			}else{
-				$table_name[]  = $a;
-				$table_value[] = $b;
-			}
-
-
-			echo '<table border = 1><tr>';
-			foreach ($table_name as $i => $a){			
-				if ($i%2){
-					echo "<td>";
-				}else{
-					echo "<td bgcolor='#c0c0c0'>";
-				}
-				echo "$a"."</td>";
-			}
-			echo '</tr><tr>';
-			foreach ($table_value as $i=> $a){			
-				if ($i%2){
-					echo "<td>";
-				}else{
-					echo "<td bgcolor='#c0c0c0'>";
-				}
-				var_dump ($a);
-				echo '</td>';
-			}        		
-			echo '</tr>';
-			echo '</table><br>';	
-		}	
-
-	}
-
 
 	//显示骨架(预分配方案(ipsp已完成)，以及STACK冲突判断结果)
 	public static function my_shower_05($c_bone_model,$bone_obj,$stack_unusable,$isConflict,$conflict_position){

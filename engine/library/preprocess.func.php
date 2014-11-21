@@ -10,7 +10,7 @@ class PreprocessFunc{
 	//根据 dynamic insert 记录 替换 $StandardAsmResultArray 中对应 整数参数
 	public static function dynamic_insert_dealer($dynamic_insert_array,&$StandardAsmResultArray){
 		global $language;
-		global $UniqueHead;
+
 
 		$ret = array();
 		foreach ($StandardAsmResultArray as $sec_id => $a){
@@ -51,7 +51,7 @@ class PreprocessFunc{
 									}elseif (4 == $y['size']){
 										$ret[$y['org']][BITS] = 32;								
 									}								
-									$StandardAsmResultArray[$sec_id][$prev_line][PARAMS][$last_int_param_no] = $UniqueHead.'dynamic_insert_'.$y['org'];
+									$StandardAsmResultArray[$sec_id][$prev_line][PARAMS][$last_int_param_no] = UNIQUEHEAD.'dynamic_insert_'.$y['org'];
 									//var_dump ($last_int_param_no);
 									unset ($dynamic_insert_array[$sec_id][$z]);
 								}

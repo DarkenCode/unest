@@ -302,7 +302,7 @@ class OrganMeat{
 						$ret[PARAMS][$number] = $c_mem_usable_array[$tmp][CODE];
 						if (isset($c_mem_usable_array[$tmp][REL])){        // 内存地址 含 重定位信息
 							if (GenerateFunc::reloc_inc_copy($ret[PARAMS][$number],$old,$new)){
-								$ret[PARAMS][$number] = str_replace("$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$old[2],"$UniqueHead".'RELINFO_'.$old[0].'_'.$old[1].'_'.$new,$ret[PARAMS][$number]);
+								$ret[PARAMS][$number] = str_replace(UNIQUEHEAD.'RELINFO_'.$old[0].'_'.$old[1].'_'.$old[2],UNIQUEHEAD.'RELINFO_'.$old[0].'_'.$old[1].'_'.$new,$ret[PARAMS][$number]);
 								$ret[REL][$number]['i'] = $old[1];
 								$ret[REL][$number][C] = $new;
 								$c_rel_info[$old[1]][$new] = $c_rel_info[$old[1]][$old[2]];
