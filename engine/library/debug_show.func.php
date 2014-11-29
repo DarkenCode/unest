@@ -4,6 +4,8 @@ if(!defined('UNEST.ORG')) {
         exit('Access Denied');
 }
 
+define ('DEBUG_ECHO',true);
+
 //显示
 $INFO_SHOW = true;
 
@@ -32,13 +34,13 @@ class DebugShowFunc{
 			}else{
 				$color = '#C0C0C0';
 			}
-			$c = $list[$a]['c'];
-			echo '<tr bgcolor='.$color.'><td>'.$c.'</td><td>'.$soul[$c]['prefix'].'</td><td>'.$soul[$c]['operation'].'</td><td>';
-			echo $soul[$c]['params'][0];
+			$c = $list[$a][C];
+			echo '<tr bgcolor='.$color.'><td>'.$c.'</td><td>'.$soul[$c][PREFIX].'</td><td>'.$soul[$c][OPERATION].'</td><td>';
+			echo $soul[$c][PARAMS][0];
 			echo '</td><td>';
-			echo $soul[$c]['params'][1];
+			echo $soul[$c][PARAMS][1];
 			echo '</td><td>';
-			echo $soul[$c]['params'][2];
+			echo $soul[$c][PARAMS][2];
 			echo '</td>';
 			if (true === $list[$a]['ipsp']){
 				echo '<td bgcolor=red>保护';
@@ -86,62 +88,6 @@ class DebugShowFunc{
 		echo '</table>';    
 	}
 
-	//显示用户设置
-	public static function my_shower_06($usr_cfg_file,$sec_name,$user_cnf){
-		echo "<br>============= 显示用户设置 ( $usr_cfg_file ) ============= <br>";
-		foreach ($sec_name as $sec_name_show => $a){
-			$save = false;
-			$total_sec_num = array();
-			$table_name = array();
-			$table_value = array();
-			$table_name[] = "sec name";
-			$table_value[] = $sec_name_show;
-			$table_name[] = "sec number";		
-			foreach ($a as $sec_num){	
-				$total_sec_num[$sec_num] = $sec_num;    
-			}
-			$table_value[] = $total_sec_num;
-			
-			$a = $sec_num;
-			$b = $user_cnf[$a];
-					
-			if (is_array($b)){
-				foreach ($b as $z => $y){
-					$table_name[]  = $z;
-					$table_value[] = $y;
-				}
-			}else{
-				$table_name[]  = $a;
-				$table_value[] = $b;
-			}
-
-
-			echo '<table border = 1><tr>';
-			foreach ($table_name as $i => $a){			
-				if ($i%2){
-					echo "<td>";
-				}else{
-					echo "<td bgcolor='#c0c0c0'>";
-				}
-				echo "$a"."</td>";
-			}
-			echo '</tr><tr>';
-			foreach ($table_value as $i=> $a){			
-				if ($i%2){
-					echo "<td>";
-				}else{
-					echo "<td bgcolor='#c0c0c0'>";
-				}
-				var_dump ($a);
-				echo '</td>';
-			}        		
-			echo '</tr>';
-			echo '</table><br>';	
-		}	
-
-	}
-
-
 	//显示骨架(预分配方案(ipsp已完成)，以及STACK冲突判断结果)
 	public static function my_shower_05($c_bone_model,$bone_obj,$stack_unusable,$isConflict,$conflict_position){
 		//global $soul_writein_Dlinked_List;
@@ -171,7 +117,7 @@ class DebugShowFunc{
 		//var_dump ($c_bone_model['direct']);
 		//var_dump ($bone_obj);
 		echo '<table border = 1><tr><td>Bone Number</td><td>BoneObj编号</td><td>链表编号</td><td>Type</td><td>Code</td><td>Params</td><td>usable[stack]</td><td>stack_unusable结果[同项]</td><td>冲突</td></tr>';
-		foreach ($c_bone_model['code'] as $a => $b){
+		foreach ($c_bone_model[CODE] as $a => $b){
 			if (true === $b){
 				if (count ($boned_soul_array[$a]) > 0){
 					$rowspan = count($boned_soul_array[$a]);
@@ -186,31 +132,31 @@ class DebugShowFunc{
 						echo '<td>';
 						echo "$z".'</td><td>';
 						echo "$y".'</td><td>';
-						if (isset($soul_writein_Dlinked_List[$y]['poly'])){
+						if (isset($soul_writein_Dlinked_List[$y][POLY])){
 						   echo '[多态]';
-						}elseif (isset($soul_writein_Dlinked_List[$y]['bone'])){
+						}elseif (isset($soul_writein_Dlinked_List[$y][BONE])){
 						   echo '[骨架]';
-						}elseif (isset($soul_writein_Dlinked_List[$y]['meat'])){
+						}elseif (isset($soul_writein_Dlinked_List[$y][MEAT])){
 						   echo '[血肉]';
 						}else{
 						   echo '[灵魂]';
 						}
 						echo '</td><td>';
-						if (isset($soul_writein_Dlinked_List[$y]['label'])){
-							var_dump ($soul_writein_Dlinked_List[$y]['label']);
+						if (isset($soul_writein_Dlinked_List[$y][LABEL])){
+							var_dump ($soul_writein_Dlinked_List[$y][LABEL]);
 						}
 						$x = ConstructionDlinkedListOpt::get_unit_by_soul_writein_Dlinked_List($y);
-						var_dump ($x['code']['operation']);
+						var_dump ($x[CODE][OPERATION]);
 						echo '</td><td>';
-						var_dump ($x['code']['params']);
+						var_dump ($x[CODE][PARAMS]);
 						echo '</td>';
 						echo '<td>';
-						if (true === $x['usable']['p']['stack']){
+						if (true === $x[USABLE][P][STACK]){
 							echo '<font color=blue>前方Stack可用</font>';
 						}else{
 							echo '<font color=red>前方Stack禁用</font>';
 						}					
-						if (true === $x['usable']['n']['stack']){
+						if (true === $x[USABLE][N][STACK]){
 							echo '<br><font color=blue>后方Stack可用</font>';
 						}else{
 							echo '<br><font color=red>后方Stack禁用</font>';
@@ -221,7 +167,7 @@ class DebugShowFunc{
 							var_dump ($stack_unusable[$a]);
 							echo '</td>';
 							echo '<td rowspan='.$rowspan.'>';
-							if ($a === $conflict_position['code']){
+							if ($a === $conflict_position[CODE]){
 								var_dump ($conflict_position);
 							}
 							echo '</td>';
@@ -236,15 +182,15 @@ class DebugShowFunc{
 				echo '<tr bgcolor="yellow"><td>'.$a.'</td><td></td><td></td><td>当前骨架</td><td>';
 				var_dump ($b);
 				echo '</td><td></td>';
-				$tmp = GenerateFunc::get_inst_define($b['operation'],$b['params']);
+				$tmp = Instruction::getInstructionOpt($b[OPERATION],count($b[PARAMS]));
 				echo '<td>';
-				if (isset($tmp['STACK'])){
+				if (isset($tmp[STACK])){
 					echo '<font color=blue>Stack需要</font>';
 				}
 				echo '</td>';
 				echo '<td></td>';
 				echo '<td>';
-				if ($a === $conflict_position['bone']){
+				if ($a === $conflict_position[BONE]){
 					var_dump ($conflict_position);
 				}
 				echo '</td>';
@@ -291,10 +237,10 @@ class DebugShowFunc{
 			var_dump ($soul_writein_Dlinked_List[$c_unit]);
 			echo '</td><td>';
 			//抽取代码
-			if (isset($soul_writein_Dlinked_List[$c_unit]['label'])){
-				echo $soul_writein_Dlinked_List[$c_unit]['label'];
+			if (isset($soul_writein_Dlinked_List[$c_unit][LABEL])){
+				echo $soul_writein_Dlinked_List[$c_unit][LABEL];
 			}else{
-				$c_opt = OrgansOperator::GetByDListUnit($soul_writein_Dlinked_List[$c_unit],'code');				
+				$c_opt = OrgansOperator::GetByDListUnit($soul_writein_Dlinked_List[$c_unit],CODE);				
 				var_dump ($c_opt);
 			}
 			echo '</td><td>';
@@ -302,10 +248,10 @@ class DebugShowFunc{
 			echo '</td><td>';
 			var_dump ($rel_jmp_pointer[$c_unit]);
 			echo '</td></tr>';
-			if (!isset($soul_writein_Dlinked_List[$c_unit]['n'])){
+			if (!isset($soul_writein_Dlinked_List[$c_unit][N])){
 				break;
 			}
-			$c_unit = $soul_writein_Dlinked_List[$c_unit]['n'];
+			$c_unit = $soul_writein_Dlinked_List[$c_unit][N];
 		}
 		echo '</table>';
 	}
@@ -326,51 +272,51 @@ class DebugShowFunc{
 		echo '<table border = 1><tr><td>sub tree</td><td>line</td><td>Instruction</td><td>Prev usable</td><td>Next usable</td></tr>';
 		
 		$org_List = $soul_writein_Dlinked_List[$org_List_index];
-		if (isset($org_List['poly'])){
+		if (isset($org_List[POLY])){
 			$type   = '【多】';
-		}elseif (isset($org_List['bone'])){
+		}elseif (isset($org_List[BONE])){
 			$type   = '【骨】';
-		}elseif (isset($org_List['meat'])){
+		}elseif (isset($org_List[MEAT])){
 			$type   = '【肉】';
 		}else{
 			$type   = '【魂】';
 		}		
-		$d      = OrgansOperator::GetByDListUnit($org_List,'code');
-		$usable = OrgansOperator::GetByDListUnit($org_List,'usable');
+		$d      = OrgansOperator::GetByDListUnit($org_List,CODE);
+		$usable = OrgansOperator::GetByDListUnit($org_List,USABLE);
 
 		echo '<tr><td>'.'0'.'</td><td>'.$org_List_index.'</td><td>';
 		echo "$type";
-		if (is_array($d['prefix'])){
-			foreach ($d['prefix'] as $z => $y){
+		if (is_array($d[PREFIX])){
+			foreach ($d[PREFIX] as $z => $y){
 				echo "$y ";
 			}
 		}
-		echo $d['operation'];
-		if (is_array($d['params'])){
-			foreach ($d['params'] as $z => $y){
+		echo $d[OPERATION];
+		if (is_array($d[PARAMS])){
+			foreach ($d[PARAMS] as $z => $y){
 				echo " $y ,";
 			}
 		}
-		var_dump ($d['p_type']);	
-		var_dump ($d['p_bits']);
+		var_dump ($d[P_TYPE]);	
+		var_dump ($d[P_BITS]);
 		echo "Stack:";
-		if (true === $d['stack']){
+		if (true === $d[STACK]){
 			echo "true";
 		}else{
 			echo "false | null";
 		}
 		echo '</td><td>';
 		///////////////////////////////////////////////////////////////////// Prev
-		if (isset($usable['p']['flag_write_able'])){
+		if (isset($usable[P][FLAG_WRITE_ABLE])){
 			echo '<font color=pink>';
-			foreach ($usable['p']['flag_write_able'] as $z => $y){
+			foreach ($usable[P][FLAG_WRITE_ABLE] as $z => $y){
 				echo " $z;";
 			}
 			echo '</font>';
 		}
-		if (isset($usable['p']['normal_write_able'])){
+		if (isset($usable[P][NORMAL_WRITE_ABLE])){
 			echo '<font color=blue>';
-			foreach ($usable['p']['normal_write_able'] as $z => $y){
+			foreach ($usable[P][NORMAL_WRITE_ABLE] as $z => $y){
 				echo " $z{";
 				foreach ($y as $v => $w){
 					echo $v.',';  
@@ -379,24 +325,24 @@ class DebugShowFunc{
 			}
 			echo '</font>';
 		}
-		if (isset($usable['p']['mem_opt_able'])){
+		if (isset($usable[P][MEM_OPT_ABLE])){
 			echo '<font color=red>';
-			foreach ($usable['p']['mem_opt_able'] as $z => $y){
-				$zz = $all_valid_mem_opt_index[$y]['code'];
+			foreach ($usable[P][MEM_OPT_ABLE] as $z => $y){
+				$zz = $all_valid_mem_opt_index[$y][CODE];
 				$v  = $all_valid_mem_opt_index[$y];
-				echo '<br>'.$y.':'.$zz.' {'.$v['bits'].'位 - ';
-				if ($v['opt'] == 1)
+				echo '<br>'.$y.':'.$zz.' {'.$v[BITS].'位 - ';
+				if ($v[OPT] == 1)
 					echo "读; ";
-				elseif ($v['opt'] == 2)
+				elseif ($v[OPT] == 2)
 					echo "写; ";
-				elseif ($v['opt'] == 3)
+				elseif ($v[OPT] == 3)
 					echo "读写; ";
 				else
 					echo "<font color=red><b>未知?</b></font>; ";	
 
-				if (is_array($v['reg'])){
+				if (is_array($v[REG])){
 					echo '(';
-					foreach ($v['reg'] as $u => $t){
+					foreach ($v[REG] as $u => $t){
 						echo "$t,";    
 					}
 					echo ')';
@@ -404,21 +350,21 @@ class DebugShowFunc{
 			}
 			echo '</font>';
 		}
-		if (true !== ($usable['p']['stack'])){
+		if (true !== ($usable[P][STACK])){
 			echo ' <b>堆栈禁用</b> ';
 		}
 		echo '</td><td>';
 		///////////////////////////////////////////////////////////////////// Next
-		if (isset($usable['n']['flag_write_able'])){
+		if (isset($usable[N][FLAG_WRITE_ABLE])){
 			echo '<font color=pink>';
-			foreach ($usable['n']['flag_write_able'] as $z => $y){
+			foreach ($usable[N][FLAG_WRITE_ABLE] as $z => $y){
 				echo " $z;";
 			}
 			echo '</font>';
 		}
-		if (isset($usable['n']['normal_write_able'])){
+		if (isset($usable[N][NORMAL_WRITE_ABLE])){
 			echo '<font color=blue>';
-			foreach ($usable['n']['normal_write_able'] as $z => $y){
+			foreach ($usable[N][NORMAL_WRITE_ABLE] as $z => $y){
 				echo " $z{";
 				foreach ($y as $v => $w){
 					echo $v.',';  
@@ -427,24 +373,24 @@ class DebugShowFunc{
 			}
 			echo '</font>';
 		}
-		if (isset($usable['n']['mem_opt_able'])){
+		if (isset($usable[N][MEM_OPT_ABLE])){
 			echo '<font color=red>';
-			foreach ($usable['n']['mem_opt_able'] as $z => $y){
-				$zz = $all_valid_mem_opt_index[$y]['code'];
+			foreach ($usable[N][MEM_OPT_ABLE] as $z => $y){
+				$zz = $all_valid_mem_opt_index[$y][CODE];
 				$v  = $all_valid_mem_opt_index[$y];
-				echo '<br>'.$y.':'.$zz.' {'.$v['bits'].'位 - ';
-				if ($v['opt'] == 1)
+				echo '<br>'.$y.':'.$zz.' {'.$v[BITS].'位 - ';
+				if ($v[OPT] == 1)
 					echo "读; ";
-				elseif ($v['opt'] == 2)
+				elseif ($v[OPT] == 2)
 					echo "写; ";
-				elseif ($v['opt'] == 3)
+				elseif ($v[OPT] == 3)
 					echo "读写; ";
 				else
 					echo "<font color=red><b>未知?</b></font>; ";	
 				
-				if (is_array($v['reg'])){
+				if (is_array($v[REG])){
 					echo '(';
-					foreach ($v['reg'] as $u => $t){
+					foreach ($v[REG] as $u => $t){
 						echo "$t,";    
 					}
 					echo ')';
@@ -452,7 +398,7 @@ class DebugShowFunc{
 			}
 			echo '</font>';
 		}
-		if (true !== ($usable['p']['stack'])){
+		if (true !== ($usable[P][STACK])){
 			echo ' <b>堆栈禁用</b> ';
 		}
 		echo '</td></tr>';
@@ -467,49 +413,49 @@ class DebugShowFunc{
 	private static function my_shower_03_func_1($poly_List_index,$c_poly_array){
 		global $all_valid_mem_opt_index;
 
-		foreach ($c_poly_array['code'] as $a => $d){    
+		foreach ($c_poly_array[CODE] as $a => $d){    
 		
 			echo '<tr bgcolor=\'#C0C0C0\'><td>';
 			echo '>';
 			echo '</td><td>'.$a.'</td><td>';		
-			if (isset($d['label'])){
-				echo $d['label'];
+			if (isset($d[LABEL])){
+				echo $d[LABEL];
 			}else{
-				if (is_array($d['prefix'])){
-					foreach ($d['prefix'] as $z => $y){
+				if (is_array($d[PREFIX])){
+					foreach ($d[PREFIX] as $z => $y){
 						echo "$y ";
 					}
 				}
-				echo $d['operation'];
-				if (is_array($d['params'])){
-					foreach ($d['params'] as $z => $y){
+				echo $d[OPERATION];
+				if (is_array($d[PARAMS])){
+					foreach ($d[PARAMS] as $z => $y){
 						echo " $y ,";
 					}
 				}
 			}
-			var_dump ($d['p_type']);
-			var_dump ($d['p_bits']);
+			var_dump ($d[P_TYPE]);
+			var_dump ($d[P_BITS]);
 			echo "Stack:";
-			if (true !== $d['stack']){
+			if (true !== $d[STACK]){
 				echo "false | null";
 			}else{
 				echo "true";
 			}
 			echo '</td><td>';
 			///////////////////////////////////////////////////////////////////// Prev
-			if ($c_poly_array['fat'][$a] === 1){
+			if ($c_poly_array[FAT][$a] === 1){
 				echo "<b>FAT</b>";
 			}else{		
-				if (isset($c_poly_array['usable'][$a]['p']['flag_write_able'])){
+				if (isset($c_poly_array[USABLE][$a][P][FLAG_WRITE_ABLE])){
 					echo '<font color=pink>';
-					foreach ($c_poly_array['usable'][$a]['p']['flag_write_able'] as $z => $y){
+					foreach ($c_poly_array[USABLE][$a][P][FLAG_WRITE_ABLE] as $z => $y){
 						echo " $z;";
 					}
 					echo '</font>';
 				}
-				if (isset($c_poly_array['usable'][$a]['p']['normal_write_able'])){
+				if (isset($c_poly_array[USABLE][$a][P][NORMAL_WRITE_ABLE])){
 					echo '<font color=blue>';
-					foreach ($c_poly_array['usable'][$a]['p']['normal_write_able'] as $z => $y){
+					foreach ($c_poly_array[USABLE][$a][P][NORMAL_WRITE_ABLE] as $z => $y){
 						echo " $z{";
 						foreach ($y as $v => $w){
 							echo $v.',';  
@@ -519,24 +465,24 @@ class DebugShowFunc{
 					echo '</font>';
 				}
 
-				if (isset($c_poly_array['usable'][$a]['p']['mem_opt_able'])){
+				if (isset($c_poly_array[USABLE][$a][P][MEM_OPT_ABLE])){
 					echo '<font color=red>';
-					foreach ($c_poly_array['usable'][$a]['p']['mem_opt_able'] as $z => $y){
-						$zz = $all_valid_mem_opt_index[$y]['code'];
+					foreach ($c_poly_array[USABLE][$a][P][MEM_OPT_ABLE] as $z => $y){
+						$zz = $all_valid_mem_opt_index[$y][CODE];
 						$v  = $all_valid_mem_opt_index[$y];
-						echo '<br>'.$y.':'.$zz.' {'.$v['bits'].'位 - ';
-						if ($v['opt'] == 1)
+						echo '<br>'.$y.':'.$zz.' {'.$v[BITS].'位 - ';
+						if ($v[OPT] == 1)
 							echo "读; ";
-						elseif ($v['opt'] == 2)
+						elseif ($v[OPT] == 2)
 							echo "写; ";
-						elseif ($v['opt'] == 3)
+						elseif ($v[OPT] == 3)
 							echo "读写; ";
 						else
 							echo "<font color=red><b>未知?</b></font>; ";	
 
-						if (is_array($v['reg'])){
+						if (is_array($v[REG])){
 							echo '(';
-							foreach ($v['reg'] as $u => $t){
+							foreach ($v[REG] as $u => $t){
 								echo "$t,";    
 							}
 							echo ')';
@@ -545,25 +491,25 @@ class DebugShowFunc{
 					}
 					echo '</font>';
 				}
-				if (true !== ($c_poly_array['usable'][$a]['p']['stack'])){
+				if (true !== ($c_poly_array[USABLE][$a][P][STACK])){
 					echo ' <b>堆栈禁用</b> ';
 				}
 			}
 			echo '</td><td>';
 			///////////////////////////////////////////////////////////////////// Next
-			if ($c_poly_array['fat'][$a] === 2){
+			if ($c_poly_array[FAT][$a] === 2){
 				echo "<b>FAT</b>";
 			}else{		
-				if (isset($c_poly_array['usable'][$a]['n']['flag_write_able'])){
+				if (isset($c_poly_array[USABLE][$a][N][FLAG_WRITE_ABLE])){
 					echo '<font color=pink>';
-					foreach ($c_poly_array['usable'][$a]['n']['flag_write_able'] as $z => $y){
+					foreach ($c_poly_array[USABLE][$a][N][FLAG_WRITE_ABLE] as $z => $y){
 						echo " $z;";
 					}
 					echo '</font>';
 				}
-				if (isset($c_poly_array['usable'][$a]['n']['normal_write_able'])){
+				if (isset($c_poly_array[USABLE][$a][N][NORMAL_WRITE_ABLE])){
 					echo '<font color=blue>';
-					foreach ($c_poly_array['usable'][$a]['n']['normal_write_able'] as $z => $y){
+					foreach ($c_poly_array[USABLE][$a][N][NORMAL_WRITE_ABLE] as $z => $y){
 						echo " $z{";
 						foreach ($y as $v => $w){
 							echo $v.',';  
@@ -572,24 +518,24 @@ class DebugShowFunc{
 					}
 					echo '</font>';
 				}
-				if (isset($c_poly_array['usable'][$a]['n']['mem_opt_able'])){
+				if (isset($c_poly_array[USABLE][$a][N][MEM_OPT_ABLE])){
 					echo '<font color=red>';
-					foreach ($c_poly_array['usable'][$a]['n']['mem_opt_able'] as $z => $y){
-						$zz = $all_valid_mem_opt_index[$y]['code'];
+					foreach ($c_poly_array[USABLE][$a][N][MEM_OPT_ABLE] as $z => $y){
+						$zz = $all_valid_mem_opt_index[$y][CODE];
 						$v  = $all_valid_mem_opt_index[$y];
-						echo '<br>'.$y.':'.$zz.' {'.$v['bits'].'位 - ';
-						if ($v['opt'] == 1)
+						echo '<br>'.$y.':'.$zz.' {'.$v[BITS].'位 - ';
+						if ($v[OPT] == 1)
 							echo "读; ";
-						elseif ($v['opt'] == 2)
+						elseif ($v[OPT] == 2)
 							echo "写; ";
-						elseif ($v['opt'] == 3)
+						elseif ($v[OPT] == 3)
 							echo "读写; ";
 						else
 							echo "<font color=red><b>未知?</b></font>; ";	
 
-						if (is_array($v['reg'])){
+						if (is_array($v[REG])){
 							echo '(';
-							foreach ($v['reg'] as $u => $t){
+							foreach ($v[REG] as $u => $t){
 								echo "$t,";    
 							}
 							echo ')';
@@ -598,7 +544,7 @@ class DebugShowFunc{
 					}
 					echo '</font>';
 				}
-				if (true !== ($c_poly_array['usable'][$a]['n']['stack'])){
+				if (true !== ($c_poly_array[USABLE][$a][N][STACK])){
 					echo ' <b>堆栈禁用</b> ';
 				}
 			}
@@ -620,7 +566,7 @@ class DebugShowFunc{
 		global $flag_register_opt_array;
 		global $valid_mem_opt_array;
 		global $soul_usable;
-		global $registersss;
+
 		global $all_valid_mem_opt_index;
 		global $soul_forbid;
 		global $soul_writein_Dlinked_List_Total;
@@ -647,7 +593,7 @@ class DebugShowFunc{
 			
 			$c_list = $soul_writein_Dlinked_List_Total[$a]['list'][0];
 			while (true){			
-				$c = $c_list['c'];
+				$c = $c_list[C];
 				$d = $StandardAsmResultArray[$a][$c];
 			//foreach ($StandardAsmResultArray[$a] as $c => $d){
 				if ($color == 'white')
@@ -657,23 +603,23 @@ class DebugShowFunc{
 				//prev
 				echo '<tr bgcolor='."$color".'><td><b><-</b></td><td><b>Prev</b></td>';
 				echo '<td><b>usable</b></td><td><b>record</b></td><td></td><td></td><td>';
-				if (is_array($soul_usable[$a][$c]['p']['normal_write_able'])){
-					foreach ($soul_usable[$a][$c]['p']['normal_write_able'] as $z => $v){
+				if (is_array($soul_usable[$a][$c][P][NORMAL_WRITE_ABLE])){
+					foreach ($soul_usable[$a][$c][P][NORMAL_WRITE_ABLE] as $z => $v){
 						foreach ($v as $x => $w){
-							echo $registersss[$x][$z];
+							echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 					}
 				}
-				if (is_array($soul_forbid[$a][$c]['p']['normal'])){
+				if (is_array($soul_forbid[$a][$c][P][NORMAL])){
 					echo '<font color = red>';
-					foreach ($soul_forbid[$a][$c]['p']['normal'] as $z => $v){
+					foreach ($soul_forbid[$a][$c][P][NORMAL] as $z => $v){
 						echo '<del>';
 						foreach ($v as $x => $w){
-							if (!$registersss[$x][$z]){
+							if (!Instruction::getRegByIdxBits($x,$z)){
 								echo "$x - $z";
 							}else
-								echo $registersss[$x][$z];
+								echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 						echo '</del>';
@@ -681,14 +627,14 @@ class DebugShowFunc{
 					echo '</font>';
 				}
 				echo '</td><td>';
-				if (is_array($soul_usable[$a][$c]['p']['flag_write_able'])){
-					foreach ($soul_usable[$a][$c]['p']['flag_write_able'] as $z => $v){
+				if (is_array($soul_usable[$a][$c][P][FLAG_WRITE_ABLE])){
+					foreach ($soul_usable[$a][$c][P][FLAG_WRITE_ABLE] as $z => $v){
 						echo " $z ,";
 					}
 				}
-				if (is_array($soul_forbid[$a][$c]['p']['flag'])){
+				if (is_array($soul_forbid[$a][$c][P][FLAG])){
 					echo '<font color = red>';
-					foreach ($soul_forbid[$a][$c]['p']['flag'] as $z => $v){
+					foreach ($soul_forbid[$a][$c][P][FLAG] as $z => $v){
 						echo '<del>';
 						echo " $z";
 						echo '</del>';
@@ -697,23 +643,23 @@ class DebugShowFunc{
 					echo '</font>';
 				}			
 				echo '</td><td>';
-				if (is_array($soul_usable[$a][$c]['p']['mem_opt_able'])){
-					foreach ($soul_usable[$a][$c]['p']['mem_opt_able'] as $z => $v){
-						$z = $all_valid_mem_opt_index[$v]['code'];
+				if (is_array($soul_usable[$a][$c][P][MEM_OPT_ABLE])){
+					foreach ($soul_usable[$a][$c][P][MEM_OPT_ABLE] as $z => $v){
+						$z = $all_valid_mem_opt_index[$v][CODE];
 						$v = $all_valid_mem_opt_index[$v];
-						echo $z.' {'.$v['bits'].'位 - ';
-						if ($v['opt'] == 1)
+						echo $z.' {'.$v[BITS].'位 - ';
+						if ($v[OPT] == 1)
 							echo "读; ";
-						elseif ($v['opt'] == 2)
+						elseif ($v[OPT] == 2)
 							echo "写; ";
-						elseif ($v['opt'] == 3)
+						elseif ($v[OPT] == 3)
 							echo "读写; ";
 						else
 							echo "<font color=red><b>未知?</b></font>; ";	
 
-						if (is_array($v['reg'])){
+						if (is_array($v[REG])){
 							echo '(';
-							foreach ($v['reg'] as $u => $t){
+							foreach ($v[REG] as $u => $t){
 								echo "$t,";    
 							}
 							echo ')';
@@ -722,7 +668,7 @@ class DebugShowFunc{
 					}
 				}
 				echo '</td>';
-				if (true !== $soul_usable[$a][$c]['p']['stack']){
+				if (true !== $soul_usable[$a][$c][P][STACK]){
 					echo '<td bgcolor=red> 禁用';
 				}else{
 					echo '<td>可用';
@@ -735,33 +681,33 @@ class DebugShowFunc{
 				echo "$c";
 				echo '</td><td>';
 
-				if (isset($c_list['label'])){
-					echo '<b><font color = red>Label</font></b></td><td>'.$c_list['label'].'</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
+				if (isset($c_list[LABEL])){
+					echo '<b><font color = red>Label</font></b></td><td>'.$c_list[LABEL].'</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>';
 				}else{
-					if (is_array($d['prefix'])){
-						foreach ($d['prefix'] as $z => $y){
+					if (is_array($d[PREFIX])){
+						foreach ($d[PREFIX] as $z => $y){
 							echo "$y ";
 						}
 					}
 					echo '</td><td>';
-					echo $d['operation'];
+					echo $d[OPERATION];
 					for ($w = 0;$w < 3;$w++){
 						echo '</td><td>';
-						if ('r' == $d['p_type'][$w]){
+						if ('r' == $d[P_TYPE][$w]){
 							echo "<font color=red>";
-						}elseif('m' == $d['p_type'][$w]){
+						}elseif('m' == $d[P_TYPE][$w]){
 							echo "<font color=blue>";
-						}elseif('i' == $d['p_type'][$w]){
+						}elseif('i' == $d[P_TYPE][$w]){
 							echo "<font color=black>";
 						}
-						if ($d['params'][$w]){
-							echo $d['params'][$w];
+						if ($d[PARAMS][$w]){
+							echo $d[PARAMS][$w];
 							echo '[<b>';
-							echo $d['p_bits'][$w];
+							echo $d[P_BITS][$w];
 							echo '</b> 位]';
-							if ($d['p_m_reg'][$w]){
+							if ($d[P_M_REG][$w]){
 								echo ' {<b>';
-								foreach ($d['p_m_reg'][$w] as $z => $y){
+								foreach ($d[P_M_REG][$w] as $z => $y){
 									echo "$z ";
 								}
 								echo '</b>}';
@@ -806,19 +752,19 @@ class DebugShowFunc{
 					echo '</td><td>';
 					if (is_array($valid_mem_opt_array[$a][$c])){
 						foreach ($valid_mem_opt_array[$a][$c] as $z => $v){
-							echo $v['code'].' {'.$v['bits'].'位 - ';
-							if ($v['opt'] == 1)
+							echo $v[CODE].' {'.$v[BITS].'位 - ';
+							if ($v[OPT] == 1)
 								echo "读; ";
-							elseif ($v['opt'] == 2)
+							elseif ($v[OPT] == 2)
 								echo "写; ";
-							elseif ($v['opt'] == 3)
+							elseif ($v[OPT] == 3)
 								echo "读写; ";
 							else
-								echo "<font color=red><b>未知(".$v['opt'].")?</b></font>; ";	
+								echo "<font color=red><b>未知(".$v[OPT].")?</b></font>; ";	
 
-							if (is_array($v['reg'])){
+							if (is_array($v[REG])){
 								echo '(';
-								foreach ($v['reg'] as $u => $t){
+								foreach ($v[REG] as $u => $t){
 									echo "$t,";    
 								}
 								echo ')';
@@ -828,7 +774,7 @@ class DebugShowFunc{
 					}
 					echo '</td>';
 					
-					if (true !== $d['stack']){
+					if (true !== $d[STACK]){
 						echo '<td bgcolor=red> 禁用';
 					}else{
 						echo '<td>可用';
@@ -846,23 +792,23 @@ class DebugShowFunc{
 				//next
 				echo '<tr bgcolor='."$color".'><td><b>-></b></td><td><b>Next</b></td>';
 				echo '<td><b>usable</b></td><td><b>record</b></td><td></td><td></td><td>';
-				if (is_array($soul_usable[$a][$c]['n']['normal_write_able'])){
-					foreach ($soul_usable[$a][$c]['n']['normal_write_able'] as $z => $v){
+				if (is_array($soul_usable[$a][$c][N][NORMAL_WRITE_ABLE])){
+					foreach ($soul_usable[$a][$c][N][NORMAL_WRITE_ABLE] as $z => $v){
 						foreach ($v as $x => $w){
-							echo $registersss[$x][$z];
+							echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 					}
 				}
-				if (is_array($soul_forbid[$a][$c]['n']['normal'])){
+				if (is_array($soul_forbid[$a][$c][N][NORMAL])){
 					echo '<font color = red>';
-					foreach ($soul_forbid[$a][$c]['n']['normal'] as $z => $v){
+					foreach ($soul_forbid[$a][$c][N][NORMAL] as $z => $v){
 						echo '<del>';
 						foreach ($v as $x => $w){
-							if (!$registersss[$x][$z]){
+							if (!Instruction::getRegByIdxBits($x,$z)){
 								echo "$x - $z";
 							}else
-								echo $registersss[$x][$z];
+								echo Instruction::getRegByIdxBits($x,$z);
 							echo " , ";
 						}					
 						echo '</del>';
@@ -870,14 +816,14 @@ class DebugShowFunc{
 					echo '</font>';
 				}
 				echo '</td><td>';
-				if (is_array($soul_usable[$a][$c]['n']['flag_write_able'])){
-					foreach ($soul_usable[$a][$c]['n']['flag_write_able'] as $z => $v){
+				if (is_array($soul_usable[$a][$c][N][FLAG_WRITE_ABLE])){
+					foreach ($soul_usable[$a][$c][N][FLAG_WRITE_ABLE] as $z => $v){
 						echo " $z ,";
 					}
 				}
-				if (is_array($soul_forbid[$a][$c]['n']['flag'])){
+				if (is_array($soul_forbid[$a][$c][N][FLAG])){
 					echo '<font color = red>';
-					foreach ($soul_forbid[$a][$c]['n']['flag'] as $z => $v){
+					foreach ($soul_forbid[$a][$c][N][FLAG] as $z => $v){
 						echo '<del>';
 						echo " $z";
 						echo '</del>';
@@ -886,23 +832,23 @@ class DebugShowFunc{
 					echo '</font>';
 				}
 				echo '</td><td>';
-				if (is_array($soul_usable[$a][$c]['n']['mem_opt_able'])){
-					foreach ($soul_usable[$a][$c]['n']['mem_opt_able'] as $z => $v){
-						$z = $all_valid_mem_opt_index[$v]['code'];
+				if (is_array($soul_usable[$a][$c][N][MEM_OPT_ABLE])){
+					foreach ($soul_usable[$a][$c][N][MEM_OPT_ABLE] as $z => $v){
+						$z = $all_valid_mem_opt_index[$v][CODE];
 						$v = $all_valid_mem_opt_index[$v];
-						echo $z.' {'.$v['bits'].'位 - ';
-						if ($v['opt'] == 1)
+						echo $z.' {'.$v[BITS].'位 - ';
+						if ($v[OPT] == 1)
 							echo "读; ";
-						elseif ($v['opt'] == 2)
+						elseif ($v[OPT] == 2)
 							echo "写; ";
-						elseif ($v['opt'] == 3)
+						elseif ($v[OPT] == 3)
 							echo "读写; ";
 						else
 							echo "<font color=red><b>未知?</b></font>; ";	
 
-						if (is_array($v['reg'])){
+						if (is_array($v[REG])){
 							echo '(';
-							foreach ($v['reg'] as $u => $t){
+							foreach ($v[REG] as $u => $t){
 								echo "$t,";    
 							}
 							echo ')';
@@ -911,7 +857,7 @@ class DebugShowFunc{
 					}
 				}
 				echo '</td>';
-				if (true !== $soul_usable[$a][$c]['n']['stack']){
+				if (true !== $soul_usable[$a][$c][N][STACK]){
 					echo '<td bgcolor=red> 禁用';
 				}else{
 					echo '<td>可用';
@@ -921,8 +867,8 @@ class DebugShowFunc{
 				
 				///////////////////////////////////////////////////////
 				//
-				if (isset($c_list['n'])){
-					$c_list = $soul_writein_Dlinked_List_Total[$a]['list'][$c_list['n']];
+				if (isset($c_list[N])){
+					$c_list = $soul_writein_Dlinked_List_Total[$a]['list'][$c_list[N]];
 				}else{
 					break;
 				}

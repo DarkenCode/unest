@@ -4,164 +4,6 @@ if(!defined('UNEST.ORG')) {
 	exit('Access Denied');
 }
 
-
-//段寄存器
-$segment_flag = array('CS' => 'CS', 'DS' => 'DS', 'SS' => 'SS', 'ES' => 'ES', 'FS' => 'FS', 'GS' => 'GS');
-
-//标志寄存器
-$all_eflags   = array('OF'     ,'SF'     ,'ZF'     ,'AF'     ,'CF'     ,'PF'     ,'DF'     ,'TF'     ,'IF'     ,'NT'     ,'RF'     );
-$all_eflags_0 = array('OF' => 1,'SF' => 1,'ZF' => 1,'AF' => 1,'CF' => 1,'PF' => 1,'DF' => 2,'TF' => 3,'IF' => 3,'NT' => 3,'RF' => 3); 
-                      //      1: status flag                                              2:control flag      3:system flag(不全)
-                      // OF      SF      ZF      AF      PF       CF      TF      IF      DF      NT  RF  <= 不含不受指令 影响的寄存器 见 
-					  //                                                                                    《 Intel® 64 and IA-32 Architectures Software Developer's 
-					  //                                                                                       Manual Volume 1:Basic Architecture 》 附录 A
-					  //
-//条件跳转指令
-//所有条件跳转只能跟随 整数，不能跟随寄存器，涉及ECX的后面只能短跳转(jcxz,loop,loopnz ...)
-$cond_jmp = array(
-  'JA'        => 1, //高于（CF=0 且 ZF=0）时短跳转
-  'JAE'       => 1,         //高于或等于 (CF=0) 时短跳转
-  'JB'        => 1,         //低于 (CF=1) 时短跳转
-  'JBE'       => 1, //低于或等于（CF=1 或 ZF=1）时短跳转
-  'JC'        => 1,         //进位 (CF=1) 时短跳转
-  'JCXZ'      => 2,         //CX 寄存器为 0 时短跳转
-  'JECXZ'     => 2,        //ECX 寄存器为 0 时短跳转
-  'JRCXZ'     => 2,        //RCX 寄存器为 0 时短跳转
-  'JE'        => 1,         //等于 (ZF=1) 时短跳转
-  'JG'        => 1,//大于（ZF=0 且 SF=OF）时短跳转
-  'JGE'       => 1, //大于或等于 (SF=OF) 时短跳转
-  'JL'        => 1, //小于 (SF<>OF) 时短跳转
-  'JLE'       => 1,//小于或等于（ZF=1 或 SF<>OF）时短跳转
-  'JNA'       => 1, //不高于（CF=1 或 ZF=1）时短跳转
-  'JNAE'      => 1,//不高于或等于 (CF=1) 时短跳转
-  'JNB'       => 1,//不低于 (CF=0) 时短跳转
-  'JNBE'      => 1,//不低于或等于（CF=0 或 ZF=0）时短跳转
-  'JNC'       => 1,//无进位 (CF=0) 时短跳转
-  'JNE'       => 1,//不相等 (ZF=0) 时短跳转
-  'JNG'       => 1,//不大于（ZF=1 或 SF<>OF）时短跳转
-  'JNGE'      => 1,//不大于或等于 (SF<>OF) 时短跳转
-  'JNL'       => 1,//不小于 (SF＝OF) 时短跳转
-  'JNLE'      => 1,//不小于或等于（ZF=0 且 SF=OF）时短跳转
-  'JNO'       => 1,//不上溢 (OF=0) 时短跳转
-  'JNP'       => 1,//奇校验 (PF=0) 时短跳转
-  'JNS'       => 1,//正数时 (SF＝0) 短跳转
-  'JNZ'       => 1,//不为零 (ZF=0) 时短跳转
-  'JO'        => 1,//上溢 (OF=1) 时短跳转
-  'JP'        => 1,//偶校验 (PF=1) 时短跳转
-  'JPE'       => 1,//偶校验 (PF=1) 时短跳转
-  'JPO'       => 1,//奇校验 (PF=0) 时短跳转
-  'JS'        => 1,//负数 (SF=1) 时短跳转
-  'JZ'        => 1,//为零 (ZF  1) 时短跳转
-  'JMPE'      => 1,//		rm32				[m:	o32 0f 00 /6]				IA64
-
-  'LOOP'      => 2,        //递减计数；计数  0 时短跳转
-  'LOOPE'     => 2,//递减计数；计数  0 且 ZF=1 时短跳转
-  'LOOPZ'     => 2,//递减计数；计数  0 且 ZF=1 时短跳转
-  'LOOPNE'    => 2,//递减计数；计数  0 且 ZF=0 时短跳转
-  'LOOPNZ'    => 2,//递减计数；计数  0 且 ZF=0 时短跳转
-  
-
-);
-
-//绝对跳转指令
-$abs_jmp = array(
-    'JMP'       => 1,
-);
-
-//所有寄存器
-
-//8bit 低位
-$register['8']  = array('AL' => 8,   'CL' => 8,  'DL' => 8,  'BL' => 8,);
-//9bit 高位
-$register['9']  = array('AH' => 9,   'CH' => 9,  'DH' => 9,  'BH' => 9,);
-//16bit
-$register['16'] = array('AX' => 16,  'CX' => 16, 'DX' => 16, 'BX' => 16, 'SI' => 16, 'DI' => 16,  'BP' => 16,  'SP' => 16,  'IP' => 16);
-//32bit
-$register['32'] = array('EAX' => 32,'ECX' => 32,'EDX' => 32,'EBX' => 32,'ESI' => 32,'EDI' => 32, 'EBP' => 32, 'ESP' => 32, 'EIP' => 32);
-//64bit
-$register['64'] = array('RAX' => 64,'RCX' => 64,'RDX' => 64,'RBX' => 64,'RSI' => 64,'RDI' => 64, 'RBP' => 64, 'RSP' => 64, 'RIP' => 32);
-
-$total_register = $register['8'] + $register['9'] + $register['16'] + $register['32'] + $register['64'];
-
-$registersss['8']  = array ('EAX' => 'AL', 'ECX' => 'CL',  'EDX'=> 'DL',  'EBX' => 'BL');
-$registersss['9']  = array ('EAX' => 'AH', 'ECX' => 'CH',  'EDX'=> 'DH',  'EBX' => 'BH');
-$registersss['16'] = array ('EAX' => 'AX', 'ECX' => 'CX',  'EDX'=> 'DX',  'EBX' => 'BX', 'ESI' => 'SI',  'EDI'=> 'DI', 'EBP' => 'BP',  'ESP' => 'SP');
-$registersss['32'] = array ('EAX' => 'EAX','ECX' => 'ECX', 'EDX'=> 'EDX', 'EBX' => 'EBX','ESI' => 'ESI', 'EDI'=> 'EDI','EBP' => 'EBP', 'ESP' => 'ESP');
-$registersss['64'] = array ('EAX' => 'RAX','ECX' => 'RCX', 'EDX'=> 'RDX', 'EBX' => 'RBX','ESI' => 'RSI', 'EDI'=> 'RDI','EBP' => 'RBP', 'ESP' => 'RSP');
-
-$register_assort = array(
-    'AL' => 'EAX','AH' => 'EAX','AX' => 'EAX','EAX'=> 'EAX','RAX'=> 'EAX',
-	'CL' => 'ECX','CH' => 'ECX','CX' => 'ECX','ECX'=> 'ECX','RCX'=> 'ECX',
-	'DL' => 'EDX','DH' => 'EDX','DX' => 'EDX','EDX'=> 'EDX','RDX'=> 'EDX',
-	'BL' => 'EBX','BH' => 'EBX','BX' => 'EBX','EBX'=> 'EBX','RBX'=> 'EBX',
-                                'SI' => 'ESI','ESI'=> 'ESI','RSI'=> 'ESI',
-								'DI' => 'EDI','EDI'=> 'EDI','RDI'=> 'EDI',
-								'BP' => 'EBP','EBP'=> 'EBP','RBP'=> 'EBP',
-								'SP' => 'ESP','ESP'=> 'ESP','RSP'=> 'ESP',
-								'IP' => 'EIP','EIP'=> 'EIP','RIP'=> 'EIP',
-);
-
-/*
-
-Format:
-
-'xxxx' => array( //指令名 xxxx    
-    '0' = -1,    //第一个参数               不读也不写 (LEA)
-    '0' =  1,     //第一个参数(如果是寄存器) 读取 动作	
-	'1' =  2,     //第二个参数(如果是寄存器) 写入 动作
-	'2' =  3,     //第三个参数(如果是寄存器) 读取并写入 动作
-	'edi' = 2,   //固定对edi有写入动作
-	'cx' =1,     //固定对cx有读取动作
-	'zf' =1,     //对zf标志有读取动作
-	'cf' =2,     //对cf标志有写入动作
-)
-
-如果根据操作数还有分类,数组中再设置数组
-'xxxx' => array(
-    
-	'multi_op' => 2, //根据操作数再设数组 (个数)
-
-    '0' => array(  //无参数情况
-	),
-
-	'1' => array(  //1个参数情况
-	
-	),
-
-)
-
-
-注：目前仅考虑基本寄存器，不考虑SSE/MMX等
-
-*/
-
-$Intel_instruction_mem_opt = array( //所有 隐含 内存操作的指令
-    'MOVSB' => array(
-	                 array( 'code' => '[ESI]','opt'  => 1,'bits' => 8,'reg' => array('ESI')),
-	                 array( 'code' => '[EDI]','opt'  => 2,'bits' => 8,'reg' => array('EDI')),	
-               ),
-    'MOVSW' => array(
-	                 array( 'code' => '[ESI]','opt'  => 1,'bits' => 16,'reg' => array('ESI')),
-	                 array( 'code' => '[EDI]','opt'  => 2,'bits' => 16,'reg' => array('EDI')),	
-               ),
-    'MOVSD' => array(
-	                 array( 'code' => '[ESI]','opt'  => 1,'bits' => 32,'reg' => array('ESI')),
-	                 array( 'code' => '[EDI]','opt'  => 2,'bits' => 32,'reg' => array('EDI')),	
-               ),
-    'STOSB' => array(array( 'code' => '[EDI]','opt'  => 2,'bits' =>  8,'reg' => array('EDI'))),
-	'STOSW' => array(array( 'code' => '[EDI]','opt'  => 2,'bits' => 16,'reg' => array('EDI'))),
-	'STOSD' => array(array( 'code' => '[EDI]','opt'  => 2,'bits' => 32,'reg' => array('EDI'))),
-
-    'LODSB' => array(array( 'code' => '[ESI]','opt'  => 1,'bits' =>  8,'reg' => array('ESI'))),
-	'LODSW' => array(array( 'code' => '[ESI]','opt'  => 1,'bits' => 16,'reg' => array('ESI'))),
-	'LODSD' => array(array( 'code' => '[ESI]','opt'  => 1,'bits' => 32,'reg' => array('ESI'))),
-
-	'SCASB' => array(array( 'code' => '[EDI]','opt'  => 1,'bits' =>  8,'reg' => array('EDI'))),
-	'SCASW' => array(array( 'code' => '[EDI]','opt'  => 1,'bits' => 16,'reg' => array('EDI'))),
-	'SCASD' => array(array( 'code' => '[EDI]','opt'  => 1,'bits' => 32,'reg' => array('EDI'))),
-);
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
 $Intel_instruction = array(
@@ -188,7 +30,7 @@ $Intel_instruction = array(
   'BTC'       => array('0'=>3,       'OF'=>2,'SF'=>2,        'AF'=>2,'CF'=>2,'PF'=>2,),
   'BTR'       => array('0'=>3,       'OF'=>2,'SF'=>2,        'AF'=>2,'CF'=>2,'PF'=>2,),
   'BTS'       => array('0'=>3,       'OF'=>2,'SF'=>2,        'AF'=>2,'CF'=>2,'PF'=>2,),
-  'CALL'      => array('STACK'=>3,'0'=>1,'ESP'=>3,'IP'=>2),//,'EAX'=>2), //注：CALL 本身不改变EAX，这里暂时为_std调用函数而设置 * 临时
+  'CALL'      => array(STACK=>3,'0'=>1,'ESP'=>3,'IP'=>2),//,'EAX'=>2), //注：CALL 本身不改变EAX，这里暂时为_std调用函数而设置 * 临时
   'CBW'       => array(                                                              'AL'=>3,'AX'=>2),
   'CDQ'       => array(                                                                              'EAX'=>1,'EDX'=>2),
   'CDQE'      => array(                                                                              'EAX'=>3,'RAX'=>2),
@@ -253,7 +95,7 @@ $Intel_instruction = array(
   'DMINT'     => array(),//unkown
 
   'EMMS'      => array(), //将 x87 FPU 标记字设置为空
-  'ENTER'     => array('STACK'=>3,'BP'=>3,'SP'=>3), //生成过程参数的堆栈帧
+  'ENTER'     => array(STACK=>3,'BP'=>3,'SP'=>3), //生成过程参数的堆栈帧
   'EQU'       => array(),
   
   'F2XM1'     => array(), // - 计算 2x-1
@@ -389,10 +231,10 @@ $Intel_instruction = array(
   'INVPCID'   => array('0'=>3),//Invalidate Process-Context Identifier
   'INVLPG'    => array(),//使 TLB 项目失效
   'INVLPGA'	  => array('EAX'=>3,'ECX'=>3),//unkown
-  'IRET'      => array('STACK'=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2,'NT' => 1),//中断返回
-  'IRETD'     => array('STACK'=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//中断返回
-  'IRETQ'     => array('STACK'=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//中断返回
-  'IRETW'     => array('STACK'=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//中断返回
+  'IRET'      => array(STACK=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2,'NT' => 1),//中断返回
+  'IRETD'     => array(STACK=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//中断返回
+  'IRETQ'     => array(STACK=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//中断返回
+  'IRETW'     => array(STACK=>3,'ESP'=>3,'IP'=>2,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//中断返回
 
   'JA'        => array('0'=>1,'CF'=>1,'ZF'=>1,'IP'=>2), //高于（CF=0 且 ZF=0）时短跳转
   'JAE'       => array('0'=>1,'CF'=>1,'IP'=>2),         //高于或等于 (CF=0) 时短跳转
@@ -434,7 +276,7 @@ $Intel_instruction = array(
   'LAR'       => array('0'=>2,'1'=>1,  'ZF'=>2),//加载访问权限字节
   'LDS'		  => array('0'=>2,'1'=>1),//加载远指针
   'LEA'       => array('0'=>2,'1'=> -1),//加载有效地址// lea 的第二参数 不读也不写
-  'LEAVE'     => array('STACK'=>3,'BP'=>3,'SP'=>2),//高级过程退出
+  'LEAVE'     => array(STACK=>3,'BP'=>3,'SP'=>2),//高级过程退出
   'LES'       => array('0'=>2),//加载远指针
   'LFENCE'    => array(),//加载边界
   'LFS'       => array('0'=>2),//加载远指针
@@ -525,27 +367,27 @@ PMVLZB		mmxreg,mem			[rm:	0f 5b /r]				PENT,MMX,SQ,CYRIX
 PMVNZB		mmxreg,mem			[rm:	0f 5a /r]				PENT,MMX,SQ,CYRIX
 PMVZB		mmxreg,mem			[rm:	0f 58 /r]				PENT,MMX,SQ,CYRIX
 */
-  'POP'       => array('STACK'=>3,'0'=>2,'ESP'=>3),//将值弹出堆栈		reg16				[r:	o16 58+r]				8086
-  'POPA'      => array('STACK'=>3,'DI'=>2, 'SI'=>2, 'BP'=>2, 'BX'=>2, 'DX'=>2, 'CX'=>2, 'AX'=>2,'ESP'=>3),//弹出所有通用寄存器		void				[	odf 61]					186,NOLONG
-  'POPAD'     => array('STACK'=>3,'EDI'=>2,'ESI'=>2,'EBP'=>2,'EBX'=>2,'EDX'=>2,'ECX'=>2,'EAX'=>2,'ESP'=>3),//弹出所有通用寄存器		void				[	o32 61]					386,NOLONG
-  'POPAW'	  => array('STACK'=>3,'DI'=>2, 'SI'=>2, 'BP'=>2, 'BX'=>2, 'DX'=>2, 'CX'=>2, 'AX'=>2,'ESP'=>3),//	void				[	o16 61]					186,NOLONG
-  'POPF'      => array('STACK'=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2,'NT' => 2),//All flags may be affected;		void				[	odf 9d]					8086
-  'POPFD'	  => array('STACK'=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//All flags may be affected;	void				[	o32 9d]					386,NOLONG
-  'POPFQ'	  => array('STACK'=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//All flags may be affected,	void				[	o32 9d]					X64
-  'POPFW'	  => array('STACK'=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//All flags may be affected	void				[	o16 9d]					8086
+  'POP'       => array(STACK=>3,'0'=>2,'ESP'=>3),//将值弹出堆栈		reg16				[r:	o16 58+r]				8086
+  'POPA'      => array(STACK=>3,'DI'=>2, 'SI'=>2, 'BP'=>2, 'BX'=>2, 'DX'=>2, 'CX'=>2, 'AX'=>2,'ESP'=>3),//弹出所有通用寄存器		void				[	odf 61]					186,NOLONG
+  'POPAD'     => array(STACK=>3,'EDI'=>2,'ESI'=>2,'EBP'=>2,'EBX'=>2,'EDX'=>2,'ECX'=>2,'EAX'=>2,'ESP'=>3),//弹出所有通用寄存器		void				[	o32 61]					386,NOLONG
+  'POPAW'	  => array(STACK=>3,'DI'=>2, 'SI'=>2, 'BP'=>2, 'BX'=>2, 'DX'=>2, 'CX'=>2, 'AX'=>2,'ESP'=>3),//	void				[	o16 61]					186,NOLONG
+  'POPF'      => array(STACK=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2,'NT' => 2),//All flags may be affected;		void				[	odf 9d]					8086
+  'POPFD'	  => array(STACK=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//All flags may be affected;	void				[	o32 9d]					386,NOLONG
+  'POPFQ'	  => array(STACK=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//All flags may be affected,	void				[	o32 9d]					X64
+  'POPFW'	  => array(STACK=>3,'ESP'=>3,'OF' => 2,'SF' => 2,'ZF' => 2,'AF' => 2,'CF' => 2,'PF' => 2,'DF' => 2,'TF' => 2,'IF' => 2),//All flags may be affected	void				[	o16 9d]					8086
   'POR'       => array(),//逻辑位或		mmxreg,mmxrm			[rm:	np o64nw 0f eb /r]			PENT,MMX,SQ
   'PREFETCH'  => array(),//将数据预取到缓存	mem				[m:	0f 0d /0]				PENT,3DNOW,SQ
   'PREFETCHW' => array(),//将数据预取到缓存	mem				[m:	0f 0d /1]				PENT,3DNOW,SQ
 
 //PSUBSIW		mmxreg,mmxrm			[rm:	o64nw 0f 55 /r]				PENT,MMX,SQ,CYRIX
-  'PUSH'      => array('STACK'=>3,'0'=>1,'ESP'=>3),//将字或双字压入堆栈		imm64				[i:	o64nw 68+s ibd,s]			X64,AR0,SZ
-  'PUSHA'     => array('STACK'=>3,'AX'=>1, 'CX'=>1, 'DX'=>1, 'BX'=>1, 'SP'=>1, 'BP'=>1, 'SI'=>1, 'DI'=>1, 'ESP'=>3),//压入所有通用寄存器
-  'PUSHAD'	  => array('STACK'=>3,'EDI'=>1,'ESI'=>1,'EBP'=>1,'EBX'=>1,'EDX'=>1,'ECX'=>1,'EAX'=>1,'ESP'=>3),//压入所有通用寄存器	void				[	o32 60]					386,NOLONG
-  'PUSHAW'    => array('STACK'=>3,'EDI'=>1,'ESI'=>1,'EBP'=>1,'EBX'=>1,'EDX'=>1,'ECX'=>1,'EAX'=>1,'ESP'=>3),//压入所有通用寄存器		void				[	o16 60]					186,NOLONG
-  'PUSHF'     => array('STACK'=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	odf 9c]					8086
-  'PUSHFD'    => array('STACK'=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	o32 9c]					386,NOLONG
-  'PUSHFQ'    => array('STACK'=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	o32 9c]					X64
-  'PUSHFW'    => array('STACK'=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	o16 9c]					8086
+  'PUSH'      => array(STACK=>3,'0'=>1,'ESP'=>3),//将字或双字压入堆栈		imm64				[i:	o64nw 68+s ibd,s]			X64,AR0,SZ
+  'PUSHA'     => array(STACK=>3,'AX'=>1, 'CX'=>1, 'DX'=>1, 'BX'=>1, 'SP'=>1, 'BP'=>1, 'SI'=>1, 'DI'=>1, 'ESP'=>3),//压入所有通用寄存器
+  'PUSHAD'	  => array(STACK=>3,'EDI'=>1,'ESI'=>1,'EBP'=>1,'EBX'=>1,'EDX'=>1,'ECX'=>1,'EAX'=>1,'ESP'=>3),//压入所有通用寄存器	void				[	o32 60]					386,NOLONG
+  'PUSHAW'    => array(STACK=>3,'EDI'=>1,'ESI'=>1,'EBP'=>1,'EBX'=>1,'EDX'=>1,'ECX'=>1,'EAX'=>1,'ESP'=>3),//压入所有通用寄存器		void				[	o16 60]					186,NOLONG
+  'PUSHF'     => array(STACK=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	odf 9c]					8086
+  'PUSHFD'    => array(STACK=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	o32 9c]					386,NOLONG
+  'PUSHFQ'    => array(STACK=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	o32 9c]					X64
+  'PUSHFW'    => array(STACK=>3,'ESP'=>3,'OF'=>1,'SF'=>1,'ZF'=>1,'AF'=>1,'CF'=>1,'PF'=>1,'DF'=>1,'TF'=>1,'IF'=>1),//将 EFLAGS 寄存器压入堆栈		void				[	o16 9c]					8086
   'PXOR'      => array(),//逻辑异或		mmxreg,mmxrm			[rm:	np o64nw 0f ef /r]			PENT,MMX,SQ
   'RCL'       => array('0'=>3,'1'=>1,'CF'=>3,'OF'=>2),//循环左移 9 位（CF 与 r/m8）一次
   'RCR'       => array('0'=>3,'1'=>1,'CF'=>3,'OF'=>2),//循环右移 9 位（CF 与 r/m8）一次		rm8,unity			[m-:	d0 /3]					8086
@@ -560,11 +402,11 @@ PMVZB		mmxreg,mem			[rm:	0f 58 /r]				PENT,MMX,SQ,CYRIX
   'REPNE'     => array('isPrefix'=>1,'CX'=>3,'ZF'=>3),//重复字符串操作前缀
   'REPNZ'     => array('isPrefix'=>1,'CX'=>3,'ZF'=>3),//重复字符串操作前缀
   'RET'       => array('multi_op' => 2,
-                       '0' => array('STACK'=>3,       'SP'=>3,'IP'=>2),
-					   '1' => array('STACK'=>3,'0'=>1,'SP'=>3,'IP'=>2),					   
+                       '0' => array(STACK=>3,       'SP'=>3,'IP'=>2),
+					   '1' => array(STACK=>3,'0'=>1,'SP'=>3,'IP'=>2),					   
 					   ),//		imm				[i:	c2 iw]					8086,SW
-  'RETF'      => array('STACK'=>3,'0'=>1,'SP'=>3,'IP'=>2),//FAR RET 		imm				[i:	ca iw]					8086,SW
-  'RETN'	  => array('STACK'=>3,'0'=>1,'SP'=>3,'IP'=>2),//NEAR RET	imm				[i:	c2 iw]					8086,SW
+  'RETF'      => array(STACK=>3,'0'=>1,'SP'=>3,'IP'=>2),//FAR RET 		imm				[i:	ca iw]					8086,SW
+  'RETN'	  => array(STACK=>3,'0'=>1,'SP'=>3,'IP'=>2),//NEAR RET	imm				[i:	c2 iw]					8086,SW
   'ROL'       => array('0'=>3,'1'=>1,'CF'=>3,'OF'=>2),//循环左移 32 位 r/m32 一次		rm8,unity			[m-:	d0 /0]					8086
   'ROR'       => array('0'=>3,'1'=>1,'CF'=>3,'OF'=>2),//		rm8,unity			[m-:	d0 /1]					8086
 /*

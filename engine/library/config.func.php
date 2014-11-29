@@ -9,6 +9,162 @@ class CfgParser{
 	private static $_user_config = false;
 	private static $_user_strength = false;
     private static $_preprocess_sec_name;
+	private static $_user_params = false; //可 命令行输入 部分
+
+	private static $_preprocess_config = false;   // 预处理设置
+	private static $_user_cnf          = false;   // 用户配置(除预处理部分)	
+
+	private static $_rdy               = false;   // rdy文件内容
+
+    //////////////////////////////////////////////
+	public static function unset_rdy(){
+	    self::$_rdy = false;
+	}
+
+    //通用获取参数
+	private static function get($array,$key){
+		if (false === $key){
+		    return $array;
+		}elseif (!isset($array[$key])){
+		    return false;
+		}else{
+		    return $array[$key];
+		}	
+	}
+	//////////////////////////////////////////////
+	public static function get_rdy($key = false){
+	    return self::get(self::$_rdy,$key);
+	}
+	//////////////////////////////////////////////
+	public static function get_user_cnf($key = false){
+	    return self::get(self::$_user_cnf,$key);
+	}
+    //////////////////////////////////////////////
+	public static function get_preprocess_config($key = false){
+	    return self::get(self::$_preprocess_config,$key);
+	}
+
+    //////////////////////////////////////////////
+	//
+	//支持命令行/Get/Post 提交 的参数
+	//返回    $ret['key'] = value
+	//注：argv 优先于 REQUEST ,argv 参数序用双引号 generat.php "a=b&c=d..."
+	//
+	//type: (0) ready  (1) generate 与 self::init_params 有关
+	public static function get_params($argv,$type=0){
+		global $language;
+
+		$ret = false;
+	 
+		if (is_array($_REQUEST)){
+			$ret = $_REQUEST;
+		}	
+		if (count($argv) > 1){
+			parse_str($argv[1],$ret);
+		}		
+
+		if (!isset($ret['cnf'])){
+			GeneralFunc::LogInsert('need param cnf');
+		}else{
+			if (1 == $type){
+			    $cf = @file_get_contents($ret['base'].'/'.$ret['rdy']);
+
+	            if ($cf == false){
+					GeneralFunc::LogInsert('fail to open ready file: '.$ret['base'].'/'.$ret['rdy']);
+				}else{
+				    self::$_rdy = unserialize($cf);//反序列化，并赋值  
+				}
+			}
+            
+			if (0 == $type){
+				if (false === self::get_usr_config(false,$ret['base'].'/'.$ret['cnf'],true)){ //读取配置文件失败，不做任何处理？放弃
+					GeneralFunc::LogInsert($language['without_cfg_file']);        
+				}
+			}elseif (1 == $type){
+			    if (false === self::get_usr_config(self::$_rdy['sec_name'],$ret['base'].'/'.$ret['cnf'],false)){ //读取配置文件失败，不做任何处理？放弃
+					GeneralFunc::LogInsert($language['without_cfg_file']);        
+				}
+			}
+
+			self::$_user_params = $ret; 
+			self::init_params($type);            //check && init params	
+
+			if (1 == $type){  //setvalue_dynamic 动态调整 原设置值
+	            self::affect_setvalue_dynamic(self::$_rdy['sec_name']);	
+			}
+            
+			//var_dump (self::$_user_params);
+			//var_dump (self::$_user_cnf);
+		    //var_dump (self::$_preprocess_config);
+			//exit;
+		}
+	}
+
+	private static function init_params($type){	    
+		if (!isset(self::$_user_params['timelimit'])){			
+			GeneralFunc::LogInsert('need param timelimit');
+		}
+		if (!isset(self::$_user_params['base'])){
+			GeneralFunc::LogInsert('need param base');
+		}
+		if (!isset(self::$_user_params['log'])){
+		    GeneralFunc::LogInsert('need param log');
+		}else{
+		    self::$_user_params['log'] = self::$_user_params['base'].'/'.self::$_user_params['log'];
+		}
+		if (!isset(self::$_user_params['cnf'])){
+			GeneralFunc::LogInsert('need param cnf');
+		}else{
+			self::$_user_params['cnf'] = self::$_user_params['base'].'/'.self::$_user_params['cnf']; //用户设置
+		}
+		if (0 == $type){ // ready 阶段
+			if (!isset(self::$_user_params['path'])){
+				GeneralFunc::LogInsert('need param path');
+			}
+			if ('bin' === self::$_user_params['type']){
+				 self::$_user_params['type'] = 'BIN';
+			}elseif ('coff' ===  self::$_user_params['type']){	
+				 self::$_user_params['type'] = 'COFF';
+			}else{
+				GeneralFunc::LogInsert('need param type');
+			}
+			if (!isset(self::$_user_params['output'])){
+				GeneralFunc::LogInsert('need param output');
+			}else{
+				self::$_user_params['_file'] = self::$_user_params['base'].'/'.self::$_user_params['output'].'/'.self::$_user_params['filename'];			
+			}
+			if (!isset(self::$_user_params['filename'])){
+				GeneralFunc::LogInsert('need param filename');
+			}else{
+				self::$_user_params['filename'] = self::$_user_params['base'].'/'.self::$_user_params['path'].'/'.self::$_user_params['filename'];			
+			}
+		}elseif (1 == $type){ //gen 阶段					
+			if (!isset(self::$_user_params['rdy'])){
+				GeneralFunc::LogInsert('need param rdy');
+			}else{
+				self::$_user_params['rdy'] = self::$_user_params['base'].'/'.self::$_user_params['rdy']; 
+			}			
+			
+			if (!isset(self::$_user_params['filename'])){
+				GeneralFunc::LogInsert('need param filename');
+			}else{
+				self::$_user_params['obj_filename'] = self::$_user_params['base']."/".self::$_user_params['filename'];
+				if (!is_file(self::$_user_params['obj_filename'])){
+					GeneralFunc::LogInsert('file is not exist: '.self::$_user_params['obj_filename']);
+				}
+			}	
+
+			if (!isset(self::$_user_params['outputfile'])){
+				GeneralFunc::LogInsert('need param outputfile');
+			}else{
+				self::$_user_params['_file'] = self::$_user_params['base'].'/'.self::$_user_params['outputfile'];	
+			}
+		}	
+	}
+
+	public static function params($key = false){
+		return self::get(self::$_user_params,$key);
+	}
 
     ////////////////////////////////////////////////////////////////////////////////
 	//
@@ -40,7 +196,7 @@ class CfgParser{
 	//
 	//根据用户configure文件生成 数组(按节表)
 	//
-	private static function usr_config_parser($buffer,$preprocess,&$preprocess_config,&$all_configure_array,&$section_array,&$global_array,&$i){
+	private static function usr_config_parser($buffer,$preprocess,&$all_configure_array,&$section_array,&$global_array,&$i){
 
 		global $language;
 
@@ -65,7 +221,7 @@ class CfgParser{
 					$in_section = 2;    
 					continue;
 				}elseif ('==PreprocessConfig==' === $a){
-					if (false !== $preprocess_config){  //预处理 设置 不止 一个段
+					if (false !== self::$_preprocess_config){  //预处理 设置 不止 一个段
 						GeneralFunc::LogInsert($language['dup_preprocessconfig']);
 						return false;
 					}
@@ -107,14 +263,14 @@ class CfgParser{
 							if ('@protect_section' === $name){
 								$size = intval($tmp[2]); // 长度
 								$value = intval($value);
-								if (!isset($preprocess_config[$value]) or ($size > $preprocess_config[$value])){
-									$preprocess_config['protect_section'][$value] = $size;
+								if (!isset(self::$_preprocess_config[$value]) or ($size > self::$_preprocess_config[$value])){
+									self::$_preprocess_config['protect_section'][$value] = $size;
 								}									
 							}elseif ('@dynamic_insert' === $name){
 								$size = intval($tmp[2]); // 长度
 								$value = intval($value);
-								if (!isset($preprocess_config[$value]) or ($size > $preprocess_config[$value])){
-									$preprocess_config['dynamic_insert'][$value] = $size;
+								if (!isset(self::$_preprocess_config[$value]) or ($size > self::$_preprocess_config[$value])){
+									self::$_preprocess_config['dynamic_insert'][$value] = $size;
 								}
 							}	
 							continue;
@@ -151,10 +307,10 @@ class CfgParser{
 	//
 	//读取用户设置文件内容
 	//
-	//$preprocess = false 仅处理preprocess 部分
+	//$preprocess = true 仅处理preprocess 部分
 	//
 
-	public static function get_usr_config($sec_name,$filename,&$user_cnf,&$preprocess_config,$preprocess = false){
+	public static function get_usr_config($sec_name,$filename,$preprocess = false){
 
 		global $language;
 
@@ -175,11 +331,11 @@ class CfgParser{
 												//
 				$global_array = array();        //$all_configure_array 编号 => $all_configure_array 编号
 												//
-				$preprocess_config = false;     //预处理 => 数组
+				//$preprocess_config = false;     //预处理 => 数组
 												//
 				$index = 1;                     //$all_configure_array 编号
 												//
-				self::usr_config_parser($buffer,$preprocess,$preprocess_config,$all_configure_array,$section_array,$global_array,$index);  
+				self::usr_config_parser($buffer,$preprocess,$all_configure_array,$section_array,$global_array,$index);  
 
 				//if (true === $preprocess){ //预处理,搜集所有目标 段名
 				foreach ($section_array as $a => $b){
@@ -216,7 +372,7 @@ class CfgParser{
 							self::$_user_config[$c_name]['stack_usable'] = true;
 						}
 						foreach ($v as $sec_id){
-							$user_cnf[$sec_id]              = $all_configure_array[$i];
+							self::$_user_cnf[$sec_id]              = $all_configure_array[$i];
 							self::$_user_strength[$sec_id]  = $all_configure_array[$i]['strength'];
 						}
 					}		
@@ -271,24 +427,22 @@ class CfgParser{
 	//                                   2：value 类型不符
 	//
 	private static function check_cnf_value ($name,$value,&$c_ret){
-		global $all_eflags_0;
-		global $registersss;
+		
 
 		if ('@unprotect' === $name){
 			$value = strtoupper($value);
-			if ('STATUS_FLAGS' === $value){							
-				$c_ret['unprotect']['flag']['CF'] = 1;
-				$c_ret['unprotect']['flag']['PF'] = 1;
-				$c_ret['unprotect']['flag']['AF'] = 1;
-				$c_ret['unprotect']['flag']['ZF'] = 1;
-				$c_ret['unprotect']['flag']['SF'] = 1;
-				$c_ret['unprotect']['flag']['OF'] = 1;
+			if ('STATUS_FLAGS' === $value){		
+				if (false !== ($a = Instruction::getEflags(1))){
+				    foreach ($a as $b){
+				        $c_ret['unprotect'][FLAG][$b] = 1;
+					}
+				}
 				return true;
-			}elseif (isset($all_eflags_0[$value])){
-				$c_ret['unprotect']['flag'][$value] = 1;
+			}elseif (Instruction::isEflag($value)){
+				$c_ret['unprotect'][FLAG][$value] = 1;
 				return true;
-			}elseif (isset($registersss['32'][$value])){
-				$c_ret['unprotect']['normal'][$value]['32'] = 1;
+			}elseif (Instruction::getRegByIdxBits(32,$value)){
+				$c_ret['unprotect'][NORMAL][$value]['32'] = 1;
 				return true;
 			}								 
 		}elseif ('@protect' === $name){
@@ -299,32 +453,32 @@ class CfgParser{
 			}
 		}elseif ('@strength_poly_max' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['poly']['max'] = intval($value);
+				$c_ret['strength'][POLY]['max'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_poly_min' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['poly']['min'] = intval($value);
+				$c_ret['strength'][POLY]['min'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_bone_max' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['bone']['max'] = intval($value);
+				$c_ret['strength'][BONE]['max'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_bone_min' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['bone']['min'] = intval($value);
+				$c_ret['strength'][BONE]['min'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_meat_max' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['meat']['max'] = intval($value);
+				$c_ret['strength'][MEAT]['max'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_meat_min' === $name){
 			if (is_numeric($value)){
-				$c_ret['strength']['meat']['min'] = intval($value);
+				$c_ret['strength'][MEAT]['min'] = intval($value);
 				return true;
 			}
 		}elseif ('@strength_default' === $name){
@@ -363,7 +517,7 @@ class CfgParser{
 			}
 		}elseif ('@stack_pointer_define' === $name){
 			$value = strtoupper($value);
-			if (isset($registersss['32'][$value])){
+			if (Instruction::getRegByIdxBits(32,$value)){
 				$c_ret['stack_pointer_define'][$value] = $value;
 				return true;
 			}		
@@ -373,37 +527,39 @@ class CfgParser{
 		return 2;
 	}
 
-
-
 	////////////////////////////////////////////////////////////////////////////////
 	//
 	// revalue_dynamic 设置
 	//                 generate.php参数 覆写 configure 内容
 	//
-	public static function affect_setvalue_dynamic($sec_name,$setvalue_dynamic,&$user_cnf){
+	private static function affect_setvalue_dynamic($sec_name){
 
 		global $language;
 
-		foreach ($setvalue_dynamic as $name => $a){
-			if (isset($sec_name[$name])){
-				$v = $sec_name[$name];
-				foreach ($v as $a){
-					foreach ($setvalue_dynamic[$name] as $key => $new_value){
-						if (true === $user_cnf[$a]['setvalue_dynamic'][$key]){
-							$tmp = self::check_cnf_value('@'.$key,$new_value,$user_cnf[$a]);
-							if (1 === $tmp){ //key name unknown
-								GeneralFunc::LogInsert($language['setvalue_unknown_key'].'['.$name.']['.$key.'] = '.$new_value,2);
-							}elseif (2 === $tmp){ //value mismatch
-								GeneralFunc::LogInsert($language['setvalue_mismatch_value'].'['.$name.']['.$key.'] = '.$new_value,2);
-							}						
-						}else{ //尝试向未开放动态revalue的段中 动态覆写					
-							GeneralFunc::LogInsert($language['setvalue_with_off'].'['.$name.']['.$key.']',2);
-							break;
+        if (isset(self::$_user_params['sd'])){
+			$setvalue_dynamic = self::$_user_params['sd'];
+
+			foreach ($setvalue_dynamic as $name => $a){
+				if (isset($sec_name[$name])){
+					$v = $sec_name[$name];
+					foreach ($v as $a){
+						foreach ($setvalue_dynamic[$name] as $key => $new_value){
+							if (true === self::$_user_cnf[$a]['setvalue_dynamic'][$key]){
+								$tmp = self::check_cnf_value('@'.$key,$new_value,self::$_user_cnf[$a]);
+								if (1 === $tmp){ //key name unknown
+									GeneralFunc::LogInsert($language['setvalue_unknown_key'].'['.$name.']['.$key.'] = '.$new_value,2);
+								}elseif (2 === $tmp){ //value mismatch
+									GeneralFunc::LogInsert($language['setvalue_mismatch_value'].'['.$name.']['.$key.'] = '.$new_value,2);
+								}						
+							}else{ //尝试向未开放动态revalue的段中 动态覆写					
+								GeneralFunc::LogInsert($language['setvalue_with_off'].'['.$name.']['.$key.']',2);
+								break;
+							}
 						}
 					}
+				}else{ //传送了一个未定义段名的revalue
+					GeneralFunc::LogInsert($language['setvalue_illegal_sec'].$name,2);
 				}
-			}else{ //传送了一个未定义段名的revalue
-				GeneralFunc::LogInsert($language['setvalue_illegal_sec'].$name,2);
 			}
 		}
 
@@ -413,7 +569,7 @@ class CfgParser{
 	//
 	//根据 用户 对 节表 定义，对 soul_usable 进行增加 (除soul_forbid 显式禁止的外)
 	//
-	public static function reconfigure_soul_usable ($sec_name,$user_cnf,$soul_writein_Dlinked_List_Total,&$soul_usable,$soul_forbid){
+	public static function reconfigure_soul_usable ($sec_name,$soul_writein_Dlinked_List_Total,&$soul_usable,$soul_forbid){
 		global $StandardAsmResultArray;
 		global $all_valid_mem_opt_index;
 		global $avmoi_ptr;
@@ -427,73 +583,142 @@ class CfgParser{
 			foreach ($b as $c => $d){
 				$c_list = $soul_writein_Dlinked_List_Total[$d]['list'][0]; //未 多态/混淆 ，起始位默认是0
 				while (true){				
-					$f = $c_list['c']; 
+					$f = $c_list[C]; 
 					if (true === $c_define['protect']['thread_memory']){   //禁止所有内存地址 可写入 属性
-						if (is_array($soul_usable[$d][$f]['p']['mem_opt_able'])){
-							foreach ($soul_usable[$d][$f]['p']['mem_opt_able'] as $z => $y){
-								if (1 < $all_valid_mem_opt_index[$y]['opt']){
+						if (is_array($soul_usable[$d][$f][P][MEM_OPT_ABLE])){
+							foreach ($soul_usable[$d][$f][P][MEM_OPT_ABLE] as $z => $y){
+								if (1 < $all_valid_mem_opt_index[$y][OPT]){
 									$all_valid_mem_opt_index[$avmoi_ptr] = $all_valid_mem_opt_index[$y];
-									$all_valid_mem_opt_index[$avmoi_ptr]['opt'] &= 1;
-									$soul_usable[$d][$f]['p']['mem_opt_able'][$z] = $avmoi_ptr;
+									$all_valid_mem_opt_index[$avmoi_ptr][OPT] &= 1;
+									$soul_usable[$d][$f][P][MEM_OPT_ABLE][$z] = $avmoi_ptr;
 									$avmoi_ptr ++;
 								}
 							}
 						}
-						if (is_array($soul_usable[$d][$f]['n']['mem_opt_able'])){
-							foreach ($soul_usable[$d][$f]['n']['mem_opt_able'] as $z => $y){
-								if (1 < $all_valid_mem_opt_index[$y]['opt']){
+						if (is_array($soul_usable[$d][$f][N][MEM_OPT_ABLE])){
+							foreach ($soul_usable[$d][$f][N][MEM_OPT_ABLE] as $z => $y){
+								if (1 < $all_valid_mem_opt_index[$y][OPT]){
 									$all_valid_mem_opt_index[$avmoi_ptr] = $all_valid_mem_opt_index[$y];
-									$all_valid_mem_opt_index[$avmoi_ptr]['opt'] &= 1;
-									$soul_usable[$d][$f]['n']['mem_opt_able'][$z] = $avmoi_ptr;
+									$all_valid_mem_opt_index[$avmoi_ptr][OPT] &= 1;
+									$soul_usable[$d][$f][N][MEM_OPT_ABLE][$z] = $avmoi_ptr;
 									$avmoi_ptr ++;
 								}
 							}
 						}
 					}
 					//foreach ($StandardAsmResultArray[$d] as $f => $g){				
-					if (isset($c_define['flag'])){
-						foreach ($c_define['flag'] as $z => $y){
-							if (!isset($soul_forbid[$d][$f]['p']['flag'][$z])){
-								$soul_usable[$d][$f]['p']['flag_write_able'][$z] = $y;
+					if (isset($c_define[FLAG])){
+						foreach ($c_define[FLAG] as $z => $y){
+							if (!isset($soul_forbid[$d][$f][P][FLAG][$z])){
+								$soul_usable[$d][$f][P][FLAG_WRITE_ABLE][$z] = $y;
 							}
-							if (!isset($soul_forbid[$d][$f]['n']['flag'][$z])){
-								$soul_usable[$d][$f]['n']['flag_write_able'][$z] = $y;
+							if (!isset($soul_forbid[$d][$f][N][FLAG][$z])){
+								$soul_usable[$d][$f][N][FLAG_WRITE_ABLE][$z] = $y;
 							}
 						}
 					}
 					//通用寄存器，方便起见，forbid显式禁止 以寄存器为单位，不细分到位
-					if (isset($c_define['normal'])){
-						foreach ($c_define['normal'] as $z => $y){
-							if (!isset($soul_forbid[$d][$f]['p']['normal'][$z])){
-								foreach ($c_define['normal'][$z] as $x => $w){
-									$soul_usable[$d][$f]['p']['normal_write_able'][$z][$x] = $y;
+					if (isset($c_define[NORMAL])){
+						foreach ($c_define[NORMAL] as $z => $y){
+							if (!isset($soul_forbid[$d][$f][P][NORMAL][$z])){
+								foreach ($c_define[NORMAL][$z] as $x => $w){
+									$soul_usable[$d][$f][P][NORMAL_WRITE_ABLE][$z][$x] = $y;
 								}
 							}
-							if (!isset($soul_forbid[$d][$f]['n']['normal'][$z])){
-								foreach ($c_define['normal'][$z] as $x => $w){
-									$soul_usable[$d][$f]['n']['normal_write_able'][$z][$x] = $y;
+							if (!isset($soul_forbid[$d][$f][N][NORMAL][$z])){
+								foreach ($c_define[NORMAL][$z] as $x => $w){
+									$soul_usable[$d][$f][N][NORMAL_WRITE_ABLE][$z][$x] = $y;
 								}
 							}
 						}
 					}
 
 					if (true === $c_define['stack_usable']){   //设置所有栈有效 and 清除所有单位可用ESP,  见./readme/readme.config.txt
-						unset ($soul_usable[$d][$f]['p']['normal_write_able']['ESP']);
-						unset ($soul_usable[$d][$f]['n']['normal_write_able']['ESP']);
-						$soul_usable[$d][$f]['p']['stack'] = true;
-						$soul_usable[$d][$f]['n']['stack'] = true;
-						$StandardAsmResultArray[$d][$f]['stack'] = true;
+						unset ($soul_usable[$d][$f][P][NORMAL_WRITE_ABLE]['ESP']);
+						unset ($soul_usable[$d][$f][N][NORMAL_WRITE_ABLE]['ESP']);
+						$soul_usable[$d][$f][P][STACK] = true;
+						$soul_usable[$d][$f][N][STACK] = true;
+						$StandardAsmResultArray[$d][$f][STACK] = true;
 					}
 					///////////////////////////////////////////////////////
 					//
-					if (isset($c_list['n'])){
-						$c_list = $soul_writein_Dlinked_List_Total[$d]['list'][$c_list['n']];
+					if (isset($c_list[N])){
+						$c_list = $soul_writein_Dlinked_List_Total[$d]['list'][$c_list[N]];
 					}else{
 						break;
 					}
 				}			
 			}
 		}
+	}
+
+    //显示命令行设置
+	public static function params_show(){
+		echo "<br>============= 显示用户命令行输入 ============= <br>";
+		echo '<table border = 1><tr>';
+		foreach (self::$_user_params as $i => $v){
+		    echo '<tr><td>';
+			echo "$i";
+			echo '</td><td>';
+			var_dump ($v);
+			echo '</td></tr>';
+		}
+		echo '</table>';
+	}
+
+	//显示用户设置
+	public static function show($sec_name){
+		echo "<br>============= 显示用户设置 ( ".self::$_user_params['base'].'/'.$_user_params['cnf']." ) ============= <br>";
+		foreach ($sec_name as $sec_name_show => $a){
+			$save = false;
+			$total_sec_num = array();
+			$table_name = array();
+			$table_value = array();
+			$table_name[] = "sec name";
+			$table_value[] = $sec_name_show;
+			$table_name[] = "sec number";		
+			foreach ($a as $sec_num){	
+				$total_sec_num[$sec_num] = $sec_num;    
+			}
+			$table_value[] = $total_sec_num;
+			
+			$a = $sec_num;
+			$b = self::$_user_cnf[$a];
+					
+			if (is_array($b)){
+				foreach ($b as $z => $y){
+					$table_name[]  = $z;
+					$table_value[] = $y;
+				}
+			}else{
+				$table_name[]  = $a;
+				$table_value[] = $b;
+			}
+
+
+			echo '<table border = 1><tr>';
+			foreach ($table_name as $i => $a){			
+				if ($i%2){
+					echo "<td>";
+				}else{
+					echo "<td bgcolor='#c0c0c0'>";
+				}
+				echo "$a"."</td>";
+			}
+			echo '</tr><tr>';
+			foreach ($table_value as $i=> $a){			
+				if ($i%2){
+					echo "<td>";
+				}else{
+					echo "<td bgcolor='#c0c0c0'>";
+				}
+				var_dump ($a);
+				echo '</td>';
+			}        		
+			echo '</tr>';
+			echo '</table><br>';	
+		}	
+
 	}
 
 }

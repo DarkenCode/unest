@@ -1,12 +1,5 @@
 <?php
 
-
-//模板 type定义
-  define ('CTPL_OPT',1); //指令 
-//define ('CTPL_POS',2); //位置 (如：前中后)
-//define ('CTPL_PRM',3); //参数 (如：有无整数)
-
-
 //处理优先级
 
 class Character{
@@ -177,11 +170,11 @@ class Character{
 		$exRate = 0;
 		if (POLY === $type){		 
 			
-		//var_dump ($obj['operation']);
+		//var_dump ($obj[OPERATION]);
 			if (false !== OrganPoly::get_usable_models($obj)){ //存在对应的Poly Tpl				
 			    $exRate ++;
-				if (isset(self::$_tpl[CTPL_OPT][POLY][$obj['operation']])){
-				    $exRate += self::$_tpl[CTPL_OPT][POLY][$obj['operation']];
+				if (isset(self::$_tpl[CTPL_OPT][POLY][$obj[OPERATION]])){
+				    $exRate += self::$_tpl[CTPL_OPT][POLY][$obj[OPERATION]];
 				}
 
 			}else{

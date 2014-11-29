@@ -10,14 +10,14 @@ if(!defined('UNEST.ORG')) {
 //
 function shutdown_except(){
     global $complete_finished;
-	global $log_path;
+
 	global $exetime_record;
     if ((!$complete_finished)&&(!GeneralFunc::LogHasErr())){
 		GeneralFunc::LogInsert('unexpected shutdown, maximum execution time exceeded or other errors');
 	}
 	$output = GeneralFunc::LogRead();
     //输出$output[] 到日志文件,jason格式
-	file_put_contents($log_path,json_encode($output));  
+	file_put_contents(CfgParser::params('log'),json_encode($output));  
 
 	var_dump ($output);
 	var_dump ($exetime_record);
@@ -77,33 +77,14 @@ class GeneralFunc{
 		/**************************************/
 	}    
 
-    //
-	//////////////////////////////////////////////
-	 //
-	 //支持命令行/Get/Post 提交 的参数
-	 //返回    $ret['key'] = value
-	//注：argv 优先于 REQUEST ,argv 参数序用双引号 generat.php "a=b&c=d..."
-	public static function get_params($argv){
-		$ret = false;
-	 
-		if (is_array($_REQUEST)){
-			$ret = $_REQUEST;
-		}	
-		if (count($argv) > 1){
-			parse_str($argv[1],$ret);
-		}
-		return $ret;
-	 }
-
-
 	///////////////////////////////////////////////////
 	//根据usable前后stack确定指令的stack环境(可用or 不可用)
 	public static function soul_stack_set(&$code,$usable){
 		foreach ($code as $a => $b){
-			if ((true !== $usable[$a]['p']['stack']) or (true !== $usable[$a]['n']['stack'])){
-				$code[$a]['stack'] = false;
+			if ((true !== $usable[$a][P][STACK]) or (true !== $usable[$a][N][STACK])){
+				$code[$a][STACK] = false;
 			}else{
-				$code[$a]['stack'] = true;
+				$code[$a][STACK] = true;
 			}		
 		}
 	}
@@ -133,9 +114,8 @@ class GeneralFunc{
 	//内部错误 日志 保存(保存到文件 or 发送到邮件)
 
 	public static function internal_log_save($title,$contents=false){
-		global $engin_version;
 
-		$log_path = dirname(__FILE__)."/../../log/$engin_version/";
+		$log_path = dirname(__FILE__)."/../../log/ENGIN_VER/";
 
 		if (!is_dir($log_path)){
 			if (!mkdir($log_path)){
@@ -183,42 +163,42 @@ class GeneralFunc{
 	//识别 目标指令是否需要ipsp保护
 	//
 	public static function is_effect_ipsp($asm,$rule = 1,$sp_define = false){
-		global $Intel_instruction;
-		global $con_abs_jmp;
+
+
 		global $stack_pointer_reg;
-		global $registersss;
-		global $register_assort;
+	
+
 		
-		if (isset($con_abs_jmp[$asm['operation']])){ //绝对 或 相对 跳转
+		if (Instruction::isJmp($asm[OPERATION])){ //绝对 或 相对 跳转
 			return true;
 		}
 
-		$opt = $Intel_instruction[$asm['operation']];
+		$opt = Instruction::getInstructionOpt($asm[OPERATION],count($asm[P_TYPE]));
 
-		if ($opt['multi_op']){
-			$i = count($asm['p_type']);
-			$opt = $opt[$i];
-		}
+	
 
-		if (isset($opt['STACK'])){
+
+
+
+		if (isset($opt[STACK])){
 			return true;
 		}
 		
-		if (is_array($asm['params'])){ //参数，寄存器SP 或 ESP ，读或写 操作	
-			foreach ($asm['params'] as $a => $b){
-				if ('i' !== $asm['p_type'][$a]){
+		if (is_array($asm[PARAMS])){ //参数，寄存器SP 或 ESP ，读或写 操作	
+			foreach ($asm[PARAMS] as $a => $b){
+				if ('i' !== $asm[P_TYPE][$a]){
 					if ((0 === $rule) && ($opt[$a] <= 1)){
 						continue;
 					}
 					if ($opt[$a] < 1){ // lea
 						continue;
 					}
-					if ('r' === $asm['p_type'][$a]){
-						if ($register_assort[$b] == $stack_pointer_reg){
+					if ('r' === $asm[P_TYPE][$a]){
+						if (Instruction::getGeneralRegIndex($b) == $stack_pointer_reg){
 							return true;
 						}
 					}
-					if ((false !== $sp_define)&&('m' === $asm['p_type'][$a])){
+					if ((false !== $sp_define)&&('m' === $asm[P_TYPE][$a])){
 						if (preg_match('/'."$sp_define".'/',$b)){						
 							return true;
 						}
@@ -235,19 +215,19 @@ class GeneralFunc{
 	public static function get_dynamic_insert_value (&$dynamic_insert){
 
 		global $language;
-		global $my_params;
 
-		$new_dynamic_insert = $my_params['di'];
+
+		$new_dynamic_insert = CfgParser::params('di');
 		if (isset($new_dynamic_insert)){
 			if (is_array($new_dynamic_insert)){
 				foreach ($new_dynamic_insert as $key => $value){
 					if (isset($dynamic_insert[$key])){					
 						$tmp = GenerateFunc::get_bit_from_inter($value);
 						if ($tmp){
-							if ($tmp <= $dynamic_insert[$key]['bits']){
+							if ($tmp <= $dynamic_insert[$key][BITS]){
 								$dynamic_insert[$key]['new'] = $value;
 							}else{
-								GeneralFunc::LogInsert($language['toobig_dynamci_insert_value'].'di['.$key.'] : '.$tmp.' > '.$dynamic_insert[$key]['bits']);	
+								GeneralFunc::LogInsert($language['toobig_dynamci_insert_value'].'di['.$key.'] : '.$tmp.' > '.$dynamic_insert[$key][BITS]);	
 							}
 						}else{
 							GeneralFunc::LogInsert($language['illegal_dynamci_insert_value'].$value);	

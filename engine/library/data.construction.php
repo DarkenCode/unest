@@ -118,8 +118,8 @@ class ConstructionDlinkedListOpt{
 	private static function seekNextObj($c,$target){
 		$objs = array();
 		$objs[1] = $c;
-		while (isset(self::$_soul_writein_Dlinked_List[$c]['n'])){
-		    $c = self::$_soul_writein_Dlinked_List[$c]['n'];
+		while (isset(self::$_soul_writein_Dlinked_List[$c][N])){
+		    $c = self::$_soul_writein_Dlinked_List[$c][N];
 			$objs[] = $c;
             if ($c == $target){
 				return $objs;
@@ -297,8 +297,8 @@ class ConstructionDlinkedListOpt{
 	}
 	//链表插入
 	public static function insertDlinkedList($prev,$next){
-	    self::$_soul_writein_Dlinked_List[$prev]['n'] = $next;
-        self::$_soul_writein_Dlinked_List[$next]['p'] = $prev;
+	    self::$_soul_writein_Dlinked_List[$prev][N] = $next;
+        self::$_soul_writein_Dlinked_List[$next][P] = $prev;
 	}
 		
 	//链表单位设值
@@ -331,7 +331,7 @@ class ConstructionDlinkedListOpt{
 	////////////////////////////////////////////////////////////////////////////
 	//根据 $soul_writein_Dlinked_List 链表号 获得 该单位的 前(后)usable 数组
 	public static function get_usable_from_DlinkedList($id,$position){
-        return OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$id],'usable',$position);
+        return OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$id],USABLE,$position);
 	}
 	
 	//////////////////////////////////////////////////////////////////////////
@@ -343,25 +343,25 @@ class ConstructionDlinkedListOpt{
 		$prev = false;
 		$next = false;
 
-		if (isset(self::$_soul_writein_Dlinked_List[$c_lp]['p'])){
-			$prev = self::$_soul_writein_Dlinked_List[$c_lp]['p'];
+		if (isset(self::$_soul_writein_Dlinked_List[$c_lp][P])){
+			$prev = self::$_soul_writein_Dlinked_List[$c_lp][P];
 		}
 		
-		if (isset(self::$_soul_writein_Dlinked_List[$c_lp]['n'])){
-			$next = self::$_soul_writein_Dlinked_List[$c_lp]['n'];
+		if (isset(self::$_soul_writein_Dlinked_List[$c_lp][N])){
+			$next = self::$_soul_writein_Dlinked_List[$c_lp][N];
 		}
 
 		//unset ($copy_buff[$c_lp]);
 		self::$_soul_writein_Dlinked_List[$c_lp]['302'] = $next;
 
 		if (false !== $prev)
-			unset (self::$_soul_writein_Dlinked_List[$prev]['n']);
+			unset (self::$_soul_writein_Dlinked_List[$prev][N]);
 		if (false !== $next)
-			unset (self::$_soul_writein_Dlinked_List[$next]['p']);
+			unset (self::$_soul_writein_Dlinked_List[$next][P]);
 
 		if ((false !== $prev)&&(false !== $next)){
-			self::$_soul_writein_Dlinked_List[$prev]['n'] = $next;
-			self::$_soul_writein_Dlinked_List[$next]['p'] = $prev;
+			self::$_soul_writein_Dlinked_List[$prev][N] = $next;
+			self::$_soul_writein_Dlinked_List[$next][P] = $prev;
 		}elseif (false !== $next){ //if Prev == false
 			self::$_soul_writein_Dlinked_List_start = $next;
 		}//elseif (false !== $prev){ //if Next == false 最后一个，直接清除即可
@@ -376,7 +376,7 @@ class ConstructionDlinkedListOpt{
 
 		$ret = false;
 		$tmp = false; 
-		while (isset(self::$_soul_writein_Dlinked_List[$List_id]['label'])){ //标签 则按方向取下一个(向上或向下)
+		while (isset(self::$_soul_writein_Dlinked_List[$List_id][LABEL])){ //标签 则按方向取下一个(向上或向下)
 			//echo "<br><font color=red>$List_id: Label -> $direct </font>";
 			//var_dump (self::$_soul_writein_Dlinked_List[$List_id]);
 			if (isset(self::$_soul_writein_Dlinked_List[$List_id][$direct])){
@@ -387,7 +387,7 @@ class ConstructionDlinkedListOpt{
 			}	
 		}
 
-		$ret = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$List_id],'code','operation');
+		$ret = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$List_id],CODE,OPERATION);
 		
 		return $ret;
 	}
@@ -396,25 +396,25 @@ class ConstructionDlinkedListOpt{
 	public static function getCode_from_DlinkedList($unit){
 
 		$ret = false;
-		if (isset(self::$_soul_writein_Dlinked_List[$unit]['label'])){
+		if (isset(self::$_soul_writein_Dlinked_List[$unit][LABEL])){
 		    
 		}else{
-            $ret = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$unit],'code');
+            $ret = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$unit],CODE);
 		}
 		return $ret;
 	}
 
 
-    //根据链表编号获取单位['code'] and ['usable']
+    //根据链表编号获取单位[CODE] and [USABLE]
 	//需要仅对应当前$sec的全局变量 $soul_writein_Dlinked_List / $c_Asm_Result / $c_soul_usable / $meat_result_array / $bone_result_array / $poly_result_array;
 	public static function get_unit_by_soul_writein_Dlinked_List($n){
 
 		$ret = false;
         
-		$code   = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$n],'code');
+		$code   = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$n],CODE);
 		if (false != $code){
-			$ret['code'] = $code;
-			$ret['usable'] = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$n],'usable');
+			$ret[CODE] = $code;
+			$ret[USABLE] = OrgansOperator::GetByDListUnit(self::$_soul_writein_Dlinked_List[$n],USABLE);
 		}
 
 		return $ret;
@@ -424,11 +424,11 @@ class ConstructionDlinkedListOpt{
     //判断是否为原始代码
 	private static function is_soul_unit($array){
 
-		if (isset($array['soul'])){
+		if (isset($array[SOUL])){
 			return true;
 		}
 
-		if ((!isset($array['bone'])) and (!isset($array['meat'])) and (!isset($array['poly']))){
+		if ((!isset($array[BONE])) and (!isset($array[MEAT])) and (!isset($array[POLY]))){
 			return true;
 		}
 

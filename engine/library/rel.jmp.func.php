@@ -168,8 +168,8 @@ class RelJmp{
 				}
 			}
 
-			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'label')){  //is label
-				$label = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'label');
+			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,LABEL)){  //is label
+				$label = ConstructionDlinkedListOpt::getDlinkedList($c_unit,LABEL);
 				if (is_array($in_cache_src[$label])){
 					foreach ($in_cache_src[$label] as $a => $b){
 						ConstructionDlinkedListOpt::setRelJmpRange($b,$a);//$rel_jmp_range[$a] = $b;
@@ -187,12 +187,12 @@ class RelJmp{
 			}
 
 			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'rel_jmp')){ //is rel jmp
-				$label = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp','label');
+				$label = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp',LABEL);
 				if (isset($in_cache_label[$label])){
 					//$rel_jmp_range[$c_unit]['max']    = $soul_writein_Dlinked_List[$c_unit]['rel_jmp']['max'];
 					ConstructionDlinkedListOpt::setRelJmpRange(ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp','max'),$c_unit,'max');				
-					//$rel_jmp_range[$c_unit]['label']  = $soul_writein_Dlinked_List[$c_unit]['rel_jmp']['label'];
-					ConstructionDlinkedListOpt::setRelJmpRange(ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp','label'),$c_unit,'label');
+					//$rel_jmp_range[$c_unit][LABEL]  = $soul_writein_Dlinked_List[$c_unit]['rel_jmp'][LABEL];
+					ConstructionDlinkedListOpt::setRelJmpRange(ConstructionDlinkedListOpt::getDlinkedList($c_unit,'rel_jmp',LABEL),$c_unit,LABEL);
 					//$rel_jmp_range[$c_unit]['range']  = $in_cache_label[$label]['range'];
 					ConstructionDlinkedListOpt::setRelJmpRange($in_cache_label[$label]['range'],$c_unit,'range');
 					//$rel_jmp_range[$c_unit]['range'] += $soul_writein_Dlinked_List[$c_unit]['len'];
@@ -234,8 +234,8 @@ class RelJmp{
 			}
 
 			//next unit
-			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,'n')){
-				$c_unit = ConstructionDlinkedListOpt::getDlinkedList($c_unit,'n');
+			if (ConstructionDlinkedListOpt::issetDlinkedListUnit($c_unit,N)){
+				$c_unit = ConstructionDlinkedListOpt::getDlinkedList($c_unit,N);
 			}else{
 				break;
 			}
@@ -298,7 +298,7 @@ class RelJmp{
 				}else{ //无法匹配，程序逻辑错误!!! 写入log
 					$log = array();
 					$log['in_cache_last_label'] = $in_cache_last_label;
-					$log['label']               = $label;
+					$log[LABEL]               = $label;
 					$log['in_cache_src']        = $in_cache_src;
 					GeneralFunc::internal_log_save('fail to search Label (of $in_cache_last_label) in $in_cache_src : [func reset_rel_jmp_array] ',$log);
 					return false;
@@ -367,8 +367,8 @@ class RelJmp{
 			$reserve_last_pointer  = array();
 			$tmp = reset($discard_objs);
 			//echo "<br><font color=blue>reset: $tmp</font>";
-			if (isset($backup_List[$tmp]['p'])){
-				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['p']);
+			if (isset($backup_List[$tmp][P])){
+				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp][P]);
 				if (is_array($tmp_tmp)){
 					foreach ($tmp_tmp as $a => $b){
 						if ($b & 2){
@@ -376,15 +376,15 @@ class RelJmp{
 						}
 					}			
 				}
-				$c_unit = ConstructionDlinkedListOpt::getDlinkedList($backup_List[$tmp]['p'],'n');
+				$c_unit = ConstructionDlinkedListOpt::getDlinkedList($backup_List[$tmp][P],N);
 			}else{
 				$c_unit = $c_List_start;       //从头开始,则新链表的第一单位为开始
 			}
 			//末尾单位
 			$tmp = end($discard_objs);
 			//echo "<br><font color=blue>end: $tmp</font>";
-			if (isset($backup_List[$tmp]['n'])){
-				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp]['n']);
+			if (isset($backup_List[$tmp][N])){
+				$tmp_tmp = ConstructionDlinkedListOpt::ReadRelJmpPointer($backup_List[$tmp][N]);
 				
 				if (is_array($tmp_tmp)){					
 					foreach ($tmp_tmp as $a => $b){
@@ -393,7 +393,7 @@ class RelJmp{
 						}
 					}
 				}
-				$end_unit = $backup_List[$tmp]['n'];
+				$end_unit = $backup_List[$tmp][N];
 			}else{
 				$end_unit = false;               //到链表结束为止
 			}
@@ -405,10 +405,10 @@ class RelJmp{
 			echo "<br>vvvvvvvvvvvvvvvvvvv";
             */	   
  			//$reserve_start_pointer $reserve_last_pointer 都存在的，放入 $in_cache_last_whole
-			//$reserve_start_pointer 存在，且, $obj['n']不存在       放入 $in_cache_src
-			//       ..                        $obj['n']  存在       放入 $in_cache_label
-			//$reserve_last_pointer  存在，且  $obj['n']不存在       放入 $in_cache_last_src
-			//       ..                        $obj['n']  存在       放入 $in_cache_last_label
+			//$reserve_start_pointer 存在，且, $obj[N]不存在       放入 $in_cache_src
+			//       ..                        $obj[N]  存在       放入 $in_cache_label
+			//$reserve_last_pointer  存在，且  $obj[N]不存在       放入 $in_cache_last_src
+			//       ..                        $obj[N]  存在       放入 $in_cache_last_label
 			$tmp = $reserve_start_pointer;
 			foreach ($tmp  as $a => $b){
 				if (isset($reserve_last_pointer[$a])){
@@ -416,7 +416,7 @@ class RelJmp{
 					unset ($reserve_last_pointer[$a]);
 					unset ($reserve_start_pointer[$a]);
 				}else{
-					$tmp_tmp = ConstructionDlinkedListOpt::readRelJmpRange($a,'label');//$tmp_tmp = $rel_jmp_range[$a]['label'];
+					$tmp_tmp = ConstructionDlinkedListOpt::readRelJmpRange($a,LABEL);//$tmp_tmp = $rel_jmp_range[$a][LABEL];
 					if (in_array($a,$discard_objs)){
 						$in_cache_label[$tmp_tmp] = ConstructionDlinkedListOpt::readRelJmpRange($a);//$rel_jmp_range[$a];
 					}else{
@@ -426,7 +426,7 @@ class RelJmp{
 			}	
 
 			foreach ($reserve_last_pointer as $a => $b){
-				$tmp_tmp = ConstructionDlinkedListOpt::readRelJmpRange($a,'label');//$tmp_tmp = $rel_jmp_range[$a]['label'];
+				$tmp_tmp = ConstructionDlinkedListOpt::readRelJmpRange($a,LABEL);//$tmp_tmp = $rel_jmp_range[$a][LABEL];
 				if (in_array($a,$discard_objs)){
 					$in_cache_last_label[$tmp_tmp] = ConstructionDlinkedListOpt::readRelJmpRange($a);//$rel_jmp_range[$a];
 				}else{
@@ -459,13 +459,13 @@ class RelJmp{
 	//取得 补完 List 单位'len' 'rel_jmp'
 	//返回: array['len']
 	//           ['rel_jmp']['max']
-	//                      ['label']
+	//                      [LABEL]
 	//
 	public static function get_addition_List_info($unit,$get_len=false,$get_rel_jmp=false){
 
-		global $UniqueHead;
 
-		global $range_limit_static_jmp;
+
+		
 
 		$ret = false; 
 
@@ -476,9 +476,9 @@ class RelJmp{
 		}else{
 			
 			if ($get_rel_jmp){ //获取 rel_jmp 信息
-				if ((isset($range_limit_static_jmp[$c_opt['operation']])) and (0 === strpos($c_opt['params'][0],"$UniqueHead".'SOLID_JMP_'))){ //定长跳转
-					$ret['rel_jmp']['max'] = $range_limit_static_jmp[$c_opt['operation']];    
-					$ret['rel_jmp']['label'] = $c_opt['params'][0].' : ';
+				if ((Instruction::isJmpStatic($c_opt[OPERATION])) and (0 === strpos($c_opt[PARAMS][0],UNIQUEHEAD.'SOLID_JMP_'))){ //定长跳转
+					$ret['rel_jmp']['max'] = Instruction::getJmpRangeLmt($c_opt[OPERATION]);
+					$ret['rel_jmp'][LABEL] = $c_opt[PARAMS][0].' : ';
 				}
 			}
 

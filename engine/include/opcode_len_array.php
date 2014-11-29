@@ -21,8 +21,8 @@ $match_params['unity']   = array('1' => true,);
 $match_params['reg32na'] = array ('ECX' => true,'EDX' => true,'EBX' => true,'ESI' => true,'EDI' => true,'EBP' => true,'ESP' => true);
 
 
-//$match_types[...] 搜索 匹配目标的['p_type']
-//$match_bits[...]  搜索 匹配目标的['p_bits'] (同时 与 match_types 匹配)
+//$match_types[...] 搜索 匹配目标的[P_TYPE]
+//$match_bits[...]  搜索 匹配目标的[P_BITS] (同时 与 match_types 匹配)
 
 $match_types['imm']   = array('i' => true); 
 $match_types['mem']   = array('m' => true);
